@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Monitora+ · Agendamento de Monitorias Acadêmicas</title>
+  <meta
+    name="description"
+    content="Portal acadêmico para consulta de horários, agendamento e gestão de monitorias."
+  />
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23FFF4EE'/%3E%3Cpath d='M12 46V21c0-5 5.8-7.4 9.3-3.8L32 28.4V42l-7.2-6.8V46c0 2.2-1.8 4-4 4h-4.8c-2.2 0-4-1.8-4-4Z' fill='%23141B29'/%3E%3Cpath d='M52 46V21c0-5-5.8-7.4-9.3-3.8L32 28.4V42l7.2-6.8V46c0 2.2 1.8 4 4 4H48c2.2 0 4-1.8 4-4Z' fill='%23D96B38'/%3E%3C/svg%3E"
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="theme-light is-landing-mode">
+  <a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
+
+  <!-- Barra superior interna (visível após entrar no sistema) -->
+  <header class="topbar" id="app-topbar">
+    <div class="topbar-inner">
+      <button type="button" class="brand-btn" id="btn-brand-home" title="Voltar à tela inicial">
+        <svg class="brand-svg interactive-mark" viewBox="0 0 64 64" width="28" height="28" aria-hidden="true">
+          <path
+            class="m-left"
+            d="M8 48V18c0-5.4 6.2-8 10-4.2L32 28l-6.6 6.6-6.4-6.4V48c0 2.2-1.8 4-4 4h-3c-2.2 0-4-1.8-4-4Z"
+          />
+          <path
+            class="m-right"
+            d="M56 48V18c0-5.4-6.2-8-10-4.2L32 28l6.6 6.6 6.4-6.4V48c0 2.2 1.8 4 4 4h3c2.2 0 4-1.8 4-4Z"
+          />
+        </svg>
+        <span class="brand-name">Monitora<span class="brand-plus">+</span></span>
+      </button>
+
+      <nav class="main-nav" aria-label="Navegação principal" id="main-nav">
+        <button type="button" class="nav-link is-active" data-view="agendar" aria-current="page">
+          Agendar
+        </button>
+        <button type="button" class="nav-link" data-view="agendamentos">
+          Meus Agendamentos
+          <span class="nav-count" id="badge-agendamentos" aria-label="agendamentos ativos">0</span>
+        </button>
+        <button type="button" class="nav-link is-hidden" data-view="monitor" id="nav-monitor-tab">
+          Painel do Monitor
+        </button>
+      </nav>
+
+      <div class="topbar-right">
+        <button
+          type="button"
+          class="student-chip-btn"
+          id="btn-account-action"
+          title="Gerenciar sessão ou entrar"
+        >
+          <span class="student-dot" id="topbar-dot" aria-hidden="true"></span>
+          <span id="topbar-user-label">Entrar</span>
+        </button>
+
+        <div class="theme-switch" role="group" aria-label="Tema visual">
+          <button type="button" class="theme-opt is-active" data-theme="light" aria-pressed="true">Claro</button>
+          <button type="button" class="theme-opt" data-theme="dark" aria-pressed="false">Escuro</button>
+          <button type="button" class="theme-opt" data-theme="contrast" aria-pressed="false">Contraste</button>
+        </div>
+
+        <div class="font-switch" role="group" aria-label="Tamanho da fonte">
+          <button type="button" class="font-btn" id="btn-font-dec" aria-label="Diminuir fonte">A-</button>
+          <button type="button" class="font-btn" id="btn-font-inc" aria-label="Aumentar fonte">A+</button>
+        </div>
+
+        <button
+          type="button"
+          class="mobile-gear-btn"
+          id="btn-mobile-settings-topbar"
+          aria-label="Configurações de tema e fonte"
+          title="Tema e fonte"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="conteudo-principal" class="main-shell">
+    <!-- ==================== VIEW 0: LANDING 50/50 (ESQUERDA GENNERA + DIREITA ASSAAD) ==================== -->
+    <section id="view-landing" class="view-section is-active" aria-labelledby="landing-phrase-title">
+      <div class="split-landing">
+        <!-- METADE ESQUERDA (50%): Painel Editorial com Frases Rotativas estilo Gennera -->
+        <aside class="split-left" id="landing-carousel-area">
+          <div class="split-geo-circle" aria-hidden="true"></div>
+          <div class="split-geo-ring" aria-hidden="true"></div>
+          <div class="split-geo-dot" aria-hidden="true"></div>
+
+          <div class="split-left-top">
+            <button type="button" class="brand-btn brand-on-navy interactive-brand-trigger" title="Monitora+">
+              <svg class="brand-svg interactive-mark" viewBox="0 0 64 64" width="32" height="32" aria-hidden="true">
+                <path
+                  class="m-left m-left-light"
+                  d="M8 48V18c0-5.4 6.2-8 10-4.2L32 28l-6.6 6.6-6.4-6.4V48c0 2.2-1.8 4-4 4h-3c-2.2 0-4-1.8-4-4Z"
+                />
+                <path
+                  class="m-right"
+                  d="M56 48V18c0-5.4-6.2-8-10-4.2L32 28l6.6 6.6 6.4-6.4V48c0 2.2 1.8 4 4 4h3c2.2 0 4-1.8 4-4Z"
+                />
+              </svg>
+              <span class="brand-name brand-name-white">Monitora<span class="brand-plus-light">+</span></span>
+            </button>
+          </div>
+
+          <div class="split-phrase-block">
+            <div class="phrase-stage" id="phrase-stage" aria-live="polite">
+              <h1 id="landing-phrase-title" class="split-headline">
+                Aprender fica mais<br />leve com apoio<span class="brand-plus-light">.</span>
+              </h1>
+              <p id="landing-phrase-sub" class="split-sub">
+                Tire dúvidas no horário certo, sem mensagens perdidas ou choque de agenda.
+              </p>
+            </div>
+
+            <div class="phrase-dots" role="tablist" aria-label="Frases institucionais">
+              <button
+                type="button"
+                class="phrase-dot is-active"
+                data-phrase-idx="0"
+                aria-label="Frase 1"
+                aria-selected="true"
+              ></button>
+              <button
+                type="button"
+                class="phrase-dot"
+                data-phrase-idx="1"
+                aria-label="Frase 2"
+                aria-selected="false"
+              ></button>
+              <button
+                type="button"
+                class="phrase-dot"
+                data-phrase-idx="2"
+                aria-label="Frase 3"
+                aria-selected="false"
+              ></button>
+            </div>
+          </div>
+
+          <div class="split-left-foot">
+            <span>Engenharia de Software · 1º Período</span>
+          </div>
+        </aside>
+
+        <!-- METADE DIREITA (50%): Card Centralizado estilo Assaad -->
+        <div class="split-right">
+          <div class="mobile-landing-bar">
+            <div class="mobile-brand-lockup">
+              <svg class="brand-svg" viewBox="0 0 64 64" width="24" height="24" aria-hidden="true">
+                <path
+                  class="m-left"
+                  d="M8 48V18c0-5.4 6.2-8 10-4.2L32 28l-6.6 6.6-6.4-6.4V48c0 2.2-1.8 4-4 4h-3c-2.2 0-4-1.8-4-4Z"
+                />
+                <path
+                  class="m-right"
+                  d="M56 48V18c0-5.4-6.2-8-10-4.2L32 28l6.6 6.6 6.4-6.4V48c0 2.2 1.8 4 4 4h3c2.2 0 4-1.8 4-4Z"
+                />
+              </svg>
+              <span class="brand-name">Monitora<span class="brand-plus">+</span></span>
+            </div>
+
+            <button
+              type="button"
+              class="mobile-gear-btn"
+              id="btn-mobile-settings-landing"
+              aria-label="Configurações de tema e fonte"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+              <span>Aparência</span>
+            </button>
+          </div>
+
+          <div class="split-right-tools">
+            <div class="theme-switch" role="group" aria-label="Tema visual">
+              <button type="button" class="theme-opt is-active" data-theme="light" aria-pressed="true">Claro</button>
+              <button type="button" class="theme-opt" data-theme="dark" aria-pressed="false">Escuro</button>
+              <button type="button" class="theme-opt" data-theme="contrast" aria-pressed="false">Contraste</button>
+            </div>
+            <div class="font-switch" role="group" aria-label="Tamanho da fonte">
+              <button type="button" class="font-btn" id="btn-landing-font-dec" aria-label="Diminuir fonte">A-</button>
+              <button type="button" class="font-btn" id="btn-landing-font-inc" aria-label="Aumentar fonte">A+</button>
+            </div>
+          </div>
+
+          <div class="assaad-card">
+            <!-- Ícone interativo no topo do card -->
+            <button
+              type="button"
+              class="card-emblem-btn interactive-brand-trigger"
+              id="btn-emblem-interact"
+              aria-label="Ícone Monitora+"
+              title="Monitora+"
+            >
+              <svg class="brand-svg interactive-mark" viewBox="0 0 64 64" width="34" height="34" aria-hidden="true">
+                <path
+                  class="m-left"
+                  d="M8 48V18c0-5.4 6.2-8 10-4.2L32 28l-6.6 6.6-6.4-6.4V48c0 2.2-1.8 4-4 4h-3c-2.2 0-4-1.8-4-4Z"
+                />
+                <path
+                  class="m-right"
+                  d="M56 48V18c0-5.4-6.2-8-10-4.2L32 28l6.6 6.6 6.4-6.4V48c0 2.2 1.8 4 4 4h3c2.2 0 4-1.8 4-4Z"
+                />
+              </svg>
+            </button>
+
+            <!-- ETAPA A: LOGIN / CRIAR CONTA -->
+            <div id="auth-stage-main">
+              <div class="assaad-head">
+                <h2>Entrar no Monitora+</h2>
+                <p>Acesse com sua matrícula ou e-mail institucional.</p>
+              </div>
+
+              <div class="assaad-tabs" role="tablist" aria-label="Acesso ao sistema">
+                <button
+                  type="button"
+                  class="assaad-tab is-active"
+                  role="tab"
+                  aria-selected="true"
+                  data-auth-tab="login"
+                >
+                  Entrar
+                </button>
+                <button
+                  type="button"
+                  class="assaad-tab"
+                  role="tab"
+                  aria-selected="false"
+                  data-auth-tab="register"
+                >
+                  Criar conta
+                </button>
+              </div>
+
+              <!-- Formulário Entrar -->
+              <form id="form-login" class="auth-panel" novalidate>
+                <div class="field">
+                  <label for="login-identifier">Matrícula ou e-mail</label>
+                  <input
+                    type="text"
+                    id="login-identifier"
+                    placeholder="2026101 ou nome@academico.edu.br"
+                    autocomplete="username"
+                    required
+                  />
+                </div>
+
+                <div class="field">
+                  <label for="login-password">Senha</label>
+                  <input
+                    type="password"
+                    id="login-password"
+                    placeholder="Digite sua senha"
+                    autocomplete="current-password"
+                    required
+                  />
+                </div>
+
+                <div id="login-error" class="inline-alert is-hidden" role="alert"></div>
+
+                <button type="submit" class="btn btn-primary btn-full">Entrar no sistema</button>
+              </form>
+
+              <!-- Formulário Criar Conta -->
+              <form id="form-register" class="auth-panel is-hidden" novalidate>
+                <div class="field">
+                  <label>Perfil</label>
+                  <div class="role-toggle" role="radiogroup" aria-label="Tipo de conta">
+                    <button
+                      type="button"
+                      class="role-opt is-active"
+                      role="radio"
+                      aria-checked="true"
+                      data-reg-role="student"
+                    >
+                      Estudante
+                    </button>
+                    <button
+                      type="button"
+                      class="role-opt"
+                      role="radio"
+                      aria-checked="false"
+                      data-reg-role="monitor"
+                    >
+                      Monitor(a)
+                    </button>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="reg-name">Nome completo</label>
+                  <input type="text" id="reg-name" maxlength="70" placeholder="Seu nome completo" required />
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="reg-ra">Matrícula</label>
+                    <input type="text" id="reg-ra" maxlength="12" placeholder="Ex.: 2026145" required />
+                  </div>
+                  <div class="field" id="reg-course-wrap">
+                    <label for="reg-course">Turma</label>
+                    <select id="reg-course">
+                      <option value="Eng. Software · 1º A">Eng. Software · 1º A</option>
+                      <option value="Eng. Software · 1º B">Eng. Software · 1º B</option>
+                      <option value="Sistemas Inf. · 1º">Sistemas Inf. · 1º</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field is-hidden" id="reg-subject-wrap">
+                  <label for="reg-subject">Disciplina</label>
+                  <select id="reg-subject">
+                    <option value="off-ihc">Interação Humano-Computador</option>
+                    <option value="off-es">Introdução à Engenharia de Software</option>
+                    <option value="off-aoc">Arquitetura e Organização de Computadores</option>
+                    <option value="off-md">Matemática Discreta</option>
+                    <option value="off-alg">Algoritmo e Programação</option>
+                    <option value="off-ing">Introdução à Língua Inglesa</option>
+                  </select>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="reg-email">E-mail institucional</label>
+                    <input type="email" id="reg-email" placeholder="voce@edu.br" required />
+                  </div>
+                  <div class="field">
+                    <label for="reg-password">Senha</label>
+                    <input type="password" id="reg-password" minlength="4" placeholder="Mínimo 4 caracteres" required />
+                  </div>
+                </div>
+
+                <div id="register-error" class="inline-alert is-hidden" role="alert"></div>
+
+                <button type="submit" class="btn btn-primary btn-full" id="btn-register-next">
+                  Criar conta
+                </button>
+              </form>
+
+              <div class="assaad-links">
+                <p id="assaad-switch-line">
+                  Primeiro acesso?
+                  <button type="button" class="text-accent-link" id="btn-link-to-register">Criar conta</button>
+                </p>
+              </div>
+
+              <div class="assaad-demo-foot">
+                <span>Acesso rápido:</span>
+                <button type="button" class="mini-text-btn" id="btn-demo-student">Estudante</button>
+                <span aria-hidden="true">·</span>
+                <button type="button" class="mini-text-btn" id="btn-demo-monitor">Monitor</button>
+              </div>
+            </div>
+
+            <!-- ETAPA B (ESTILO ASSAAD): CÓDIGO DO PROFESSOR EM 6 CAIXINHAS -->
+            <form id="auth-stage-otp" class="is-hidden" novalidate>
+              <div class="assaad-head">
+                <h2>Digite o código</h2>
+                <p id="otp-subtitle">
+                  Insira o código de 6 caracteres autorizado pelo docente da disciplina.
+                </p>
+              </div>
+
+              <div class="otp-info-banner">
+                <span class="otp-check-icon" aria-hidden="true">✓</span>
+                <span id="otp-banner-text">
+                  Disciplina selecionada. Código de teste: <strong class="mono-inline" id="otp-hint-code">IHC026</strong>
+                </span>
+              </div>
+
+              <div class="field">
+                <label for="otp-box-0">Código do professor</label>
+                <div class="otp-grid" id="otp-grid" role="group" aria-label="Código de 6 caracteres">
+                  <input type="text" maxlength="1" class="otp-box" id="otp-box-0" autocomplete="off" aria-label="Caractere 1" />
+                  <input type="text" maxlength="1" class="otp-box" id="otp-box-1" autocomplete="off" aria-label="Caractere 2" />
+                  <input type="text" maxlength="1" class="otp-box" id="otp-box-2" autocomplete="off" aria-label="Caractere 3" />
+                  <input type="text" maxlength="1" class="otp-box" id="otp-box-3" autocomplete="off" aria-label="Caractere 4" />
+                  <input type="text" maxlength="1" class="otp-box" id="otp-box-4" autocomplete="off" aria-label="Caractere 5" />
+                  <input type="text" maxlength="1" class="otp-box" id="otp-box-5" autocomplete="off" aria-label="Caractere 6" />
+                </div>
+              </div>
+
+              <div id="otp-error" class="inline-alert is-hidden" role="alert"></div>
+
+              <button type="submit" class="btn btn-primary btn-full" id="btn-verify-otp" disabled>
+                Verificar código
+              </button>
+
+              <div class="otp-foot-links">
+                <button type="button" class="ghost-link" id="btn-otp-back">← Voltar e editar dados</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 1: AGENDAR (FLUXO EM 3 ETAPAS) ==================== -->
+    <section id="view-agendar" class="view-section" aria-labelledby="agendar-heading">
+      <div class="stepper-bar" aria-label="Etapas do agendamento">
+        <button type="button" class="step-crumb is-active" data-step-jump="1" id="crumb-1">
+          <span>1. Escolher monitoria</span>
+        </button>
+        <span class="step-sep" aria-hidden="true">→</span>
+        <button type="button" class="step-crumb" data-step-jump="2" id="crumb-2" disabled>
+          <span>2. Data e horário</span>
+        </button>
+        <span class="step-sep" aria-hidden="true">→</span>
+        <button type="button" class="step-crumb" data-step-jump="3" id="crumb-3" disabled>
+          <span>3. Confirmar</span>
+        </button>
+      </div>
+
+      <!-- ETAPA 1 -->
+      <div id="step-1" class="step-panel">
+        <div class="step-header-centered">
+          <h1 id="agendar-heading">Escolha uma monitoria</h1>
+          <p class="step-sub">
+            Selecione a disciplina ou monitor para consultar os dias e horários disponíveis.
+          </p>
+
+          <div class="search-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M20 20l-3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <input
+              type="search"
+              id="input-search"
+              class="search-input"
+              placeholder="Buscar disciplina, assunto ou monitor... (atalho /)"
+              aria-label="Buscar disciplina, assunto ou monitor"
+            />
+          </div>
+
+          <div class="filter-bar-row">
+            <div class="underline-tabs" id="subject-tabs" role="tablist" aria-label="Filtrar por disciplina"></div>
+
+            <div class="layout-toggle" role="group" aria-label="Formato de exibição">
+              <button type="button" class="layout-btn is-active" data-step1-layout="list" aria-pressed="true">
+                Lista
+              </button>
+              <button type="button" class="layout-btn" data-step1-layout="matrix" aria-pressed="false">
+                Grade Semanal
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="step1-list-box" class="hairline-list" aria-live="polite"></div>
+        <div id="step1-matrix-box" class="matrix-card is-hidden" aria-live="polite"></div>
+
+        <div id="step1-empty" class="empty-box is-hidden">
+          <p>Nenhuma monitoria encontrada para essa busca.</p>
+          <button type="button" class="btn btn-secondary" id="btn-clear-search">
+            Mostrar todas as monitorias
+          </button>
+        </div>
+      </div>
+
+      <!-- ETAPA 2: CAL.COM -->
+      <div id="step-2" class="step-panel is-hidden">
+        <div class="cal-shell">
+          <aside class="cal-left">
+            <button type="button" class="back-link" id="btn-back-step1">← Voltar</button>
+            <span class="mono-kicker" id="s2-subject">DISCIPLINA</span>
+            <h2 class="cal-title" id="s2-title">Tema da monitoria</h2>
+
+            <dl class="cal-details">
+              <div class="cal-detail-row">
+                <dt>Monitor</dt>
+                <dd id="s2-monitor">—</dd>
+              </div>
+              <div class="cal-detail-row">
+                <dt>Duração</dt>
+                <dd>40 minutos</dd>
+              </div>
+              <div class="cal-detail-row">
+                <dt>Local</dt>
+                <dd id="s2-location">—</dd>
+              </div>
+            </dl>
+          </aside>
+
+          <div class="cal-center">
+            <div class="cal-month-head">
+              <h3 id="cal-month-label">Novembro 2026</h3>
+              <div class="cal-nav-arrows">
+                <button type="button" class="icon-btn" id="btn-prev-month" aria-label="Mês anterior">‹</button>
+                <button type="button" class="icon-btn" id="btn-next-month" aria-label="Próximo mês">›</button>
+              </div>
+            </div>
+
+            <div class="cal-weekdays" aria-hidden="true">
+              <span>DOM</span><span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span>
+            </div>
+            <div id="cal-days-grid" class="cal-days-grid" role="grid" aria-label="Dias do mês"></div>
+          </div>
+
+          <div class="cal-right">
+            <h3 class="cal-day-heading" id="s2-selected-day-label">Selecione um dia</h3>
+            <div id="s2-slots-list" class="timeslot-stack" aria-live="polite"></div>
+
+            <button type="button" class="btn btn-primary btn-full" id="btn-go-step3" disabled>
+              Continuar <span aria-hidden="true">→</span>
+            </button>
+
+            <p class="cal-right-note">
+              Atendimento de 40 min · Cancelamento livre em Meus Agendamentos.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ETAPA 3: CONFIRMAR -->
+      <div id="step-3" class="step-panel is-hidden">
+        <div id="step3-form-shell" class="cal-shell cal-shell-2col">
+          <aside class="cal-left">
+            <button type="button" class="back-link" id="btn-back-step2">← Alterar horário</button>
+            <span class="mono-kicker" id="s3-subject">DISCIPLINA</span>
+            <h2 class="cal-title" id="s3-title">Tema da monitoria</h2>
+
+            <dl class="cal-details">
+              <div class="cal-detail-row">
+                <dt>Data e horário</dt>
+                <dd class="mono-val" id="s3-datetime">—</dd>
+              </div>
+              <div class="cal-detail-row">
+                <dt>Monitor</dt>
+                <dd id="s3-monitor">—</dd>
+              </div>
+              <div class="cal-detail-row">
+                <dt>Local</dt>
+                <dd id="s3-location">—</dd>
+              </div>
+              <div class="cal-detail-row">
+                <dt>Vagas livres</dt>
+                <dd id="s3-vacancies">—</dd>
+              </div>
+            </dl>
+          </aside>
+
+          <form id="form-confirm-booking" class="step3-form" novalidate>
+            <div class="step3-head-row">
+              <h2>Confirmar atendimento</h2>
+            </div>
+
+            <div id="s3-logged-box" class="s3-identity-line">
+              <span>Solicitante: <strong id="s3-user-display">—</strong></span>
+              <button type="button" class="ghost-link" id="btn-s3-switch-account">Trocar conta</button>
+            </div>
+
+            <div class="field">
+              <label for="s3-topic">Sobre o que é a dúvida?</label>
+              <div class="topic-chips" id="s3-topic-chips" role="group" aria-label="Atalhos de assunto">
+                <button type="button" class="topic-chip" data-topic="Revisão de lista de exercícios">
+                  Lista de exercícios
+                </button>
+                <button type="button" class="topic-chip" data-topic="Revisão para avaliação">
+                  Revisão para prova
+                </button>
+                <button type="button" class="topic-chip" data-topic="Orientação do trabalho integrador">
+                  Trabalho integrador
+                </button>
+                <button type="button" class="topic-chip" data-topic="Dúvida prática ou exercício de código">
+                  Dúvida prática
+                </button>
+              </div>
+              <textarea
+                id="s3-topic"
+                rows="3"
+                maxlength="180"
+                placeholder="Ex.: Lista de exercícios, revisão para avaliação ou trabalho integrador..."
+                required
+              ></textarea>
+            </div>
+
+            <div id="s3-error-box" class="inline-alert is-hidden" role="alert"></div>
+
+            <div class="step3-actions">
+              <button type="button" class="btn btn-secondary" id="btn-s3-cancel">Voltar</button>
+              <button type="submit" class="btn btn-primary" id="btn-s3-submit">Confirmar agendamento</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="step3-success-shell" class="success-shell is-hidden">
+          <div class="success-check" aria-hidden="true">✓</div>
+          <h2>Monitoria confirmada</h2>
+          <p class="step-sub">Seu atendimento está reservado. Guarde o código de protocolo abaixo.</p>
+
+          <div class="protocol-pill">
+            <span>Protocolo</span>
+            <strong id="success-protocol">#MON-2026-000</strong>
+          </div>
+
+          <dl class="success-grid" id="success-summary"></dl>
+
+          <div class="success-actions">
+            <button type="button" class="btn btn-secondary" id="btn-download-ics">Baixar lembrete (.ics)</button>
+            <button type="button" class="btn btn-secondary" id="btn-copy-proof">Copiar comprovante</button>
+            <button type="button" class="btn btn-primary" id="btn-view-my-bookings">Ver em Meus Agendamentos →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 2: MEUS AGENDAMENTOS ==================== -->
+    <section id="view-agendamentos" class="view-section" aria-labelledby="heading-agendamentos">
+      <div class="narrow-container">
+        <div class="view-head-row">
+          <div>
+            <h1 id="heading-agendamentos">Meus Agendamentos</h1>
+            <p class="step-sub" id="bookings-owner-sub">Acompanhe seus atendimentos confirmados e históricos.</p>
+          </div>
+
+          <div class="underline-tabs" role="group" aria-label="Filtrar por status">
+            <button type="button" class="u-tab is-active" data-booking-filter="todos">Todos</button>
+            <button type="button" class="u-tab" data-booking-filter="Confirmado">Confirmados</button>
+            <button type="button" class="u-tab" data-booking-filter="Concluído">Concluídos</button>
+            <button type="button" class="u-tab" data-booking-filter="Cancelado">Cancelados</button>
+          </div>
+        </div>
+
+        <div id="bookings-list" class="hairline-list" aria-live="polite"></div>
+
+        <div id="account-privacy-row" class="account-privacy-row is-hidden">
+          <span>Seus dados ficam armazenados apenas localmente neste navegador (LGPD).</span>
+          <button type="button" class="ghost-danger-link" id="btn-delete-account">
+            Excluir minha conta e dados
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 3: PAINEL DO MONITOR ==================== -->
+    <section id="view-monitor" class="view-section" aria-labelledby="heading-monitor">
+      <div class="narrow-container">
+        <div class="view-head-row">
+          <div>
+            <h1 id="heading-monitor">Painel do Monitor</h1>
+            <p class="step-sub" id="monitor-sub">
+              Publique novos horários autorizados pelo docente e acompanhe os alunos inscritos.
+            </p>
+          </div>
+        </div>
+
+        <div class="students-split">
+          <form id="form-new-slot" class="panel-box" novalidate>
+            <h2>Publicar novo horário</h2>
+
+            <div class="field">
+              <label for="ms-offering-display">Disciplina autorizada</label>
+              <input type="text" id="ms-offering-display" readonly class="readonly-input" />
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="ms-date">Data</label>
+                <input type="date" id="ms-date" value="2026-11-28" min="2026-11-18" max="2026-12-20" required />
+              </div>
+              <div class="field">
+                <label for="ms-time">Horário</label>
+                <select id="ms-time">
+                  <option value="14:00 - 14:40">14:00 - 14:40</option>
+                  <option value="15:00 - 15:40">15:00 - 15:40</option>
+                  <option value="16:30 - 17:10">16:30 - 17:10</option>
+                  <option value="18:30 - 19:10">18:30 - 19:10</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="ms-capacity">Limite de vagas</label>
+                <input type="number" id="ms-capacity" min="1" max="15" value="4" required />
+              </div>
+              <div class="field">
+                <label for="ms-prof-code">Código do professor</label>
+                <input type="text" id="ms-prof-code" maxlength="6" placeholder="Ex.: IHC026" required />
+              </div>
+            </div>
+
+            <div id="monitor-slot-error" class="inline-alert is-hidden" role="alert"></div>
+
+            <button type="submit" class="btn btn-primary btn-full">Publicar horário na agenda</button>
+          </form>
+
+          <div class="panel-box">
+            <div class="panel-box-head">
+              <h2>Alunos agendados</h2>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="layout-toggle" style="margin-bottom:0" role="group" aria-label="Filtrar agendamentos da monitoria">
+                  <button type="button" class="layout-btn is-active" data-mon-filter="active">Ativos</button>
+                  <button type="button" class="layout-btn" data-mon-filter="all">Todos</button>
+                </div>
+                <span class="mono-badge" id="monitor-bookings-count">0</span>
+              </div>
+            </div>
+            <div id="monitor-bookings-list" class="hairline-list" style="max-width:none"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal único reutilizável de confirmação -->
+  <div
+    id="confirm-modal"
+    class="modal-backdrop is-hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="confirm-modal-title"
+  >
+    <div class="modal-box">
+      <h2 id="confirm-modal-title">Confirmar ação?</h2>
+      <p id="confirm-modal-desc" class="step-sub"></p>
+      <div id="confirm-modal-summary" class="confirm-summary-box is-hidden"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btn-confirm-abort">Voltar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirm-proceed">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Configurações / Aparência (mobile) -->
+  <div
+    id="appearance-modal"
+    class="modal-backdrop is-hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="appearance-modal-title"
+  >
+    <div class="modal-box appearance-modal-box">
+      <h2 id="appearance-modal-title">Aparência e acessibilidade</h2>
+      <p class="step-sub">Ajuste o contraste visual e o tamanho do texto.</p>
+
+      <div class="appearance-group">
+        <span class="appearance-label">Tema</span>
+        <div class="theme-switch appearance-theme-switch" role="group" aria-label="Tema visual">
+          <button type="button" class="theme-opt is-active" data-theme="light" aria-pressed="true">Claro</button>
+          <button type="button" class="theme-opt" data-theme="dark" aria-pressed="false">Escuro</button>
+          <button type="button" class="theme-opt" data-theme="contrast" aria-pressed="false">Contraste</button>
+        </div>
+      </div>
+
+      <div class="appearance-group">
+        <span class="appearance-label">Tamanho da fonte</span>
+        <div class="font-row-modal">
+          <div class="font-switch" role="group" aria-label="Tamanho da fonte">
+            <button type="button" class="font-btn" id="btn-modal-font-dec" aria-label="Diminuir fonte">A-</button>
+            <button type="button" class="font-btn" id="btn-modal-font-inc" aria-label="Aumentar fonte">A+</button>
+          </div>
+          <span class="mono-badge" id="modal-font-pct">100%</span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary btn-full" id="btn-close-appearance">Concluir</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast is-hidden" role="status" aria-live="polite">
+    <span id="toast-msg"></span>
+    <button type="button" class="toast-undo-btn is-hidden" id="toast-undo-btn">Desfazer</button>
+  </div>
+
+  <footer class="site-footer" id="app-footer">
+    <div class="footer-inner">
+      <span>Monitora+ · Sistema de Agendamento de Monitorias Acadêmicas</span>
+      <span>Engenharia de Software · 2026</span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
