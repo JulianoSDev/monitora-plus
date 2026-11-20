@@ -78,15 +78,16 @@
 
         <button
           type="button"
-          class="mobile-gear-btn"
-          id="btn-mobile-settings-topbar"
-          aria-label="Configurações de tema e fonte"
-          title="Tema e fonte"
+          class="settings-trigger-btn"
+          id="btn-open-settings-topbar"
+          aria-label="Abrir central de configurações e acessibilidade"
+          title="Configurações e Acessibilidade (Alt + ,)"
         >
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
+          <span class="settings-trigger-label">Configurações</span>
         </button>
       </div>
     </div>
@@ -179,13 +180,13 @@
               type="button"
               class="mobile-gear-btn"
               id="btn-mobile-settings-landing"
-              aria-label="Configurações de tema e fonte"
+              aria-label="Abrir configurações e acessibilidade"
             >
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
-              <span>Aparência</span>
+              <span>Configurações</span>
             </button>
           </div>
 
@@ -199,6 +200,18 @@
               <button type="button" class="font-btn" id="btn-landing-font-dec" aria-label="Diminuir fonte">A-</button>
               <button type="button" class="font-btn" id="btn-landing-font-inc" aria-label="Aumentar fonte">A+</button>
             </div>
+            <button
+              type="button"
+              class="settings-trigger-btn settings-icon-only"
+              id="btn-open-settings-landing"
+              aria-label="Abrir central de configurações e acessibilidade"
+              title="Configurações e Acessibilidade (Alt + ,)"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </button>
           </div>
 
           <div class="assaad-card">
@@ -644,9 +657,14 @@
 
         <div id="account-privacy-row" class="account-privacy-row is-hidden">
           <span>Seus dados ficam armazenados apenas localmente neste navegador (LGPD).</span>
-          <button type="button" class="ghost-danger-link" id="btn-delete-account">
-            Excluir minha conta e dados
-          </button>
+          <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+            <button type="button" class="ghost-link" id="btn-open-settings-privacy">
+              Central de Configurações
+            </button>
+            <button type="button" class="ghost-danger-link" id="btn-delete-account">
+              Excluir minha conta e dados
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -741,43 +759,377 @@
     </div>
   </div>
 
-  <!-- Modal de Configurações / Aparência (mobile) -->
+  <!-- Central de Configurações e Tecnologia Assistiva (PC 2 colunas + Mobile adaptativo) -->
   <div
-    id="appearance-modal"
+    id="settings-modal"
     class="modal-backdrop is-hidden"
     role="dialog"
     aria-modal="true"
-    aria-labelledby="appearance-modal-title"
+    aria-labelledby="settings-panel-title"
   >
-    <div class="modal-box appearance-modal-box">
-      <h2 id="appearance-modal-title">Aparência e acessibilidade</h2>
-      <p class="step-sub">Ajuste o contraste visual e o tamanho do texto.</p>
-
-      <div class="appearance-group">
-        <span class="appearance-label">Tema</span>
-        <div class="theme-switch appearance-theme-switch" role="group" aria-label="Tema visual">
-          <button type="button" class="theme-opt is-active" data-theme="light" aria-pressed="true">Claro</button>
-          <button type="button" class="theme-opt" data-theme="dark" aria-pressed="false">Escuro</button>
-          <button type="button" class="theme-opt" data-theme="contrast" aria-pressed="false">Contraste</button>
+    <div class="settings-window">
+      <aside class="settings-sidebar">
+        <div class="settings-sidebar-head">
+          <span class="settings-kicker">Configurações</span>
+          <button type="button" class="settings-close-mobile" id="btn-close-settings-mobile" aria-label="Fechar configurações">
+            ✕
+          </button>
         </div>
-      </div>
 
-      <div class="appearance-group">
-        <span class="appearance-label">Tamanho da fonte</span>
-        <div class="font-row-modal">
-          <div class="font-switch" role="group" aria-label="Tamanho da fonte">
-            <button type="button" class="font-btn" id="btn-modal-font-dec" aria-label="Diminuir fonte">A-</button>
-            <button type="button" class="font-btn" id="btn-modal-font-inc" aria-label="Aumentar fonte">A+</button>
+        <div class="settings-nav-wrap" role="tablist" aria-label="Categorias de configurações" aria-orientation="vertical" id="settings-tablist">
+          <div class="settings-nav-group">
+            <span class="settings-group-label">Preferências</span>
+            <button type="button" class="settings-nav-item is-active" role="tab" aria-selected="true" aria-controls="settings-tab-geral" data-settings-tab="geral">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+              <span>Geral</span>
+            </button>
+            <button type="button" class="settings-nav-item" role="tab" aria-selected="false" aria-controls="settings-tab-aparencia" data-settings-tab="aparencia">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+              <span>Aparência</span>
+            </button>
+            <button type="button" class="settings-nav-item" role="tab" aria-selected="false" aria-controls="settings-tab-acessibilidade" data-settings-tab="acessibilidade">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="m6.5 9.5 5.5 1 5.5-1"/><path d="M12 10.5v4.5"/><path d="m9 21 3-6 3 6"/></svg>
+              <span>Acessibilidade</span>
+            </button>
+            <button type="button" class="settings-nav-item" role="tab" aria-selected="false" aria-controls="settings-tab-agenda" data-settings-tab="agenda">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Agenda</span>
+            </button>
+            <button type="button" class="settings-nav-item" role="tab" aria-selected="false" aria-controls="settings-tab-atalhos" data-settings-tab="atalhos">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>
+              <span>Atalhos</span>
+            </button>
           </div>
-          <span class="mono-badge" id="modal-font-pct">100%</span>
-        </div>
-      </div>
 
-      <div class="modal-actions">
-        <button type="button" class="btn btn-primary btn-full" id="btn-close-appearance">Concluir</button>
+          <div class="settings-nav-group">
+            <span class="settings-group-label">Sistema</span>
+            <button type="button" class="settings-nav-item" role="tab" aria-selected="false" aria-controls="settings-tab-conta" data-settings-tab="conta">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>Conta e LGPD</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="settings-user-foot">
+          <div class="settings-avatar" id="settings-user-avatar" aria-hidden="true">M+</div>
+          <div class="settings-user-meta">
+            <strong id="settings-user-name">Visitante</strong>
+            <span id="settings-user-sub">Faça login para personalizar sua conta</span>
+          </div>
+        </div>
+      </aside>
+
+      <div class="settings-main">
+        <div class="settings-main-head">
+          <div>
+            <h2 id="settings-panel-title">Geral</h2>
+            <p class="step-sub" id="settings-panel-desc">Configure como o catálogo de monitorias e confirmações funcionam.</p>
+          </div>
+          <button type="button" class="icon-btn settings-close-desktop" id="btn-close-settings" aria-label="Fechar configurações">
+            ✕
+          </button>
+        </div>
+
+        <div class="settings-body">
+          <!-- ABA 1: GERAL -->
+          <div id="settings-tab-geral" class="settings-tabpanel" role="tabpanel">
+            <div class="settings-section-block">
+              <span class="settings-block-title">Visualização padrão de monitorias</span>
+              <div class="settings-card-grid-2" role="radiogroup" aria-label="Visualização padrão na Etapa 1">
+                <button type="button" class="select-card is-selected" role="radio" aria-checked="true" data-pref-layout="list">
+                  <div class="select-card-icon" aria-hidden="true">☰</div>
+                  <strong>Lista organizada</strong>
+                  <span>Disciplinas em lista limpa com contagem de vagas em tempo real.</span>
+                </button>
+                <button type="button" class="select-card" role="radio" aria-checked="false" data-pref-layout="matrix">
+                  <div class="select-card-icon" aria-hidden="true">▦</div>
+                  <strong>Grade semanal</strong>
+                  <span>Matriz de horários de segunda a sexta para visão panorâmica.</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-section-block">
+              <span class="settings-block-title">Comportamento do sistema</span>
+              <div class="settings-grouped-list">
+                <label class="settings-row" for="pref-confirm-book">
+                  <div>
+                    <strong>Confirmar antes de concluir</strong>
+                    <p>Exibe resumo final de disciplina, horário e monitor antes de gravar a vaga.</p>
+                  </div>
+                  <input type="checkbox" id="pref-confirm-book" role="switch" class="bc-switch" checked />
+                </label>
+                <label class="settings-row" for="pref-pause-distractions">
+                  <div>
+                    <strong>Pausar distrações visuais</strong>
+                    <p>Trava a rotação automática de frases e oculta elementos geométricos flutuantes.</p>
+                  </div>
+                  <input type="checkbox" id="pref-pause-distractions" role="switch" class="bc-switch" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- ABA 2: APARÊNCIA -->
+          <div id="settings-tab-aparencia" class="settings-tabpanel is-hidden" role="tabpanel">
+            <div class="settings-section-block">
+              <span class="settings-block-title">Tema visual</span>
+              <div class="settings-card-grid-3" role="group" aria-label="Escolher tema visual">
+                <button type="button" class="select-card theme-preview-card theme-opt is-active" data-theme="light" aria-pressed="true">
+                  <span class="swatch-strip swatch-light" aria-hidden="true"><i></i><i></i></span>
+                  <strong>Claro</strong>
+                  <span>Off-white suave e cards brancos.</span>
+                </button>
+                <button type="button" class="select-card theme-preview-card theme-opt" data-theme="dark" aria-pressed="false">
+                  <span class="swatch-strip swatch-dark" aria-hidden="true"><i></i><i></i></span>
+                  <strong>Escuro</strong>
+                  <span>Baixo brilho para uso noturno.</span>
+                </button>
+                <button type="button" class="select-card theme-preview-card theme-opt" data-theme="contrast" aria-pressed="false">
+                  <span class="swatch-strip swatch-contrast" aria-hidden="true"><i></i><i></i></span>
+                  <strong>Contraste AAA</strong>
+                  <span>Preto puro com destaque amarelo.</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-section-block">
+              <span class="settings-block-title">Escala e movimento</span>
+              <div class="settings-grouped-list">
+                <div class="settings-row settings-row-stack">
+                  <div class="settings-row-top">
+                    <div>
+                      <strong>Tamanho da fonte</strong>
+                      <p>Ajusta proporcionalmente textos, botões e formulários (88% a 152%).</p>
+                    </div>
+                    <span class="mono-badge" id="modal-font-pct">100%</span>
+                  </div>
+                  <div class="slider-control-row">
+                    <button type="button" class="font-btn slider-step-btn" id="btn-modal-font-dec" aria-label="Diminuir fonte">A-</button>
+                    <input
+                      type="range"
+                      id="settings-font-slider"
+                      class="bc-range"
+                      min="88"
+                      max="152"
+                      step="8"
+                      value="100"
+                      aria-label="Porcentagem do tamanho da fonte"
+                    />
+                    <button type="button" class="font-btn slider-step-btn" id="btn-modal-font-inc" aria-label="Aumentar fonte">A+</button>
+                  </div>
+                </div>
+
+                <label class="settings-row" for="pref-reduced-motion">
+                  <div>
+                    <strong>Reduzir animações</strong>
+                    <p>Desativa transições e deslizes (útil para sensibilidade vestibular / labirintite).</p>
+                  </div>
+                  <input type="checkbox" id="pref-reduced-motion" role="switch" class="bc-switch" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- ABA 3: ACESSIBILIDADE (TECNOLOGIA ASSISTIVA WCAG 2.2) -->
+          <div id="settings-tab-acessibilidade" class="settings-tabpanel is-hidden" role="tabpanel">
+            <div class="a11y-compliance-note">
+              <span>WCAG 2.2 · Compatível com leitores de tela (NVDA, VoiceOver, TalkBack) sem alterar a estrutura semântica.</span>
+            </div>
+
+            <div class="settings-section-block">
+              <span class="settings-block-title">Visão e daltonismo</span>
+              <div class="settings-grouped-list">
+                <div class="settings-row">
+                  <div>
+                    <label for="pref-cvd-filter"><strong>Filtro para Daltonismo (CVD)</strong></label>
+                    <p>Adapta a matriz de cores mantendo textos e ícones explícitos em todo status.</p>
+                  </div>
+                  <select id="pref-cvd-filter" class="settings-select">
+                    <option value="none">Nenhum (Padrão)</option>
+                    <option value="protanopia">Protanopia (vermelho-verde)</option>
+                    <option value="deuteranopia">Deuteranopia (verde-vermelho)</option>
+                    <option value="tritanopia">Tritanopia (azul-amarelo)</option>
+                    <option value="achromatopsia">Monocromático</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section-block">
+              <span class="settings-block-title">Cognição, dislexia e TDAH</span>
+              <div class="settings-grouped-list">
+                <label class="settings-row" for="pref-dyslexia-spacing">
+                  <div>
+                    <strong>Espaçamento para Dislexia</strong>
+                    <p>Amplia entrelinha e distância entre letras e palavras (WCAG 1.4.12).</p>
+                  </div>
+                  <input type="checkbox" id="pref-dyslexia-spacing" role="switch" class="bc-switch" />
+                </label>
+
+                <label class="settings-row" for="pref-reading-mask">
+                  <div>
+                    <strong>Régua / Guia de leitura</strong>
+                    <p>Faixa horizontal suave que acompanha o cursor ou foco para evitar pular linhas.</p>
+                  </div>
+                  <input type="checkbox" id="pref-reading-mask" role="switch" class="bc-switch" />
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-section-block">
+              <span class="settings-block-title">Mobilidade, teclado e leitor em voz alta</span>
+              <div class="settings-grouped-list">
+                <label class="settings-row" for="pref-extra-focus">
+                  <div>
+                    <strong>Foco extra visível (Tab)</strong>
+                    <p>Contorno de alta espessura e contraste ao navegar por teclado ou acionador (WCAG 2.4.13).</p>
+                  </div>
+                  <input type="checkbox" id="pref-extra-focus" role="switch" class="bc-switch" />
+                </label>
+
+                <label class="settings-row" for="pref-large-targets">
+                  <div>
+                    <strong>Alvos de toque ampliados</strong>
+                    <p>Aumenta altura mínima de botões, horários e dias do calendário para 48px+ (WCAG 2.5.8).</p>
+                  </div>
+                  <input type="checkbox" id="pref-large-targets" role="switch" class="bc-switch" />
+                </label>
+
+                <div class="settings-row">
+                  <div>
+                    <strong>Leitor de resumo em voz alta (PT-BR)</strong>
+                    <p>Sintetiza em áudio o contexto e as ações da tela atual pelo navegador.</p>
+                  </div>
+                  <div class="speak-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-speak-screen">Ouvir tela</button>
+                    <button type="button" class="btn btn-secondary is-hidden" id="btn-stop-speak">Parar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ABA 4: AGENDA -->
+          <div id="settings-tab-agenda" class="settings-tabpanel is-hidden" role="tabpanel">
+            <div class="settings-section-block">
+              <span class="settings-block-title">Regras e lembretes</span>
+              <div class="settings-grouped-list">
+                <label class="settings-row" for="pref-block-conflicts">
+                  <div>
+                    <strong>Bloquear choque de horário</strong>
+                    <p>Impede confirmar duas monitorias no mesmo dia e faixa de horário.</p>
+                  </div>
+                  <input type="checkbox" id="pref-block-conflicts" role="switch" class="bc-switch" checked />
+                </label>
+
+                <label class="settings-row" for="pref-auto-ics">
+                  <div>
+                    <strong>Destacar lembrete de agenda (.ics)</strong>
+                    <p>Realça o botão de exportação para Google Agenda / Apple Calendar após confirmar.</p>
+                  </div>
+                  <input type="checkbox" id="pref-auto-ics" role="switch" class="bc-switch" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- ABA 5: ATALHOS -->
+          <div id="settings-tab-atalhos" class="settings-tabpanel is-hidden" role="tabpanel">
+            <div class="settings-section-block">
+              <span class="settings-block-title">Navegação rápida por teclado</span>
+              <div class="settings-grouped-list">
+                <div class="settings-row">
+                  <span>Focar busca de disciplinas (Etapa 1)</span>
+                  <kbd class="kbd">/</kbd>
+                </div>
+                <div class="settings-row">
+                  <span>Navegar pelos dias do calendário (Etapa 2)</span>
+                  <span class="kbd-group"><kbd class="kbd">←</kbd><kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd><kbd class="kbd">→</kbd></span>
+                </div>
+                <div class="settings-row">
+                  <span>Abrir ou alternar Configurações</span>
+                  <span class="kbd-group"><kbd class="kbd">Alt</kbd> + <kbd class="kbd">,</kbd></span>
+                </div>
+                <div class="settings-row">
+                  <span>Ouvir resumo da tela atual</span>
+                  <span class="kbd-group"><kbd class="kbd">Alt</kbd> + <kbd class="kbd">L</kbd></span>
+                </div>
+                <div class="settings-row">
+                  <span>Fechar janelas e modais</span>
+                  <kbd class="kbd">Esc</kbd>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ABA 6: CONTA E PRIVACIDADE LGPD -->
+          <div id="settings-tab-conta" class="settings-tabpanel is-hidden" role="tabpanel">
+            <div class="settings-section-block">
+              <span class="settings-block-title">Sessão e portabilidade</span>
+              <div class="settings-grouped-list">
+                <div class="settings-row">
+                  <div>
+                    <strong id="settings-account-status">Nenhum usuário autenticado</strong>
+                    <p id="settings-account-detail">Os dados ficam salvos localmente apenas neste navegador.</p>
+                  </div>
+                  <button type="button" class="btn btn-secondary is-hidden" id="btn-settings-logout">Sair da conta</button>
+                </div>
+
+                <div class="settings-row">
+                  <div>
+                    <strong>Exportar meus dados (.json)</strong>
+                    <p>Baixa cópia estruturada dos seus agendamentos (portabilidade LGPD).</p>
+                  </div>
+                  <button type="button" class="btn btn-secondary" id="btn-export-data">Exportar JSON</button>
+                </div>
+
+                <div class="settings-row">
+                  <div>
+                    <strong>Restaurar preferências padrão</strong>
+                    <p>Reinicia tema, escala de fonte e ajustes de acessibilidade sem apagar contas.</p>
+                  </div>
+                  <button type="button" class="btn btn-secondary" id="btn-reset-prefs">Restaurar</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section-block" id="settings-danger-zone">
+              <span class="settings-block-title settings-danger-title">Zona de privacidade</span>
+              <div class="settings-danger-box">
+                <div>
+                  <strong>Excluir conta e dados locais</strong>
+                  <p>Remove permanentemente seu cadastro e agendamentos deste navegador.</p>
+                </div>
+                <button type="button" class="btn btn-danger" id="btn-settings-delete-account">Excluir conta</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Régua / Guia de leitura (Tecnologia Assistiva - Cognição/Dislexia) -->
+  <div id="reading-mask" class="reading-mask is-hidden" aria-hidden="true"></div>
+
+  <!-- Região ARIA Live para anunciar alterações a leitores de tela -->
+  <div id="a11y-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Filtros SVG calibrados para Daltonismo (Protanopia, Deuteranopia, Tritanopia) -->
+  <svg id="colorblind-defs" class="svg-defs-hidden" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="cvd-protanopia">
+        <feColorMatrix type="matrix" values="0.567, 0.433, 0, 0, 0  0.558, 0.442, 0, 0, 0  0, 0.242, 0.758, 0, 0  0, 0, 0, 1, 0" />
+      </filter>
+      <filter id="cvd-deuteranopia">
+        <feColorMatrix type="matrix" values="0.625, 0.375, 0, 0, 0  0.7, 0.3, 0, 0, 0  0, 0.3, 0.7, 0, 0  0, 0, 0, 1, 0" />
+      </filter>
+      <filter id="cvd-tritanopia">
+        <feColorMatrix type="matrix" values="0.95, 0.05, 0, 0, 0  0, 0.433, 0.567, 0, 0  0, 0.475, 0.525, 0, 0  0, 0, 0, 1, 0" />
+      </filter>
+    </defs>
+  </svg>
 
   <div id="toast" class="toast is-hidden" role="status" aria-live="polite">
     <span id="toast-msg"></span>

@@ -31,8 +31,8 @@ Protótipo digital interativo desenvolvido para a **3ª Avaliação da Aprendiza
    - **Passo 3:** Atalhos de assunto, validação de choque de horário e geração imediata de protocolo (`#MON-2026-XXX`) com download `.ics`.
 3. **Painel do Monitor:**
    - Publicação de novos horários na agenda (validada pelo código docente) e acompanhamento dos alunos agendados com conclusão de atendimentos.
-4. **Temas & Acessibilidade (WCAG 2.2):**
-   - Seletor ao vivo para **Claro / Escuro / Alto Contraste** e ajuste de tamanho de fonte (`A-` / `A+`), além de exclusão local de dados (LGPD).
+4. **Central de Configurações & Tecnologia Assistiva (WCAG 2.2):**
+   - Modal em 2 colunas (desktop) / abas (mobile) acessível por `Alt + ,` com **Geral** (visualização padrão), **Aparência** (`Claro / Escuro / Alto Contraste AAA`, slider de fonte `88%–152%` e redução de animações), **Acessibilidade** (filtros para Daltonismo, espaçamento para Dislexia, Régua de leitura, Foco extra visível, Alvos ≥ 48px e leitura da tela em voz alta PT-BR), **Agenda**, **Atalhos** (`← ↑ ↓ →`, `/`, `Alt + L`) e **Conta/LGPD** (exportação JSON e exclusão local).
 
 ---
 

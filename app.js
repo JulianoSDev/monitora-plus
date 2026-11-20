@@ -196,6 +196,47 @@ const INITIAL_BOOKINGS = [
   },
 ];
 
+const DEFAULT_PREFS = {
+  defaultLayout: "list",
+  confirmBeforeBook: true,
+  blockConflicts: true,
+  autoIcsHint: false,
+  cvdFilter: "none",
+  dyslexiaSpacing: false,
+  readingMask: false,
+  pauseDistractions: false,
+  extraFocus: false,
+  largeTargets: false,
+  reducedMotion: false,
+};
+
+const SETTINGS_TAB_META = {
+  geral: {
+    title: "Geral",
+    desc: "Configure como o catálogo de monitorias e confirmações funcionam.",
+  },
+  aparencia: {
+    title: "Aparência",
+    desc: "Ajuste tema visual, escala de texto e redução de movimento.",
+  },
+  acessibilidade: {
+    title: "Acessibilidade e Tecnologia Assistiva",
+    desc: "Recursos reais alinhados à WCAG 2.2 para visão, cognição, mobilidade e voz.",
+  },
+  agenda: {
+    title: "Agenda e Lembretes",
+    desc: "Regras de conflito de horário e exportação de calendário (.ics).",
+  },
+  atalhos: {
+    title: "Atalhos de Teclado",
+    desc: "Comandos rápidos para navegar sem depender do mouse.",
+  },
+  conta: {
+    title: "Conta e Privacidade (LGPD)",
+    desc: "Sessão ativa, portabilidade de dados e exclusão local.",
+  },
+};
+
 let state = loadState();
 
 const ui = {
@@ -207,7 +248,8 @@ const ui = {
   step: 1,
   search: "",
   subjectFilter: "Todas",
-  step1Layout: "list",
+  step1Layout: state.prefs?.defaultLayout || "list",
+  activeSettingsTab: "geral",
   selectedOfferingId: null,
   calYear: 2026,
   calMonth: 10,
@@ -225,7 +267,10 @@ function loadState() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed.users && parsed.slots && parsed.bookings) {
-        return parsed;
+        return {
+          ...parsed,
+          prefs: { ...DEFAULT_PREFS, ...(parsed.prefs || {}) },
+        };
       }
     }
   } catch {
@@ -239,8 +284,14 @@ function loadState() {
     currentUserId: null,
     theme: "light",
     fontScale: 1,
+    prefs: { ...DEFAULT_PREFS },
     nextSeq: 15,
   };
+}
+
+function getPrefs() {
+  if (!state.prefs) state.prefs = { ...DEFAULT_PREFS };
+  return state.prefs;
 }
 
 function saveState() {
@@ -366,7 +417,10 @@ let phraseInterval = null;
 function startPhraseCarousel() {
   stopPhraseCarousel();
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduced || document.hidden || ui.activeView !== "landing") return;
+  const prefs = getPrefs();
+  if (reduced || prefs.reducedMotion || prefs.pauseDistractions || document.hidden || ui.activeView !== "landing") {
+    return;
+  }
 
   phraseInterval = setInterval(() => {
     setPhraseSlide(ui.phraseIdx + 1);
@@ -380,30 +434,284 @@ function stopPhraseCarousel() {
   }
 }
 
-// ==================== TEMA & TOPBAR ====================
+// ==================== TEMA, CONFIGURAÇÕES & TECNOLOGIA ASSISTIVA ====================
+function announceA11y(message) {
+  const el = document.getElementById("a11y-announcer");
+  if (!el) return;
+  el.textContent = "";
+  setTimeout(() => {
+    el.textContent = message;
+  }, 20);
+}
+
 function applyThemeAndA11y() {
+  const prefs = getPrefs();
+  const theme = state.theme || "light";
+  const scale = state.fontScale || 1;
+  const pct = Math.round(scale * 100);
+
   document.body.classList.remove("theme-dark", "theme-light", "theme-contrast");
-  document.body.classList.add(`theme-${state.theme || "light"}`);
-  document.documentElement.style.setProperty("--font-scale", String(state.fontScale || 1));
+  document.body.classList.add(`theme-${theme}`);
+  document.documentElement.style.setProperty("--font-scale", String(scale));
+
+  document.body.classList.toggle("a11y-dyslexia", Boolean(prefs.dyslexiaSpacing));
+  document.body.classList.toggle("a11y-extra-focus", Boolean(prefs.extraFocus));
+  document.body.classList.toggle("a11y-large-targets", Boolean(prefs.largeTargets));
+  document.body.classList.toggle("a11y-reduced-motion", Boolean(prefs.reducedMotion));
+  document.body.classList.toggle("a11y-pause-distractions", Boolean(prefs.pauseDistractions));
+
+  const cvd = prefs.cvdFilter || "none";
+  if (cvd === "none") {
+    document.documentElement.removeAttribute("data-cvd");
+  } else {
+    document.documentElement.setAttribute("data-cvd", cvd);
+  }
+
+  const maskEl = document.getElementById("reading-mask");
+  if (maskEl) maskEl.classList.toggle("is-hidden", !prefs.readingMask);
 
   document.querySelectorAll(".theme-opt").forEach((btn) => {
-    const active = btn.dataset.theme === (state.theme || "light");
+    const active = btn.dataset.theme === theme;
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   });
 
   const fontPct = document.getElementById("modal-font-pct");
-  if (fontPct) {
-    fontPct.textContent = `${Math.round((state.fontScale || 1) * 100)}%`;
+  if (fontPct) fontPct.textContent = `${pct}%`;
+
+  const slider = document.getElementById("settings-font-slider");
+  if (slider) {
+    slider.value = String(pct);
+    const min = Number(slider.min || 88);
+    const max = Number(slider.max || 152);
+    const ratio = max === min ? 0 : ((pct - min) / (max - min)) * 100;
+    slider.style.setProperty("--slider-value", `${Math.max(0, Math.min(100, ratio))}%`);
+  }
+
+  document.querySelectorAll("[data-pref-layout]").forEach((card) => {
+    const selected = card.dataset.prefLayout === prefs.defaultLayout;
+    card.classList.toggle("is-selected", selected);
+    card.setAttribute("aria-checked", String(selected));
+  });
+
+  const switchBindings = [
+    ["pref-confirm-book", "confirmBeforeBook"],
+    ["pref-pause-distractions", "pauseDistractions"],
+    ["pref-reduced-motion", "reducedMotion"],
+    ["pref-dyslexia-spacing", "dyslexiaSpacing"],
+    ["pref-reading-mask", "readingMask"],
+    ["pref-extra-focus", "extraFocus"],
+    ["pref-large-targets", "largeTargets"],
+    ["pref-block-conflicts", "blockConflicts"],
+    ["pref-auto-ics", "autoIcsHint"],
+  ];
+  switchBindings.forEach(([id, key]) => {
+    const input = document.getElementById(id);
+    if (input) input.checked = Boolean(prefs[key]);
+  });
+
+  const cvdSelect = document.getElementById("pref-cvd-filter");
+  if (cvdSelect) cvdSelect.value = cvd;
+
+  if (ui.activeView === "landing") {
+    if (prefs.reducedMotion || prefs.pauseDistractions) stopPhraseCarousel();
+    else startPhraseCarousel();
   }
 }
 
-function openAppearanceModal() {
-  document.getElementById("appearance-modal")?.classList.remove("is-hidden");
+function setSettingsTab(tabKey, shouldFocus = false) {
+  const key = SETTINGS_TAB_META[tabKey] ? tabKey : "geral";
+  ui.activeSettingsTab = key;
+  const meta = SETTINGS_TAB_META[key];
+
+  document.getElementById("settings-panel-title").textContent = meta.title;
+  document.getElementById("settings-panel-desc").textContent = meta.desc;
+
+  document.querySelectorAll("[data-settings-tab]").forEach((btn) => {
+    const active = btn.dataset.settingsTab === key;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-selected", String(active));
+    btn.setAttribute("tabindex", active ? "0" : "-1");
+    if (active && shouldFocus) btn.focus();
+  });
+
+  Object.keys(SETTINGS_TAB_META).forEach((k) => {
+    const panel = document.getElementById(`settings-tab-${k}`);
+    if (panel) panel.classList.toggle("is-hidden", k !== key);
+  });
 }
 
-function closeAppearanceModal() {
-  document.getElementById("appearance-modal")?.classList.add("is-hidden");
+function syncSettingsAccountBox() {
+  const user = getCurrentUser();
+  const avatar = document.getElementById("settings-user-avatar");
+  const nameEl = document.getElementById("settings-user-name");
+  const subEl = document.getElementById("settings-user-sub");
+  const statusEl = document.getElementById("settings-account-status");
+  const detailEl = document.getElementById("settings-account-detail");
+  const logoutBtn = document.getElementById("btn-settings-logout");
+  const dangerZone = document.getElementById("settings-danger-zone");
+
+  if (user) {
+    const parts = user.name.trim().split(/\s+/);
+    const initials = parts.length >= 2 ? `${parts[0][0]}${parts[parts.length - 1][0]}` : parts[0].slice(0, 2);
+    avatar.textContent = initials.toUpperCase();
+    nameEl.textContent = user.name;
+    subEl.textContent = `${user.role === "monitor" ? "Monitor(a)" : "Estudante"} · Mat. ${user.ra}`;
+    statusEl.textContent = `${user.name} (${user.ra})`;
+    detailEl.textContent = `${user.email} · ${user.role === "monitor" ? "Acesso de monitoria" : user.course || "Estudante"}`;
+    logoutBtn.classList.remove("is-hidden");
+    dangerZone.classList.remove("is-hidden");
+  } else {
+    avatar.textContent = "M+";
+    nameEl.textContent = "Visitante";
+    subEl.textContent = "Entre para personalizar sua conta";
+    statusEl.textContent = "Nenhum usuário autenticado";
+    detailEl.textContent = "Faça login para gerenciar ou excluir sua conta local.";
+    logoutBtn.classList.add("is-hidden");
+    dangerZone.classList.add("is-hidden");
+  }
+}
+
+function openSettingsModal(initialTab = "geral") {
+  syncSettingsAccountBox();
+  setSettingsTab(initialTab || ui.activeSettingsTab || "geral");
+  applyThemeAndA11y();
+  document.getElementById("settings-modal")?.classList.remove("is-hidden");
+  const activeTabBtn = document.querySelector(`[data-settings-tab="${ui.activeSettingsTab}"]`);
+  activeTabBtn?.focus();
+}
+
+function closeSettingsModal() {
+  document.getElementById("settings-modal")?.classList.add("is-hidden");
+}
+
+function speakCurrentScreen() {
+  if (!("speechSynthesis" in window)) {
+    showToast("Seu navegador não suporta leitura em voz alta.");
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  const user = getCurrentUser();
+  let summary = "";
+
+  if (ui.activeView === "landing") {
+    const h = document.getElementById("landing-phrase-title")?.textContent?.trim() || "Monitora+";
+    summary = `Tela inicial do Monitora+. ${h}. Você pode entrar com matrícula ou e-mail institucional, criar conta ou abrir configurações de acessibilidade.`;
+  } else if (ui.activeView === "agendar") {
+    if (ui.step === 1) {
+      summary = `Etapa 1 de 3: Escolher monitoria. Filtre por disciplina ou busque pelo nome do monitor.`;
+    } else if (ui.step === 2) {
+      const title = document.getElementById("s2-title")?.textContent || "monitoria";
+      const day = document.getElementById("s2-selected-day-label")?.textContent || "";
+      summary = `Etapa 2 de 3: Data e horário para ${title}. Dia selecionado: ${day}. Use as setas do teclado no calendário e escolha um horário.`;
+    } else {
+      const title = document.getElementById("s3-title")?.textContent || "monitoria";
+      const dt = document.getElementById("s3-datetime")?.textContent || "";
+      summary = `Etapa 3 de 3: Confirmar atendimento de ${title}, ${dt}. Selecione um assunto rápido ou descreva sua dúvida e confirme.`;
+    }
+  } else if (ui.activeView === "agendamentos") {
+    const count = user
+      ? state.bookings.filter((b) => b.studentId === user.id && b.status === "Confirmado").length
+      : 0;
+    summary = `Meus Agendamentos. Você possui ${count} atendimento(s) confirmado(s).`;
+  } else if (ui.activeView === "monitor") {
+    summary = `Painel do Monitor. Publique novos horários com o código docente e acompanhe os alunos agendados.`;
+  }
+
+  const utter = new SpeechSynthesisUtterance(summary);
+  utter.lang = "pt-BR";
+  utter.rate = 1.02;
+
+  const speakBtn = document.getElementById("btn-speak-screen");
+  const stopBtn = document.getElementById("btn-stop-speak");
+  stopBtn?.classList.remove("is-hidden");
+  speakBtn?.setAttribute("aria-pressed", "true");
+
+  utter.onend = utter.onerror = () => {
+    stopBtn?.classList.add("is-hidden");
+    speakBtn?.setAttribute("aria-pressed", "false");
+  };
+
+  window.speechSynthesis.speak(utter);
+  announceA11y("Iniciando leitura da tela.");
+}
+
+function stopSpeaking() {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+  document.getElementById("btn-stop-speak")?.classList.add("is-hidden");
+  document.getElementById("btn-speak-screen")?.setAttribute("aria-pressed", "false");
+}
+
+function exportUserBookingsJson() {
+  const user = getCurrentUser();
+  const mine = user ? state.bookings.filter((b) => b.studentId === user.id) : [];
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    system: "Monitora+ UNIFSA",
+    user: user ? { name: user.name, ra: user.ra, email: user.email, role: user.role } : null,
+    bookings: mine.map((bk) => {
+      const slot = state.slots.find((s) => s.id === bk.slotId);
+      const off = slot ? getOffering(slot.offeringId) : null;
+      return {
+        protocol: bk.protocol,
+        status: bk.status,
+        subject: off?.subject || "",
+        date: slot?.dateIso || "",
+        time: slot?.time || "",
+        location: off?.location || "",
+        topic: bk.topic,
+      };
+    }),
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `monitoraplus-dados-${user ? user.ra : "local"}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast("Dados exportados em JSON.");
+}
+
+function resetPrefsToDefault() {
+  state.theme = "light";
+  state.fontScale = 1;
+  state.prefs = { ...DEFAULT_PREFS };
+  ui.step1Layout = state.prefs.defaultLayout;
+  saveState();
+  applyThemeAndA11y();
+  if (ui.activeView === "agendar" && ui.step === 1) renderStep1();
+  announceA11y("Preferências restauradas para o padrão.");
+  showToast("Preferências de aparência e acessibilidade restauradas.");
+}
+
+function confirmDeleteAccount() {
+  const user = getCurrentUser();
+  if (!user) return;
+
+  openConfirmDialog({
+    title: "Excluir conta e dados?",
+    desc: "Sua conta e os seus agendamentos salvos neste navegador serão removidos permanentemente.",
+    summaryHtml: `<strong>${escapeHtml(user.name)}</strong> · Mat. ${escapeHtml(user.ra)}`,
+    confirmText: "Excluir permanentemente",
+    danger: true,
+    onConfirm: () => {
+      state.bookings = state.bookings.filter((b) => b.studentId !== user.id);
+      state.users = state.users.filter((u) => u.id !== user.id);
+      state.currentUserId = null;
+      saveState();
+      closeSettingsModal();
+      renderTopbar();
+      switchView("landing");
+      showToast("Conta e dados locais removidos.");
+    },
+  });
 }
 
 function renderTopbar() {
@@ -677,6 +985,12 @@ function renderStepper() {
 }
 
 function renderStep1() {
+  document.querySelectorAll("[data-step1-layout]").forEach((b) => {
+    const active = b.dataset.step1Layout === ui.step1Layout;
+    b.classList.toggle("is-active", active);
+    b.setAttribute("aria-pressed", String(active));
+  });
+
   const tabsEl = document.getElementById("subject-tabs");
   const subjects = ["Todas", ...OFFERINGS.map((o) => o.shortSubject)];
 
@@ -962,9 +1276,55 @@ function handleConfirmBooking(e) {
     return;
   }
 
-  if (hasScheduleConflict(user.id, slot)) {
+  if (getPrefs().blockConflicts && hasScheduleConflict(user.id, slot)) {
     errBox.textContent = `Você já possui um atendimento confirmado em ${slot.dayName} às ${slot.time}.`;
     errBox.classList.remove("is-hidden");
+    return;
+  }
+
+  const executeBooking = () => {
+    if (getSlotRemaining(slot) <= 0) {
+      errBox.textContent = "As vagas deste horário acabaram de ser preenchidas.";
+      errBox.classList.remove("is-hidden");
+      return;
+    }
+
+    const seq = String(state.nextSeq).padStart(3, "0");
+    state.nextSeq += 1;
+    const protocol = `#MON-2026-${seq}`;
+
+    const booking = {
+      id: `bk-${Date.now()}`,
+      protocol,
+      studentId: user.id,
+      slotId: slot.id,
+      topic,
+      status: "Confirmado",
+      createdAt: new Date().toLocaleString("pt-BR"),
+    };
+
+    state.bookings.push(booking);
+    ui.lastCreatedBookingId = booking.id;
+    saveState();
+    renderTopbar();
+
+    document.getElementById("success-protocol").textContent = protocol;
+    document.getElementById("success-summary").innerHTML = `
+      <div><dt>Estudante</dt><dd>${escapeHtml(user.name)}</dd></div>
+      <div><dt>Disciplina</dt><dd>${escapeHtml(off.subject)}</dd></div>
+      <div><dt>Data e horário</dt><dd>${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}</dd></div>
+      <div><dt>Local / Monitor</dt><dd>${escapeHtml(off.location)}</dd></div>
+    `;
+
+    document.getElementById("btn-download-ics")?.classList.toggle("is-emphasized", Boolean(getPrefs().autoIcsHint));
+    document.getElementById("step3-form-shell").classList.add("is-hidden");
+    document.getElementById("step3-success-shell").classList.remove("is-hidden");
+    announceA11y(`Agendamento confirmado. Protocolo ${protocol}.`);
+    showToast(`Agendamento confirmado (${protocol})`);
+  };
+
+  if (!getPrefs().confirmBeforeBook) {
+    executeBooking();
     return;
   }
 
@@ -979,44 +1339,7 @@ function handleConfirmBooking(e) {
     `,
     confirmText: "Sim, confirmar vaga",
     danger: false,
-    onConfirm: () => {
-      if (getSlotRemaining(slot) <= 0) {
-        errBox.textContent = "As vagas deste horário acabaram de ser preenchidas.";
-        errBox.classList.remove("is-hidden");
-        return;
-      }
-
-      const seq = String(state.nextSeq).padStart(3, "0");
-      state.nextSeq += 1;
-      const protocol = `#MON-2026-${seq}`;
-
-      const booking = {
-        id: `bk-${Date.now()}`,
-        protocol,
-        studentId: user.id,
-        slotId: slot.id,
-        topic,
-        status: "Confirmado",
-        createdAt: new Date().toLocaleString("pt-BR"),
-      };
-
-      state.bookings.push(booking);
-      ui.lastCreatedBookingId = booking.id;
-      saveState();
-      renderTopbar();
-
-      document.getElementById("success-protocol").textContent = protocol;
-      document.getElementById("success-summary").innerHTML = `
-        <div><dt>Estudante</dt><dd>${escapeHtml(user.name)}</dd></div>
-        <div><dt>Disciplina</dt><dd>${escapeHtml(off.subject)}</dd></div>
-        <div><dt>Data e horário</dt><dd>${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}</dd></div>
-        <div><dt>Local / Monitor</dt><dd>${escapeHtml(off.location)}</dd></div>
-      `;
-
-      document.getElementById("step3-form-shell").classList.add("is-hidden");
-      document.getElementById("step3-success-shell").classList.remove("is-hidden");
-      showToast(`Agendamento confirmado (${protocol})`);
-    },
+    onConfirm: executeBooking,
   });
 }
 
@@ -1390,14 +1713,16 @@ function bindEvents() {
   });
 
   const incFont = () => {
-    state.fontScale = Math.min(1.24, Number((state.fontScale + 0.08).toFixed(2)));
+    state.fontScale = Math.min(1.52, Number(((state.fontScale || 1) + 0.08).toFixed(2)));
     saveState();
     applyThemeAndA11y();
+    announceA11y(`Tamanho da fonte ${Math.round(state.fontScale * 100)} porcento.`);
   };
   const decFont = () => {
-    state.fontScale = Math.max(0.88, Number((state.fontScale - 0.08).toFixed(2)));
+    state.fontScale = Math.max(0.88, Number(((state.fontScale || 1) - 0.08).toFixed(2)));
     saveState();
     applyThemeAndA11y();
+    announceA11y(`Tamanho da fonte ${Math.round(state.fontScale * 100)} porcento.`);
   };
 
   document.getElementById("btn-font-inc").addEventListener("click", incFont);
@@ -1407,11 +1732,108 @@ function bindEvents() {
   document.getElementById("btn-modal-font-inc")?.addEventListener("click", incFont);
   document.getElementById("btn-modal-font-dec")?.addEventListener("click", decFont);
 
-  document.getElementById("btn-mobile-settings-landing")?.addEventListener("click", openAppearanceModal);
-  document.getElementById("btn-mobile-settings-topbar")?.addEventListener("click", openAppearanceModal);
-  document.getElementById("btn-close-appearance")?.addEventListener("click", closeAppearanceModal);
-  document.getElementById("appearance-modal")?.addEventListener("click", (e) => {
-    if (e.target.id === "appearance-modal") closeAppearanceModal();
+  document.getElementById("settings-font-slider")?.addEventListener("input", (e) => {
+    const pct = Number(e.target.value || 100);
+    state.fontScale = Number((pct / 100).toFixed(2));
+    saveState();
+    applyThemeAndA11y();
+  });
+
+  // Central de Configurações & Tecnologia Assistiva
+  document.getElementById("btn-open-settings-topbar")?.addEventListener("click", () => openSettingsModal());
+  document.getElementById("btn-open-settings-landing")?.addEventListener("click", () => openSettingsModal("aparencia"));
+  document.getElementById("btn-mobile-settings-landing")?.addEventListener("click", () => openSettingsModal("aparencia"));
+  document.getElementById("btn-open-settings-privacy")?.addEventListener("click", () => openSettingsModal("conta"));
+  document.getElementById("btn-close-settings")?.addEventListener("click", closeSettingsModal);
+  document.getElementById("btn-close-settings-mobile")?.addEventListener("click", closeSettingsModal);
+  document.getElementById("settings-modal")?.addEventListener("click", (e) => {
+    if (e.target.id === "settings-modal") closeSettingsModal();
+  });
+
+  const settingsTablist = document.getElementById("settings-tablist");
+  settingsTablist?.addEventListener("click", (e) => {
+    const tab = e.target.closest("[data-settings-tab]");
+    if (!tab) return;
+    setSettingsTab(tab.dataset.settingsTab);
+  });
+  settingsTablist?.addEventListener("keydown", (e) => {
+    const tabs = Array.from(settingsTablist.querySelectorAll("[data-settings-tab]"));
+    const cur = tabs.indexOf(document.activeElement);
+    if (cur === -1) return;
+    let next = -1;
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") next = (cur + 1) % tabs.length;
+    if (e.key === "ArrowUp" || e.key === "ArrowLeft") next = (cur - 1 + tabs.length) % tabs.length;
+    if (e.key === "Home") next = 0;
+    if (e.key === "End") next = tabs.length - 1;
+    if (next !== -1) {
+      e.preventDefault();
+      setSettingsTab(tabs[next].dataset.settingsTab, true);
+    }
+  });
+
+  document.querySelectorAll("[data-pref-layout]").forEach((card) => {
+    card.addEventListener("click", () => {
+      const val = card.dataset.prefLayout;
+      getPrefs().defaultLayout = val;
+      ui.step1Layout = val;
+      saveState();
+      applyThemeAndA11y();
+      if (ui.activeView === "agendar" && ui.step === 1) renderStep1();
+      announceA11y(`Visualização padrão definida para ${val === "matrix" ? "grade semanal" : "lista organizada"}.`);
+    });
+  });
+
+  const switchPrefMap = [
+    ["pref-confirm-book", "confirmBeforeBook", "Confirmação antes de concluir"],
+    ["pref-pause-distractions", "pauseDistractions", "Pausar distrações"],
+    ["pref-reduced-motion", "reducedMotion", "Reduzir animações"],
+    ["pref-dyslexia-spacing", "dyslexiaSpacing", "Espaçamento para Dislexia"],
+    ["pref-reading-mask", "readingMask", "Guia de leitura"],
+    ["pref-extra-focus", "extraFocus", "Foco extra visível"],
+    ["pref-large-targets", "largeTargets", "Alvos de toque ampliados"],
+    ["pref-block-conflicts", "blockConflicts", "Bloqueio de choque de horário"],
+    ["pref-auto-ics", "autoIcsHint", "Destaque de lembrete .ics"],
+  ];
+  switchPrefMap.forEach(([id, key, label]) => {
+    document.getElementById(id)?.addEventListener("change", (e) => {
+      getPrefs()[key] = Boolean(e.target.checked);
+      saveState();
+      applyThemeAndA11y();
+      announceA11y(`${label} ${e.target.checked ? "ativado" : "desativado"}.`);
+    });
+  });
+
+  document.getElementById("pref-cvd-filter")?.addEventListener("change", (e) => {
+    getPrefs().cvdFilter = e.target.value;
+    saveState();
+    applyThemeAndA11y();
+    announceA11y(`Filtro de daltonismo alterado para ${e.target.selectedOptions[0]?.textContent || e.target.value}.`);
+  });
+
+  document.getElementById("btn-speak-screen")?.addEventListener("click", speakCurrentScreen);
+  document.getElementById("btn-stop-speak")?.addEventListener("click", stopSpeaking);
+  document.getElementById("btn-export-data")?.addEventListener("click", exportUserBookingsJson);
+  document.getElementById("btn-reset-prefs")?.addEventListener("click", resetPrefsToDefault);
+  document.getElementById("btn-settings-logout")?.addEventListener("click", () => {
+    state.currentUserId = null;
+    saveState();
+    closeSettingsModal();
+    renderTopbar();
+    hideOtpStage();
+    switchView("landing");
+    showToast("Sessão encerrada.");
+  });
+  document.getElementById("btn-settings-delete-account")?.addEventListener("click", confirmDeleteAccount);
+
+  // Régua / Guia de leitura (acompanha cursor e foco de teclado)
+  const updateMaskY = (yPx) => {
+    if (!getPrefs().readingMask) return;
+    document.getElementById("reading-mask")?.style.setProperty("--mask-y", `${Math.round(yPx)}px`);
+  };
+  document.addEventListener("pointermove", (e) => updateMaskY(e.clientY), { passive: true });
+  document.addEventListener("focusin", (e) => {
+    const rect = e.target?.getBoundingClientRect?.();
+    if (rect && rect.height) updateMaskY(rect.top + rect.height / 2);
   });
 
   // Auth Tabs & Assaad Links
@@ -1591,6 +2013,25 @@ function bindEvents() {
     }
   });
 
+  document.getElementById("cal-days-grid").addEventListener("keydown", (e) => {
+    const grid = document.getElementById("cal-days-grid");
+    const enabled = Array.from(grid.querySelectorAll("[data-cal-date]:not(:disabled)"));
+    const curIdx = enabled.indexOf(document.activeElement);
+    if (curIdx === -1 || enabled.length === 0) return;
+
+    let target = null;
+    if (e.key === "ArrowRight") target = enabled[Math.min(enabled.length - 1, curIdx + 1)];
+    if (e.key === "ArrowLeft") target = enabled[Math.max(0, curIdx - 1)];
+    if (e.key === "ArrowDown") target = enabled[Math.min(enabled.length - 1, curIdx + 1)];
+    if (e.key === "ArrowUp") target = enabled[Math.max(0, curIdx - 1)];
+    if (e.key === "Home") target = enabled[0];
+    if (e.key === "End") target = enabled[enabled.length - 1];
+    if (!target) return;
+
+    e.preventDefault();
+    target.focus();
+  });
+
   document.getElementById("s2-slots-list").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-pick-slot]");
     if (!btn || btn.disabled) return;
@@ -1690,28 +2131,8 @@ function bindEvents() {
     }
   });
 
-  // Exclusão LGPD
-  document.getElementById("btn-delete-account").addEventListener("click", () => {
-    const user = getCurrentUser();
-    if (!user) return;
-
-    openConfirmDialog({
-      title: "Excluir conta e dados?",
-      desc: "Sua conta e os seus agendamentos salvos neste navegador serão removidos permanentemente.",
-      summaryHtml: `<strong>${escapeHtml(user.name)}</strong> · Mat. ${escapeHtml(user.ra)}`,
-      confirmText: "Excluir permanentemente",
-      danger: true,
-      onConfirm: () => {
-        state.bookings = state.bookings.filter((b) => b.studentId !== user.id);
-        state.users = state.users.filter((u) => u.id !== user.id);
-        state.currentUserId = null;
-        saveState();
-        renderTopbar();
-        switchView("landing");
-        showToast("Conta e dados locais removidos.");
-      },
-    });
-  });
+  // Exclusão LGPD (reaproveita helper compartilhado com a Central)
+  document.getElementById("btn-delete-account").addEventListener("click", confirmDeleteAccount);
 
   // Modal & Desfazer
   document.getElementById("btn-confirm-abort").addEventListener("click", closeConfirmDialog);
@@ -1773,7 +2194,20 @@ function bindEvents() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       closeConfirmDialog();
-      closeAppearanceModal();
+      closeSettingsModal();
+      stopSpeaking();
+      return;
+    }
+    if (e.altKey && (e.key === "," || e.key === ";")) {
+      e.preventDefault();
+      const modal = document.getElementById("settings-modal");
+      if (modal && modal.classList.contains("is-hidden")) openSettingsModal();
+      else closeSettingsModal();
+      return;
+    }
+    if (e.altKey && e.key.toLowerCase() === "l") {
+      e.preventDefault();
+      speakCurrentScreen();
       return;
     }
     const tag = document.activeElement?.tagName;
