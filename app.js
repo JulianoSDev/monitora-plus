@@ -714,21 +714,41 @@ function confirmDeleteAccount() {
   });
 }
 
+function closeProfileMenu() {
+  document.getElementById("profile-dropdown")?.classList.add("is-hidden");
+  document.getElementById("btn-account-action")?.setAttribute("aria-expanded", "false");
+}
+
+function toggleProfileMenu() {
+  const dd = document.getElementById("profile-dropdown");
+  const btn = document.getElementById("btn-account-action");
+  if (!dd || !btn) return;
+  const willOpen = dd.classList.contains("is-hidden");
+  dd.classList.toggle("is-hidden", !willOpen);
+  btn.setAttribute("aria-expanded", String(willOpen));
+}
+
 function renderTopbar() {
   const user = getCurrentUser();
   const label = document.getElementById("topbar-user-label");
-  const dot = document.getElementById("topbar-dot");
+  const ddName = document.getElementById("profile-dd-name");
+  const ddSub = document.getElementById("profile-dd-sub");
   const monitorTab = document.getElementById("nav-monitor-tab");
+  closeProfileMenu();
 
   if (user) {
-    const roleTag = user.role === "monitor" ? "Monitor" : user.ra;
-    label.textContent = `${user.name.split(" ")[0]} · ${roleTag} · Sair`;
-    dot.classList.add("is-online");
+    const firstName = user.name.trim().split(/\s+/)[0];
+    const roleTag = user.role === "monitor" ? "Monitor(a)" : `Mat. ${user.ra}`;
+    label.textContent = firstName;
+    if (ddName) ddName.textContent = user.name;
+    if (ddSub) ddSub.textContent = `${roleTag} · ${user.email}`;
   } else {
     label.textContent = "Entrar";
-    dot.classList.remove("is-online");
+    if (ddName) ddName.textContent = "Visitante";
+    if (ddSub) ddSub.textContent = "Faça login";
   }
 
+  document.querySelector(".profile-chevron")?.classList.toggle("is-hidden", !user);
   monitorTab.classList.toggle("is-hidden", !user || user.role !== "monitor");
 
   const activeCount = user
@@ -1684,17 +1704,38 @@ function bindEvents() {
     switchView("landing");
   });
 
-  document.getElementById("btn-account-action").addEventListener("click", () => {
+  const performLogout = () => {
+    state.currentUserId = null;
+    saveState();
+    closeProfileMenu();
+    closeSettingsModal();
+    renderTopbar();
+    hideOtpStage();
+    switchView("landing");
+    showToast("Sessão encerrada.");
+  };
+
+  document.getElementById("btn-account-action").addEventListener("click", (e) => {
+    e.stopPropagation();
     if (getCurrentUser()) {
-      state.currentUserId = null;
-      saveState();
-      renderTopbar();
-      hideOtpStage();
-      switchView("landing");
-      showToast("Sessão encerrada.");
+      toggleProfileMenu();
     } else {
       switchView("landing");
     }
+  });
+
+  document.getElementById("btn-profile-account")?.addEventListener("click", () => {
+    closeProfileMenu();
+    openSettingsModal("conta");
+  });
+  document.getElementById("btn-profile-settings")?.addEventListener("click", () => {
+    closeProfileMenu();
+    openSettingsModal("geral");
+  });
+  document.getElementById("btn-profile-logout")?.addEventListener("click", performLogout);
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#profile-menu-wrap")) closeProfileMenu();
   });
 
   document.querySelectorAll(".nav-link").forEach((btn) => {
@@ -1725,10 +1766,6 @@ function bindEvents() {
     announceA11y(`Tamanho da fonte ${Math.round(state.fontScale * 100)} porcento.`);
   };
 
-  document.getElementById("btn-font-inc").addEventListener("click", incFont);
-  document.getElementById("btn-font-dec").addEventListener("click", decFont);
-  document.getElementById("btn-landing-font-inc").addEventListener("click", incFont);
-  document.getElementById("btn-landing-font-dec").addEventListener("click", decFont);
   document.getElementById("btn-modal-font-inc")?.addEventListener("click", incFont);
   document.getElementById("btn-modal-font-dec")?.addEventListener("click", decFont);
 
@@ -2195,6 +2232,7 @@ function bindEvents() {
     if (e.key === "Escape") {
       closeConfirmDialog();
       closeSettingsModal();
+      closeProfileMenu();
       stopSpeaking();
       return;
     }

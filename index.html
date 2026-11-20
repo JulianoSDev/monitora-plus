@@ -55,30 +55,48 @@
       </nav>
 
       <div class="topbar-right">
-        <button
-          type="button"
-          class="student-chip-btn"
-          id="btn-account-action"
-          title="Gerenciar sessão ou entrar"
-        >
-          <span class="student-dot" id="topbar-dot" aria-hidden="true"></span>
-          <span id="topbar-user-label">Entrar</span>
-        </button>
+        <div class="profile-menu-wrap" id="profile-menu-wrap">
+          <button
+            type="button"
+            class="student-chip-btn"
+            id="btn-account-action"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            title="Conta e sessão"
+          >
+            <span class="topbar-user-avatar" id="topbar-user-avatar" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </span>
+            <span id="topbar-user-label">Entrar</span>
+            <svg class="profile-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
 
-        <div class="theme-switch" role="group" aria-label="Tema visual">
-          <button type="button" class="theme-opt is-active" data-theme="light" aria-pressed="true">Claro</button>
-          <button type="button" class="theme-opt" data-theme="dark" aria-pressed="false">Escuro</button>
-          <button type="button" class="theme-opt" data-theme="contrast" aria-pressed="false">Contraste</button>
+          <div id="profile-dropdown" class="profile-dropdown is-hidden" role="menu" aria-label="Menu da conta">
+            <div class="profile-dd-head">
+              <strong id="profile-dd-name">—</strong>
+              <span id="profile-dd-sub">—</span>
+            </div>
+            <button type="button" class="profile-dd-item" role="menuitem" id="btn-profile-account">
+              Conta e Privacidade (LGPD)
+            </button>
+            <button type="button" class="profile-dd-item" role="menuitem" id="btn-profile-settings">
+              Configurações e Acessibilidade
+            </button>
+            <div class="profile-dd-sep" role="separator"></div>
+            <button type="button" class="profile-dd-item is-danger" role="menuitem" id="btn-profile-logout">
+              Sair da conta
+            </button>
+          </div>
         </div>
 
-        <div class="font-switch" role="group" aria-label="Tamanho da fonte">
-          <button type="button" class="font-btn" id="btn-font-dec" aria-label="Diminuir fonte">A-</button>
-          <button type="button" class="font-btn" id="btn-font-inc" aria-label="Aumentar fonte">A+</button>
-        </div>
-
         <button
           type="button"
-          class="settings-trigger-btn"
+          class="settings-trigger-btn settings-icon-only"
           id="btn-open-settings-topbar"
           aria-label="Abrir central de configurações e acessibilidade"
           title="Configurações e Acessibilidade (Alt + ,)"
@@ -87,7 +105,6 @@
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
-          <span class="settings-trigger-label">Configurações</span>
         </button>
       </div>
     </div>
@@ -191,15 +208,6 @@
           </div>
 
           <div class="split-right-tools">
-            <div class="theme-switch" role="group" aria-label="Tema visual">
-              <button type="button" class="theme-opt is-active" data-theme="light" aria-pressed="true">Claro</button>
-              <button type="button" class="theme-opt" data-theme="dark" aria-pressed="false">Escuro</button>
-              <button type="button" class="theme-opt" data-theme="contrast" aria-pressed="false">Contraste</button>
-            </div>
-            <div class="font-switch" role="group" aria-label="Tamanho da fonte">
-              <button type="button" class="font-btn" id="btn-landing-font-dec" aria-label="Diminuir fonte">A-</button>
-              <button type="button" class="font-btn" id="btn-landing-font-inc" aria-label="Aumentar fonte">A+</button>
-            </div>
             <button
               type="button"
               class="settings-trigger-btn settings-icon-only"
