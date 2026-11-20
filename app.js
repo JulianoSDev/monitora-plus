@@ -511,7 +511,10 @@ function applyThemeAndA11y() {
   });
 
   const cvdSelect = document.getElementById("pref-cvd-filter");
-  if (cvdSelect) cvdSelect.value = cvd;
+  if (cvdSelect) {
+    cvdSelect.value = cvd;
+    syncCustomSelect(cvdSelect);
+  }
 
   if (ui.activeView === "landing") {
     if (prefs.reducedMotion || prefs.pauseDistractions) stopPhraseCarousel();
@@ -738,27 +741,41 @@ function renderTopbar() {
   const label = document.getElementById("topbar-user-label");
   const ddName = document.getElementById("profile-dd-name");
   const ddSub = document.getElementById("profile-dd-sub");
+  const ddAvatar = document.getElementById("profile-dd-avatar");
+  const ddRoleBadge = document.getElementById("profile-dd-role-badge");
+  const ddBookingsCount = document.getElementById("profile-dd-bookings-count");
+  const ddMonitorBtn = document.getElementById("btn-profile-monitor");
   const monitorTab = document.getElementById("nav-monitor-tab");
   closeProfileMenu();
-
-  if (user) {
-    const firstName = user.name.trim().split(/\s+/)[0];
-    const roleTag = user.role === "monitor" ? "Monitor(a)" : `Mat. ${user.ra}`;
-    label.textContent = firstName;
-    if (ddName) ddName.textContent = user.name;
-    if (ddSub) ddSub.textContent = `${roleTag} · ${user.email}`;
-  } else {
-    label.textContent = "Entrar";
-    if (ddName) ddName.textContent = "Visitante";
-    if (ddSub) ddSub.textContent = "Faça login";
-  }
-
-  document.querySelector(".profile-chevron")?.classList.toggle("is-hidden", !user);
-  monitorTab.classList.toggle("is-hidden", !user || user.role !== "monitor");
 
   const activeCount = user
     ? state.bookings.filter((b) => b.studentId === user.id && b.status === "Confirmado").length
     : 0;
+
+  if (user) {
+    const parts = user.name.trim().split(/\s+/);
+    const firstName = parts[0];
+    const initials = parts.length >= 2 ? `${parts[0][0]}${parts[parts.length - 1][0]}` : parts[0].slice(0, 2);
+    const isMonitor = user.role === "monitor";
+    const roleTag = isMonitor ? "Monitor(a)" : `Mat. ${user.ra}`;
+    label.textContent = firstName;
+    if (ddAvatar) ddAvatar.textContent = initials.toUpperCase();
+    if (ddName) ddName.textContent = user.name;
+    if (ddRoleBadge) ddRoleBadge.textContent = isMonitor ? "Monitor(a)" : "Estudante";
+    if (ddSub) ddSub.textContent = `${roleTag} · ${user.email}`;
+  } else {
+    label.textContent = "Entrar";
+    if (ddAvatar) ddAvatar.textContent = "M+";
+    if (ddName) ddName.textContent = "Visitante";
+    if (ddRoleBadge) ddRoleBadge.textContent = "Visitante";
+    if (ddSub) ddSub.textContent = "Faça login";
+  }
+
+  if (ddBookingsCount) ddBookingsCount.textContent = String(activeCount);
+  if (ddMonitorBtn) ddMonitorBtn.classList.toggle("is-hidden", !user || user.role !== "monitor");
+
+  document.querySelector(".profile-chevron")?.classList.toggle("is-hidden", !user);
+  monitorTab.classList.toggle("is-hidden", !user || user.role !== "monitor");
   document.getElementById("badge-agendamentos").textContent = String(activeCount);
 }
 
@@ -1726,6 +1743,18 @@ function bindEvents() {
     }
   });
 
+  document.getElementById("btn-profile-bookings")?.addEventListener("click", () => {
+    closeProfileMenu();
+    switchView("agendamentos");
+  });
+  document.getElementById("btn-profile-monitor")?.addEventListener("click", () => {
+    closeProfileMenu();
+    switchView("monitor");
+  });
+  document.getElementById("btn-profile-a11y")?.addEventListener("click", () => {
+    closeProfileMenu();
+    openSettingsModal("acessibilidade", true);
+  });
   document.getElementById("btn-profile-account")?.addEventListener("click", () => {
     closeProfileMenu();
     openSettingsModal("conta", true);
@@ -1734,10 +1763,15 @@ function bindEvents() {
     closeProfileMenu();
     openSettingsModal("geral", false);
   });
+  document.getElementById("btn-profile-export")?.addEventListener("click", () => {
+    closeProfileMenu();
+    exportUserBookingsJson();
+  });
   document.getElementById("btn-profile-logout")?.addEventListener("click", performLogout);
 
   document.addEventListener("click", (e) => {
     if (!e.target.closest("#profile-menu-wrap")) closeProfileMenu();
+    if (!e.target.closest(".bc-select-wrap")) closeAllCustomSelects();
   });
 
   document.querySelectorAll(".nav-link").forEach((btn) => {
@@ -2234,7 +2268,15 @@ function bindEvents() {
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      closeConfirmDialog();
+      if (document.querySelector(".bc-select-wrap.is-open")) {
+        closeAllCustomSelects();
+        return;
+      }
+      const confirmModal = document.getElementById("confirm-modal");
+      if (confirmModal && !confirmModal.classList.contains("is-hidden")) {
+        closeConfirmDialog();
+        return;
+      }
       closeSettingsModal();
       closeProfileMenu();
       stopSpeaking();
@@ -2267,8 +2309,241 @@ function bindEvents() {
   });
 }
 
+// ==================== CUSTOM SELECT POPOVER (BASECOAT / SHADCN PATTERN) ====================
+const customSelectRegistry = new WeakMap();
+
+function getSelectIconSvg(iconName) {
+  switch (iconName) {
+    case "clock":
+      return `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 13.5"/></svg>`;
+    case "graduation":
+      return `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>`;
+    case "book":
+      return `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`;
+    case "eye":
+      return `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    default:
+      return "";
+  }
+}
+
+function closeAllCustomSelects(exceptWrap = null) {
+  document.querySelectorAll(".bc-select-wrap.is-open").forEach((wrap) => {
+    if (wrap === exceptWrap) return;
+    wrap.classList.remove("is-open");
+    const trigger = wrap.querySelector(".bc-select-trigger");
+    const popover = wrap.querySelector(".bc-select-popover");
+    trigger?.setAttribute("aria-expanded", "false");
+    popover?.classList.add("is-hidden");
+    popover?.classList.remove("is-up");
+  });
+}
+
+function syncCustomSelect(selectEl) {
+  const ctx = customSelectRegistry.get(selectEl);
+  if (!ctx) return;
+
+  const selectedOpt = selectEl.selectedOptions[0] || selectEl.options[0];
+  if (selectedOpt) {
+    ctx.labelEl.textContent = selectedOpt.textContent.trim();
+  }
+
+  ctx.optionBtns.forEach((btn) => {
+    const isSel = btn.dataset.value === selectEl.value;
+    btn.setAttribute("aria-selected", String(isSel));
+    btn.classList.toggle("is-focused", isSel);
+  });
+}
+
+function upgradeCustomSelect(selectEl) {
+  if (!selectEl || customSelectRegistry.has(selectEl)) return;
+
+  const wrap = document.createElement("div");
+  wrap.className = "bc-select-wrap";
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "bc-select-trigger";
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-expanded", "false");
+
+  const labelElRef = selectEl.id ? document.querySelector(`label[for="${selectEl.id}"]`) : null;
+  if (labelElRef) {
+    if (!labelElRef.id) labelElRef.id = `label-${selectEl.id}`;
+    trigger.setAttribute("aria-labelledby", labelElRef.id);
+    labelElRef.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      trigger.focus();
+      trigger.click();
+    });
+  }
+
+  const triggerMain = document.createElement("span");
+  triggerMain.className = "bc-select-trigger-main";
+
+  const iconMarkup = getSelectIconSvg(selectEl.dataset.selectIcon || "");
+  if (iconMarkup) {
+    const iconSpan = document.createElement("span");
+    iconSpan.className = "bc-select-icon";
+    iconSpan.innerHTML = iconMarkup;
+    triggerMain.appendChild(iconSpan);
+  }
+
+  const labelSpan = document.createElement("span");
+  labelSpan.className = "bc-select-label";
+  triggerMain.appendChild(labelSpan);
+
+  const chevron = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  chevron.setAttribute("viewBox", "0 0 24 24");
+  chevron.setAttribute("width", "14");
+  chevron.setAttribute("height", "14");
+  chevron.setAttribute("fill", "none");
+  chevron.setAttribute("stroke", "currentColor");
+  chevron.setAttribute("stroke-width", "2.2");
+  chevron.setAttribute("stroke-linecap", "round");
+  chevron.setAttribute("stroke-linejoin", "round");
+  chevron.setAttribute("aria-hidden", "true");
+  chevron.classList.add("bc-select-chevron");
+  chevron.innerHTML = `<polyline points="6 9 12 15 18 9"/>`;
+
+  trigger.appendChild(triggerMain);
+  trigger.appendChild(chevron);
+
+  const popover = document.createElement("div");
+  popover.className = "bc-select-popover is-hidden";
+  popover.setAttribute("role", "listbox");
+  if (labelElRef?.id) popover.setAttribute("aria-labelledby", labelElRef.id);
+
+  const optionBtns = [];
+  Array.from(selectEl.options).forEach((opt) => {
+    const optBtn = document.createElement("button");
+    optBtn.type = "button";
+    optBtn.className = "bc-select-option";
+    optBtn.setAttribute("role", "option");
+    optBtn.dataset.value = opt.value;
+    optBtn.setAttribute("aria-selected", String(opt.selected));
+
+    const textSpan = document.createElement("span");
+    textSpan.className = "bc-select-option-text";
+    textSpan.textContent = opt.textContent.trim();
+    optBtn.appendChild(textSpan);
+
+    const rightWrap = document.createElement("span");
+    rightWrap.className = "bc-select-option-right";
+
+    if (opt.dataset.badge) {
+      const badgeSpan = document.createElement("span");
+      badgeSpan.className = "bc-select-option-badge";
+      badgeSpan.textContent = opt.dataset.badge;
+      rightWrap.appendChild(badgeSpan);
+    }
+
+    const checkIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    checkIcon.setAttribute("viewBox", "0 0 24 24");
+    checkIcon.setAttribute("fill", "none");
+    checkIcon.setAttribute("stroke", "currentColor");
+    checkIcon.setAttribute("stroke-width", "2.5");
+    checkIcon.setAttribute("stroke-linecap", "round");
+    checkIcon.setAttribute("stroke-linejoin", "round");
+    checkIcon.setAttribute("aria-hidden", "true");
+    checkIcon.classList.add("bc-select-check");
+    checkIcon.innerHTML = `<polyline points="20 6 9 17 4 12"/>`;
+    rightWrap.appendChild(checkIcon);
+
+    optBtn.appendChild(rightWrap);
+
+    optBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      selectEl.value = opt.value;
+      syncCustomSelect(selectEl);
+      closeAllCustomSelects();
+      selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+      trigger.focus();
+    });
+
+    popover.appendChild(optBtn);
+    optionBtns.push(optBtn);
+  });
+
+  // Posiciona o select nativo oculto dentro do wrapper
+  selectEl.classList.add("bc-select-native-hidden");
+  selectEl.setAttribute("tabindex", "-1");
+  selectEl.setAttribute("aria-hidden", "true");
+  selectEl.parentNode.insertBefore(wrap, selectEl);
+  wrap.appendChild(selectEl);
+  wrap.appendChild(trigger);
+  wrap.appendChild(popover);
+
+  const openPopover = () => {
+    closeAllCustomSelects(wrap);
+    wrap.classList.add("is-open");
+    trigger.setAttribute("aria-expanded", "true");
+    popover.classList.remove("is-hidden", "is-up");
+
+    const rect = trigger.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceBelow < 220 && rect.top > 220) {
+      popover.classList.add("is-up");
+    }
+
+    const activeOpt = popover.querySelector('[aria-selected="true"]') || optionBtns[0];
+    activeOpt?.focus();
+  };
+
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (wrap.classList.contains("is-open")) {
+      closeAllCustomSelects();
+    } else {
+      openPopover();
+    }
+  });
+
+  trigger.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openPopover();
+    }
+  });
+
+  popover.addEventListener("keydown", (e) => {
+    const curIdx = optionBtns.indexOf(document.activeElement);
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = optionBtns[(curIdx + 1) % optionBtns.length];
+      next?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prev = optionBtns[(curIdx - 1 + optionBtns.length) % optionBtns.length];
+      prev?.focus();
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      optionBtns[0]?.focus();
+    } else if (e.key === "End") {
+      e.preventDefault();
+      optionBtns[optionBtns.length - 1]?.focus();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      closeAllCustomSelects();
+      trigger.focus();
+    } else if (e.key === "Tab") {
+      closeAllCustomSelects();
+    }
+  });
+
+  selectEl.addEventListener("change", () => syncCustomSelect(selectEl));
+
+  customSelectRegistry.set(selectEl, { wrap, trigger, labelEl: labelSpan, popover, optionBtns });
+  syncCustomSelect(selectEl);
+}
+
+function initCustomSelects() {
+  document.querySelectorAll('select[data-custom-select="true"]').forEach(upgradeCustomSelect);
+}
+
 // Inicialização
 bindEvents();
+initCustomSelects();
 applyThemeAndA11y();
 renderTopbar();
 startPhraseCarousel();
