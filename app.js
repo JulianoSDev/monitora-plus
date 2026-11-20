@@ -556,7 +556,7 @@ function syncSettingsAccountBox() {
     const initials = parts.length >= 2 ? `${parts[0][0]}${parts[parts.length - 1][0]}` : parts[0].slice(0, 2);
     avatar.textContent = initials.toUpperCase();
     nameEl.textContent = user.name;
-    subEl.textContent = `${user.role === "monitor" ? "Monitor(a)" : "Estudante"} · Mat. ${user.ra}`;
+    subEl.textContent = `${user.role === "monitor" ? "Monitor(a)" : "Estudante"} · ${user.ra}`;
     statusEl.textContent = `${user.name} (${user.ra})`;
     detailEl.textContent = `${user.email} · ${user.role === "monitor" ? "Acesso de monitoria" : user.course || "Estudante"}`;
     logoutBtn.classList.remove("is-hidden");

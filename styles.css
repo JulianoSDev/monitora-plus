@@ -2705,7 +2705,12 @@ body.a11y-reduced-motion *::after {
     gap: 8px;
   }
 
+  .brand-btn {
+    order: 1;
+  }
+
   .topbar-right {
+    order: 2;
     width: auto;
     margin-left: auto;
     justify-content: flex-end;
