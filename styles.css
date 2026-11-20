@@ -1126,10 +1126,21 @@ body.theme-contrast .assaad-card {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+  align-items: end;
+}
+
+.field-row .field label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .field-row.field-row-course {
   grid-template-columns: 0.72fr 1.28fr;
+}
+
+.field-row.field-row-monitor-code {
+  grid-template-columns: 0.76fr 1.24fr;
 }
 
 .field-row:has(> .is-hidden) {
@@ -2419,7 +2430,17 @@ body.theme-contrast .cal-shell {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--bg);
-  overflow: hidden;
+  overflow: visible;
+}
+
+.settings-grouped-list > .settings-row:first-child {
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
+}
+
+.settings-grouped-list > .settings-row:last-child {
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
 }
 
 .settings-row {
@@ -3273,34 +3294,25 @@ body.a11y-reduced-motion *::after {
 }
 
 .bc-select-popover {
-  position: absolute;
-  top: calc(100% + 6px);
+  position: fixed;
+  top: 0;
   left: 0;
-  width: 100%;
   min-width: 210px;
-  max-height: 252px;
+  max-height: 248px;
   overflow-y: auto;
-  z-index: 320;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  z-index: 950;
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: 12px;
   padding: 5px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
   display: flex;
   flex-direction: column;
   gap: 2px;
   animation: selectPopIn 0.14s var(--ease-out);
-}
-
-.bc-select-popover.is-up {
-  top: auto;
-  bottom: calc(100% + 6px);
-}
-
-.settings-row .bc-select-popover {
-  left: auto;
-  right: 0;
-  min-width: 256px;
 }
 
 @keyframes selectPopIn {
@@ -3385,18 +3397,13 @@ body.a11y-reduced-motion *::after {
 }
 
 @media (max-width: 720px) {
-  .field-row.field-row-course {
+  .field-row.field-row-course,
+  .field-row.field-row-monitor-code {
     grid-template-columns: 1fr;
   }
 
   .settings-row .bc-select-wrap {
     width: 100%;
     min-width: 0;
-  }
-
-  .settings-row .bc-select-popover {
-    left: 0;
-    right: 0;
-    min-width: 100%;
   }
 }

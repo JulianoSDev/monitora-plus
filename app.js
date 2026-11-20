@@ -523,6 +523,7 @@ function applyThemeAndA11y() {
 }
 
 function setSettingsTab(tabKey, shouldFocus = false) {
+  closeAllCustomSelects();
   const key = SETTINGS_TAB_META[tabKey] ? tabKey : "geral";
   ui.activeSettingsTab = key;
   const meta = SETTINGS_TAB_META[key];
@@ -589,6 +590,7 @@ function openSettingsModal(initialTab = "geral", mobileDetail = false) {
 }
 
 function closeSettingsModal() {
+  closeAllCustomSelects();
   document.querySelector(".settings-window")?.classList.remove("is-mobile-detail");
   document.getElementById("settings-modal")?.classList.add("is-hidden");
 }
@@ -1771,7 +1773,9 @@ function bindEvents() {
 
   document.addEventListener("click", (e) => {
     if (!e.target.closest("#profile-menu-wrap")) closeProfileMenu();
-    if (!e.target.closest(".bc-select-wrap")) closeAllCustomSelects();
+    if (!e.target.closest(".bc-select-wrap") && !e.target.closest(".bc-select-popover")) {
+      closeAllCustomSelects();
+    }
   });
 
   document.querySelectorAll(".nav-link").forEach((btn) => {
@@ -2332,11 +2336,48 @@ function closeAllCustomSelects(exceptWrap = null) {
     if (wrap === exceptWrap) return;
     wrap.classList.remove("is-open");
     const trigger = wrap.querySelector(".bc-select-trigger");
-    const popover = wrap.querySelector(".bc-select-popover");
+    const popover = wrap._bcPopover || wrap.querySelector(".bc-select-popover");
     trigger?.setAttribute("aria-expanded", "false");
-    popover?.classList.add("is-hidden");
-    popover?.classList.remove("is-up");
+    if (popover) {
+      popover.classList.add("is-hidden");
+      popover.style.top = "";
+      popover.style.bottom = "";
+      popover.style.left = "";
+      popover.style.width = "";
+      popover.style.maxHeight = "";
+      if (popover.parentNode !== wrap) {
+        wrap.appendChild(popover);
+      }
+    }
   });
+}
+
+function positionCustomPopover(trigger, popover) {
+  const rect = trigger.getBoundingClientRect();
+  const margin = 12;
+  const popWidth = Math.min(window.innerWidth - margin * 2, Math.max(rect.width, 280));
+  const left =
+    rect.left + popWidth <= window.innerWidth - margin
+      ? Math.max(margin, rect.left)
+      : Math.max(margin, rect.right - popWidth);
+
+  popover.style.width = `${Math.round(popWidth)}px`;
+  popover.style.left = `${Math.round(left)}px`;
+
+  const spaceBelow = window.innerHeight - rect.bottom - margin;
+  const spaceAbove = rect.top - margin;
+  const contentHeight = popover.scrollHeight || 180;
+  const maxDesired = 248;
+
+  if (spaceBelow >= Math.min(contentHeight, maxDesired) || spaceBelow >= spaceAbove) {
+    popover.style.top = `${Math.round(rect.bottom + 6)}px`;
+    popover.style.bottom = "auto";
+    popover.style.maxHeight = `${Math.max(120, Math.min(maxDesired, Math.floor(spaceBelow)))}px`;
+  } else {
+    popover.style.bottom = `${Math.round(window.innerHeight - rect.top + 6)}px`;
+    popover.style.top = "auto";
+    popover.style.maxHeight = `${Math.max(120, Math.min(maxDesired, Math.floor(spaceAbove)))}px`;
+  }
 }
 
 function syncCustomSelect(selectEl) {
@@ -2473,21 +2514,20 @@ function upgradeCustomSelect(selectEl) {
   wrap.appendChild(selectEl);
   wrap.appendChild(trigger);
   wrap.appendChild(popover);
+  wrap._bcPopover = popover;
 
-  const openPopover = () => {
+  const openPopover = (viaKeyboard = false) => {
     closeAllCustomSelects(wrap);
     wrap.classList.add("is-open");
     trigger.setAttribute("aria-expanded", "true");
-    popover.classList.remove("is-hidden", "is-up");
+    document.body.appendChild(popover);
+    popover.classList.remove("is-hidden");
+    positionCustomPopover(trigger, popover);
 
-    const rect = trigger.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    if (spaceBelow < 220 && rect.top > 220) {
-      popover.classList.add("is-up");
+    if (viaKeyboard) {
+      const activeOpt = popover.querySelector('[aria-selected="true"]') || optionBtns[0];
+      activeOpt?.focus();
     }
-
-    const activeOpt = popover.querySelector('[aria-selected="true"]') || optionBtns[0];
-    activeOpt?.focus();
   };
 
   trigger.addEventListener("click", (e) => {
@@ -2495,14 +2535,14 @@ function upgradeCustomSelect(selectEl) {
     if (wrap.classList.contains("is-open")) {
       closeAllCustomSelects();
     } else {
-      openPopover();
+      openPopover(false);
     }
   });
 
   trigger.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      openPopover();
+      openPopover(true);
     }
   });
 
@@ -2539,6 +2579,27 @@ function upgradeCustomSelect(selectEl) {
 
 function initCustomSelects() {
   document.querySelectorAll('select[data-custom-select="true"]').forEach(upgradeCustomSelect);
+
+  window.addEventListener(
+    "scroll",
+    (e) => {
+      if (e.target?.closest?.(".bc-select-popover")) return;
+      const openWrap = document.querySelector(".bc-select-wrap.is-open");
+      if (!openWrap) return;
+      const trigger = openWrap.querySelector(".bc-select-trigger");
+      const popover = openWrap._bcPopover;
+      if (trigger && popover) positionCustomPopover(trigger, popover);
+    },
+    true
+  );
+
+  window.addEventListener("resize", () => {
+    const openWrap = document.querySelector(".bc-select-wrap.is-open");
+    if (!openWrap) return;
+    const trigger = openWrap.querySelector(".bc-select-trigger");
+    const popover = openWrap._bcPopover;
+    if (trigger && popover) positionCustomPopover(trigger, popover);
+  });
 }
 
 // Inicialização
