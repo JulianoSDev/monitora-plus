@@ -1175,9 +1175,28 @@
     </defs>
   </svg>
 
-  <div id="toast" class="toast is-hidden" role="status" aria-live="polite">
-    <span id="toast-msg"></span>
-    <button type="button" class="toast-undo-btn is-hidden" id="toast-undo-btn">Desfazer</button>
+  <div id="toast" class="toast is-hidden" role="status" aria-live="polite" data-category="info">
+    <span class="toast-icon" id="toast-icon" aria-hidden="true"></span>
+    <div class="toast-body">
+      <span class="toast-msg" id="toast-msg"></span>
+      <span class="toast-sub is-hidden" id="toast-sub"></span>
+    </div>
+    <div class="toast-actions">
+      <button type="button" class="toast-undo-btn is-hidden" id="toast-undo-btn">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 7v6h6" />
+          <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+        </svg>
+        <span>Desfazer</span>
+      </button>
+      <button type="button" class="toast-close-btn" id="toast-close-btn" aria-label="Fechar aviso" title="Fechar">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+    <div class="toast-progress" id="toast-progress" aria-hidden="true"></div>
   </div>
 
   <footer class="site-footer" id="app-footer">

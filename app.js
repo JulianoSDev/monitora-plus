@@ -1675,23 +1675,116 @@ async function copyProof(bookingId) {
   }
 }
 
-let toastTimer = null;
-let currentToastUndo = null;
-function showToast(msg, onUndo = null) {
-  const el = document.getElementById("toast");
-  const msgEl = document.getElementById("toast-msg");
-  const undoBtn = document.getElementById("toast-undo-btn");
+const TOAST_ICONS = {
+  success: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>`,
+  warning: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`,
+  error: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`,
+  info: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`,
+};
 
+function detectToastCategory(msg, onUndo) {
+  const lower = String(msg || "").toLowerCase();
+  if (lower.includes("não suporta") || lower.includes("erro") || lower.includes("inválido")) return "error";
+  if (lower.includes("cancelado") || lower.includes("removidos") || lower.includes("desfeita") || onUndo) {
+    if (lower.includes("concluído")) return "success";
+    return "warning";
+  }
+  if (
+    lower.includes("confirmado") ||
+    lower.includes("criada") ||
+    lower.includes("ativada") ||
+    lower.includes("publicado") ||
+    lower.includes("concluído") ||
+    lower.includes("desfeito") ||
+    lower.includes("copiado") ||
+    lower.includes("exportados") ||
+    lower.includes("baixado") ||
+    lower.includes("conectado") ||
+    lower.includes("restauradas")
+  ) {
+    return "success";
+  }
+  return "info";
+}
+
+let toastTimer = null;
+let toastRemainingMs = 0;
+let toastStartedAt = 0;
+let currentToastUndo = null;
+
+function hideToast() {
+  const el = document.getElementById("toast");
+  clearTimeout(toastTimer);
+  toastTimer = null;
+  currentToastUndo = null;
+  toastRemainingMs = 0;
+  if (el) {
+    el.dataset.paused = "false";
+    el.classList.add("is-hidden");
+  }
+}
+
+function pauseToastTimer() {
+  const el = document.getElementById("toast");
+  if (!el || el.classList.contains("is-hidden") || !toastTimer) return;
+  clearTimeout(toastTimer);
+  toastTimer = null;
+  toastRemainingMs = Math.max(400, toastRemainingMs - (Date.now() - toastStartedAt));
+  el.dataset.paused = "true";
+}
+
+function resumeToastTimer() {
+  const el = document.getElementById("toast");
+  if (!el || el.classList.contains("is-hidden") || toastTimer || toastRemainingMs <= 0) return;
+  el.dataset.paused = "false";
+  toastStartedAt = Date.now();
+  toastTimer = setTimeout(hideToast, toastRemainingMs);
+}
+
+function showToast(msg, onUndo = null, explicitCategory = null) {
+  const el = document.getElementById("toast");
+  const iconEl = document.getElementById("toast-icon");
+  const msgEl = document.getElementById("toast-msg");
+  const subEl = document.getElementById("toast-sub");
+  const undoBtn = document.getElementById("toast-undo-btn");
+  const progressEl = document.getElementById("toast-progress");
+  if (!el || !msgEl) return;
+
+  const hasUndo = typeof onUndo === "function";
+  const category = explicitCategory || detectToastCategory(msg, hasUndo);
+  const duration = hasUndo ? 6000 : 3400;
+
+  el.dataset.category = category;
+  el.dataset.paused = "false";
+  el.style.setProperty("--toast-duration", `${duration}ms`);
+
+  if (iconEl) iconEl.innerHTML = TOAST_ICONS[category] || TOAST_ICONS.info;
   msgEl.textContent = msg;
-  currentToastUndo = typeof onUndo === "function" ? onUndo : null;
-  undoBtn.classList.toggle("is-hidden", !currentToastUndo);
+
+  if (subEl) {
+    if (hasUndo) {
+      subEl.textContent = "Toque em Desfazer se quiser restaurar.";
+      subEl.classList.remove("is-hidden");
+    } else {
+      subEl.textContent = "";
+      subEl.classList.add("is-hidden");
+    }
+  }
+
+  currentToastUndo = hasUndo ? onUndo : null;
+  undoBtn?.classList.toggle("is-hidden", !currentToastUndo);
+
+  if (progressEl) {
+    progressEl.style.animation = "none";
+    void progressEl.offsetWidth;
+    progressEl.style.animation = "";
+  }
 
   el.classList.remove("is-hidden");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    el.classList.add("is-hidden");
-    currentToastUndo = null;
-  }, onUndo ? 5500 : 3200);
+  toastRemainingMs = duration;
+  toastStartedAt = Date.now();
+  toastTimer = setTimeout(hideToast, duration);
 }
 
 // ==================== EVENTOS ====================
@@ -2221,11 +2314,17 @@ function bindEvents() {
     if (typeof fn === "function") fn();
   });
 
-  document.getElementById("toast-undo-btn").addEventListener("click", () => {
+  const toastEl = document.getElementById("toast");
+  toastEl?.addEventListener("mouseenter", pauseToastTimer);
+  toastEl?.addEventListener("mouseleave", resumeToastTimer);
+  toastEl?.addEventListener("focusin", pauseToastTimer);
+  toastEl?.addEventListener("focusout", resumeToastTimer);
+
+  document.getElementById("toast-close-btn")?.addEventListener("click", hideToast);
+
+  document.getElementById("toast-undo-btn")?.addEventListener("click", () => {
     const fn = currentToastUndo;
-    currentToastUndo = null;
-    clearTimeout(toastTimer);
-    document.getElementById("toast").classList.add("is-hidden");
+    hideToast();
     if (typeof fn === "function") fn();
   });
 
