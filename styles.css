@@ -1998,7 +1998,9 @@ body.theme-contrast .cal-shell {
 
 .mobile-landing-bar,
 .mobile-gear-btn,
-.settings-close-mobile {
+.settings-close-mobile,
+.settings-chevron,
+.settings-mobile-back {
   display: none;
 }
 
@@ -2728,25 +2730,54 @@ body.a11y-reduced-motion *::after {
     padding: 0;
   }
 
+  #settings-modal {
+    padding: 0;
+  }
+
   .settings-window {
-    height: 88dvh;
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: none;
+    background: var(--bg);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .settings-window:not(.is-mobile-detail) .settings-main {
+    display: none;
+  }
+
+  .settings-window.is-mobile-detail .settings-sidebar {
+    display: none;
   }
 
   .settings-sidebar {
     border-right: none;
-    border-bottom: 1px solid var(--border);
-    padding: 12px 12px 8px;
-    gap: 8px;
+    border-bottom: none;
+    background: var(--bg);
+    padding: max(14px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    gap: 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .settings-sidebar-head {
+    padding: 4px 2px 2px;
+  }
+
+  .settings-kicker {
+    font-size: 1.32rem;
   }
 
   .settings-close-mobile {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border);
     background: var(--surface);
@@ -2754,41 +2785,114 @@ body.a11y-reduced-motion *::after {
     cursor: pointer;
   }
 
-  .settings-close-desktop,
-  .settings-group-label,
   .settings-user-foot {
-    display: none;
+    order: -1;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
   }
 
   .settings-nav-wrap {
-    flex-direction: row;
-    overflow-x: auto;
-    gap: 6px;
-    scrollbar-width: none;
+    flex: initial;
+    overflow: visible;
+    flex-direction: column;
+    gap: 16px;
   }
 
-  .settings-nav-wrap::-webkit-scrollbar {
-    display: none;
+  .settings-group-label {
+    display: block;
+    padding: 0 6px 4px;
   }
 
   .settings-nav-group {
-    flex-direction: row;
-    gap: 6px;
+    flex-direction: column;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
   }
 
   .settings-nav-item {
-    width: auto;
-    white-space: nowrap;
+    width: 100%;
+    min-height: 50px;
+    padding: 0 14px;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    font-size: 0.94rem;
+    font-weight: 500;
+  }
+
+  .settings-nav-item:last-child {
+    border-bottom: none;
+  }
+
+  .settings-nav-item.is-active {
+    background: transparent;
+    box-shadow: none;
+    font-weight: 500;
+  }
+
+  .settings-chevron {
+    display: block;
+    margin-left: auto;
+    color: var(--text-muted);
     flex-shrink: 0;
-    padding: 0 12px;
+  }
+
+  .settings-main {
+    min-width: 0;
+    width: 100%;
+    background: var(--bg);
   }
 
   .settings-main-head {
-    padding: 14px 16px 12px;
+    padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+    background: var(--surface);
+    align-items: center;
+    gap: 10px;
+  }
+
+  .settings-main-title-wrap {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .settings-main-head h2 {
+    font-size: 1.08rem;
+  }
+
+  .settings-main-head .step-sub {
+    font-size: 0.78rem;
+    margin-top: 2px;
+  }
+
+  .settings-mobile-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: none;
+    background: transparent;
+    padding: 4px 0 6px;
+    margin-left: -4px;
+    color: var(--accent-text);
+    font-size: 0.86rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .settings-close-desktop {
+    display: grid;
+    flex-shrink: 0;
   }
 
   .settings-body {
-    padding: 16px;
+    padding: 16px 16px max(32px, env(safe-area-inset-bottom));
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
   }
 
   .settings-card-grid-2,
@@ -2797,7 +2901,23 @@ body.a11y-reduced-motion *::after {
   }
 
   .settings-row {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .settings-row > div {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .settings-row.settings-row-wrap {
     flex-wrap: wrap;
+  }
+
+  .settings-row.settings-row-stack {
+    flex-wrap: nowrap;
   }
 
   .student-chip-btn {

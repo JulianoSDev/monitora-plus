@@ -572,16 +572,21 @@ function syncSettingsAccountBox() {
   }
 }
 
-function openSettingsModal(initialTab = "geral") {
+function openSettingsModal(initialTab = "geral", mobileDetail = false) {
   syncSettingsAccountBox();
   setSettingsTab(initialTab || ui.activeSettingsTab || "geral");
   applyThemeAndA11y();
+  const win = document.querySelector(".settings-window");
+  if (win) win.classList.toggle("is-mobile-detail", Boolean(mobileDetail));
   document.getElementById("settings-modal")?.classList.remove("is-hidden");
+  const body = document.querySelector(".settings-body");
+  if (body) body.scrollTop = 0;
   const activeTabBtn = document.querySelector(`[data-settings-tab="${ui.activeSettingsTab}"]`);
   activeTabBtn?.focus();
 }
 
 function closeSettingsModal() {
+  document.querySelector(".settings-window")?.classList.remove("is-mobile-detail");
   document.getElementById("settings-modal")?.classList.add("is-hidden");
 }
 
@@ -1368,9 +1373,6 @@ function renderBookings() {
   const user = getCurrentUser();
   const subEl = document.getElementById("bookings-owner-sub");
   const listEl = document.getElementById("bookings-list");
-  const privacyRow = document.getElementById("account-privacy-row");
-
-  privacyRow.classList.toggle("is-hidden", !user);
 
   if (!user) {
     subEl.textContent = "Entre na sua conta para acompanhar seus atendimentos.";
@@ -1726,11 +1728,11 @@ function bindEvents() {
 
   document.getElementById("btn-profile-account")?.addEventListener("click", () => {
     closeProfileMenu();
-    openSettingsModal("conta");
+    openSettingsModal("conta", true);
   });
   document.getElementById("btn-profile-settings")?.addEventListener("click", () => {
     closeProfileMenu();
-    openSettingsModal("geral");
+    openSettingsModal("geral", false);
   });
   document.getElementById("btn-profile-logout")?.addEventListener("click", performLogout);
 
@@ -1777,10 +1779,12 @@ function bindEvents() {
   });
 
   // Central de Configurações & Tecnologia Assistiva
-  document.getElementById("btn-open-settings-topbar")?.addEventListener("click", () => openSettingsModal());
-  document.getElementById("btn-open-settings-landing")?.addEventListener("click", () => openSettingsModal("aparencia"));
-  document.getElementById("btn-mobile-settings-landing")?.addEventListener("click", () => openSettingsModal("aparencia"));
-  document.getElementById("btn-open-settings-privacy")?.addEventListener("click", () => openSettingsModal("conta"));
+  document.getElementById("btn-open-settings-topbar")?.addEventListener("click", () => openSettingsModal("geral", false));
+  document.getElementById("btn-open-settings-landing")?.addEventListener("click", () => openSettingsModal("aparencia", false));
+  document.getElementById("btn-mobile-settings-landing")?.addEventListener("click", () => openSettingsModal("geral", false));
+  document.getElementById("btn-settings-mobile-back")?.addEventListener("click", () => {
+    document.querySelector(".settings-window")?.classList.remove("is-mobile-detail");
+  });
   document.getElementById("btn-close-settings")?.addEventListener("click", closeSettingsModal);
   document.getElementById("btn-close-settings-mobile")?.addEventListener("click", closeSettingsModal);
   document.getElementById("settings-modal")?.addEventListener("click", (e) => {
@@ -1792,6 +1796,9 @@ function bindEvents() {
     const tab = e.target.closest("[data-settings-tab]");
     if (!tab) return;
     setSettingsTab(tab.dataset.settingsTab);
+    document.querySelector(".settings-window")?.classList.add("is-mobile-detail");
+    const body = document.querySelector(".settings-body");
+    if (body) body.scrollTop = 0;
   });
   settingsTablist?.addEventListener("keydown", (e) => {
     const tabs = Array.from(settingsTablist.querySelectorAll("[data-settings-tab]"));
@@ -2168,10 +2175,7 @@ function bindEvents() {
     }
   });
 
-  // Exclusão LGPD (reaproveita helper compartilhado com a Central)
-  document.getElementById("btn-delete-account").addEventListener("click", confirmDeleteAccount);
-
-  // Modal & Desfazer
+  // Modal & Desfazer (exclusão LGPD fica somente na Central de Configurações)
   document.getElementById("btn-confirm-abort").addEventListener("click", closeConfirmDialog);
   document.getElementById("btn-confirm-proceed").addEventListener("click", () => {
     const fn = pendingConfirmCallback;

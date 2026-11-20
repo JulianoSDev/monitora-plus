@@ -664,18 +664,6 @@
         </div>
 
         <div id="bookings-list" class="hairline-list" aria-live="polite"></div>
-
-        <div id="account-privacy-row" class="account-privacy-row is-hidden">
-          <span>Seus dados ficam armazenados apenas localmente neste navegador (LGPD).</span>
-          <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
-            <button type="button" class="ghost-link" id="btn-open-settings-privacy">
-              Central de Configurações
-            </button>
-            <button type="button" class="ghost-danger-link" id="btn-delete-account">
-              Excluir minha conta e dados
-            </button>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -792,22 +780,27 @@
             <button type="button" class="settings-nav-item is-active" role="tab" aria-selected="true" aria-controls="settings-tab-geral" data-settings-tab="geral">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
               <span>Geral</span>
+              <svg class="settings-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
             <button type="button" class="settings-nav-item" role="tab" aria-selected="false" aria-controls="settings-tab-aparencia" data-settings-tab="aparencia">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
               <span>Aparência</span>
+              <svg class="settings-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
             <button type="button" class="settings-nav-item" role="tab" aria-selected="false" aria-controls="settings-tab-acessibilidade" data-settings-tab="acessibilidade">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="m6.5 9.5 5.5 1 5.5-1"/><path d="M12 10.5v4.5"/><path d="m9 21 3-6 3 6"/></svg>
               <span>Acessibilidade</span>
+              <svg class="settings-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
             <button type="button" class="settings-nav-item" role="tab" aria-selected="false" aria-controls="settings-tab-agenda" data-settings-tab="agenda">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               <span>Agenda</span>
+              <svg class="settings-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
             <button type="button" class="settings-nav-item" role="tab" aria-selected="false" aria-controls="settings-tab-atalhos" data-settings-tab="atalhos">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>
               <span>Atalhos</span>
+              <svg class="settings-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
           </div>
 
@@ -816,6 +809,7 @@
             <button type="button" class="settings-nav-item" role="tab" aria-selected="false" aria-controls="settings-tab-conta" data-settings-tab="conta">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               <span>Conta e LGPD</span>
+              <svg class="settings-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
           </div>
         </div>
@@ -831,7 +825,11 @@
 
       <div class="settings-main">
         <div class="settings-main-head">
-          <div>
+          <div class="settings-main-title-wrap">
+            <button type="button" class="settings-mobile-back" id="btn-settings-mobile-back" aria-label="Voltar para lista de configurações">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+              <span>Configurações</span>
+            </button>
             <h2 id="settings-panel-title">Geral</h2>
             <p class="step-sub" id="settings-panel-desc">Configure como o catálogo de monitorias e confirmações funcionam.</p>
           </div>
@@ -950,7 +948,7 @@
             <div class="settings-section-block">
               <span class="settings-block-title">Visão e daltonismo</span>
               <div class="settings-grouped-list">
-                <div class="settings-row">
+                <div class="settings-row settings-row-wrap">
                   <div>
                     <label for="pref-cvd-filter"><strong>Filtro para Daltonismo (CVD)</strong></label>
                     <p>Adapta a matriz de cores mantendo textos e ícones explícitos em todo status.</p>
@@ -1006,7 +1004,7 @@
                   <input type="checkbox" id="pref-large-targets" role="switch" class="bc-switch" />
                 </label>
 
-                <div class="settings-row">
+                <div class="settings-row settings-row-wrap">
                   <div>
                     <strong>Leitor de resumo em voz alta (PT-BR)</strong>
                     <p>Sintetiza em áudio o contexto e as ações da tela atual pelo navegador.</p>
