@@ -3035,18 +3035,20 @@ body.a11y-reduced-motion *::after {
     border-right: none;
     border-bottom: none;
     background: var(--bg);
-    padding: max(14px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
-    gap: 16px;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+    justify-content: flex-start;
+    gap: 18px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   .settings-sidebar-head {
-    padding: 4px 2px 2px;
+    order: 0;
+    padding: 2px 2px 0;
   }
 
   .settings-kicker {
-    font-size: 1.32rem;
+    font-size: 1.38rem;
   }
 
   .settings-close-mobile {
@@ -3063,7 +3065,7 @@ body.a11y-reduced-motion *::after {
   }
 
   .settings-user-foot {
-    order: -1;
+    order: 1;
     padding: 12px 14px;
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -3071,24 +3073,25 @@ body.a11y-reduced-motion *::after {
   }
 
   .settings-nav-wrap {
+    order: 2;
     flex: initial;
     overflow: visible;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
   }
 
   .settings-group-label {
     display: block;
-    padding: 0 6px 4px;
+    padding: 0 6px 8px;
   }
 
   .settings-nav-group {
     flex-direction: column;
     gap: 0;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
   }
 
   .settings-nav-item {
@@ -3096,18 +3099,28 @@ body.a11y-reduced-motion *::after {
     min-height: 50px;
     padding: 0 14px;
     border-radius: 0;
+    border: none;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
-    background: transparent;
+    background: var(--surface);
     font-size: 0.94rem;
     font-weight: 500;
   }
 
-  .settings-nav-item:last-child {
-    border-bottom: none;
+  .settings-nav-group > .settings-nav-item:first-of-type {
+    border-top: 1px solid var(--border);
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+  }
+
+  .settings-nav-group > .settings-nav-item:last-of-type {
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
   }
 
   .settings-nav-item.is-active {
-    background: transparent;
+    background: var(--surface);
     box-shadow: none;
     font-weight: 500;
   }
@@ -3191,6 +3204,13 @@ body.a11y-reduced-motion *::after {
 
   .settings-row.settings-row-wrap {
     flex-wrap: wrap;
+  }
+
+  .settings-row.settings-row-wrap > div,
+  .settings-row.settings-row-wrap > .bc-select-wrap,
+  .settings-row.settings-row-wrap > .speak-actions {
+    flex: 1 1 100%;
+    width: 100%;
   }
 
   .settings-row.settings-row-stack {
