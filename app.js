@@ -209,6 +209,7 @@ const DEFAULT_PREFS = {
   confirmBeforeBook: true,
   blockConflicts: true,
   autoIcsHint: false,
+  icsReminderMinutes: 30,
   cvdFilter: "none",
   dyslexiaSpacing: false,
   readingMask: false,
@@ -612,6 +613,14 @@ function applyThemeAndA11y() {
     card.setAttribute("aria-checked", String(selected));
   });
 
+  const reminderMins = Number(prefs.icsReminderMinutes ?? 30);
+  document.querySelectorAll("[data-ics-reminder]").forEach((btn) => {
+    const active = Number(btn.dataset.icsReminder) === reminderMins;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-checked", String(active));
+  });
+  syncSettingsAgendaBox();
+
   const switchBindings = [
     ["pref-confirm-book", "confirmBeforeBook"],
     ["pref-pause-distractions", "pauseDistractions"],
@@ -697,11 +706,41 @@ function syncSettingsAccountBox() {
   }
 }
 
+function syncSettingsAgendaBox() {
+  const metaEl = document.getElementById("settings-agenda-export-meta");
+  const btnEl = document.getElementById("btn-export-confirmed-ics");
+  if (!metaEl || !btnEl) return;
+
+  const user = getCurrentUser();
+  const confirmed = user
+    ? state.bookings.filter((b) => b.studentId === user.id && b.status === "Confirmado")
+    : [];
+  const count = confirmed.length;
+
+  if (!user) {
+    metaEl.textContent = "Entre na sua conta para exportar suas monitorias confirmadas.";
+    btnEl.disabled = true;
+    return;
+  }
+
+  if (count === 0) {
+    metaEl.textContent = "Nenhuma monitoria confirmada no momento.";
+    btnEl.disabled = true;
+  } else if (count === 1) {
+    metaEl.textContent = "1 monitoria confirmada pronta para importar no calendário.";
+    btnEl.disabled = false;
+  } else {
+    metaEl.textContent = `${count} monitorias confirmadas prontas para importar no calendário.`;
+    btnEl.disabled = false;
+  }
+}
+
 let lastSettingsTriggerEl = null;
 
 function openSettingsModal(initialTab = "geral", mobileDetail = false) {
   lastSettingsTriggerEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   syncSettingsAccountBox();
+  syncSettingsAgendaBox();
   setSettingsTab(initialTab || ui.activeSettingsTab || "geral");
   applyThemeAndA11y();
   const win = document.querySelector(".settings-window");
@@ -1010,18 +1049,69 @@ function confirmDeleteAccount() {
   });
 }
 
-function closeProfileMenu() {
-  document.getElementById("profile-dropdown")?.classList.add("is-hidden");
-  document.getElementById("btn-account-action")?.setAttribute("aria-expanded", "false");
+function isMobileSheetViewport() {
+  return window.innerWidth <= 768;
+}
+
+function restoreProfileDropdownHome() {
+  const dd = document.getElementById("profile-dropdown");
+  const wrap = document.getElementById("profile-menu-wrap");
+  if (dd && wrap && dd.parentNode !== wrap) {
+    wrap.appendChild(dd);
+  }
+  dd?.classList.remove("is-mobile-sheet");
+}
+
+function closeProfileMenu(restoreFocus = false) {
+  const dd = document.getElementById("profile-dropdown");
+  const backdrop = document.getElementById("profile-sheet-backdrop");
+  const btn = document.getElementById("btn-account-action");
+  const wasOpen = Boolean(dd && !dd.classList.contains("is-hidden"));
+
+  dd?.classList.add("is-hidden");
+  backdrop?.classList.add("is-hidden");
+  restoreProfileDropdownHome();
+  btn?.setAttribute("aria-expanded", "false");
+
+  if (wasOpen && restoreFocus && btn && document.contains(btn)) {
+    btn.focus();
+  }
+}
+
+function openProfileMenu() {
+  const dd = document.getElementById("profile-dropdown");
+  const backdrop = document.getElementById("profile-sheet-backdrop");
+  const btn = document.getElementById("btn-account-action");
+  if (!dd || !btn) return;
+
+  if (isMobileSheetViewport()) {
+    dd.classList.add("is-mobile-sheet");
+    if (dd.parentNode !== document.body) {
+      document.body.appendChild(dd);
+    }
+    backdrop?.classList.remove("is-hidden");
+  } else {
+    restoreProfileDropdownHome();
+    backdrop?.classList.add("is-hidden");
+  }
+
+  dd.classList.remove("is-hidden");
+  btn.setAttribute("aria-expanded", "true");
+
+  if (isMobileSheetViewport()) {
+    const firstFocus = dd.querySelector("button:not(.is-hidden):not([disabled])");
+    firstFocus?.focus();
+  }
 }
 
 function toggleProfileMenu() {
   const dd = document.getElementById("profile-dropdown");
-  const btn = document.getElementById("btn-account-action");
-  if (!dd || !btn) return;
-  const willOpen = dd.classList.contains("is-hidden");
-  dd.classList.toggle("is-hidden", !willOpen);
-  btn.setAttribute("aria-expanded", String(willOpen));
+  if (!dd) return;
+  if (dd.classList.contains("is-hidden")) {
+    openProfileMenu();
+  } else {
+    closeProfileMenu(false);
+  }
 }
 
 function renderTopbar() {
@@ -1065,6 +1155,7 @@ function renderTopbar() {
   document.querySelector(".profile-chevron")?.classList.toggle("is-hidden", !user);
   monitorTab.classList.toggle("is-hidden", !user || user.role !== "monitor");
   document.getElementById("badge-agendamentos").textContent = String(activeCount);
+  syncSettingsAgendaBox();
   syncMobileChrome();
 }
 
@@ -2214,21 +2305,13 @@ function closeConfirmDialog() {
   lastConfirmTriggerEl = null;
 }
 
-function downloadIcs(bookingId) {
-  const bk = state.bookings.find((b) => b.id === bookingId);
-  const slot = bk ? state.slots.find((s) => s.id === bk.slotId) : null;
-  const off = slot ? getOffering(slot.offeringId) : null;
-  if (!bk || !slot || !off) return;
-
+function buildIcsEventLines(bk, slot, off, reminderMinutes) {
   const dateCompact = slot.dateIso.replaceAll("-", "");
   const [startRaw, endRaw] = slot.time.split(" - ");
   const start = startRaw.replace(":", "") + "00";
   const end = endRaw.replace(":", "") + "00";
 
-  const ics = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Monitora+//PT-BR",
+  const lines = [
     "BEGIN:VEVENT",
     `UID:${bk.id}@monitoraplus`,
     `DTSTART:${dateCompact}T${start}`,
@@ -2236,20 +2319,83 @@ function downloadIcs(bookingId) {
     `SUMMARY:Monitoria - ${off.subject}`,
     `DESCRIPTION:Protocolo ${bk.protocol} | ${off.monitor} | Dúvida: ${bk.topic}`,
     `LOCATION:${off.location}`,
-    "END:VEVENT",
+  ];
+
+  if (reminderMinutes > 0) {
+    lines.push(
+      "BEGIN:VALARM",
+      `TRIGGER:-PT${reminderMinutes}M`,
+      "ACTION:DISPLAY",
+      `DESCRIPTION:Lembrete de monitoria: ${off.subject} (${off.location})`,
+      "END:VALARM"
+    );
+  }
+
+  lines.push("END:VEVENT");
+  return lines;
+}
+
+function buildIcsCalendar(eventBlocks) {
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Monitora+//PT-BR",
+    "CALSCALE:GREGORIAN",
+    ...eventBlocks.flat(),
     "END:VCALENDAR",
   ].join("\r\n");
+}
 
-  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+function triggerIcsFileDownload(icsContent, filename) {
+  const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `monitoria-${bk.protocol.replace("#", "")}.ics`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+function downloadIcs(bookingId) {
+  const bk = state.bookings.find((b) => b.id === bookingId);
+  const slot = bk ? state.slots.find((s) => s.id === bk.slotId) : null;
+  const off = slot ? getOffering(slot.offeringId) : null;
+  if (!bk || !slot || !off) return;
+
+  const reminderMinutes = Number(getPrefs().icsReminderMinutes ?? 30);
+  const ics = buildIcsCalendar([buildIcsEventLines(bk, slot, off, reminderMinutes)]);
+  triggerIcsFileDownload(ics, `monitoria-${bk.protocol.replace("#", "")}.ics`);
   showToast("Lembrete .ics baixado.");
+}
+
+function downloadAllConfirmedIcs() {
+  const user = getCurrentUser();
+  if (!user) return;
+
+  const confirmed = state.bookings.filter((b) => b.studentId === user.id && b.status === "Confirmado");
+  if (confirmed.length === 0) {
+    showToast("Nenhuma monitoria confirmada para exportar.");
+    return;
+  }
+
+  const reminderMinutes = Number(getPrefs().icsReminderMinutes ?? 30);
+  const eventBlocks = [];
+  confirmed.forEach((bk) => {
+    const slot = state.slots.find((s) => s.id === bk.slotId);
+    const off = slot ? getOffering(slot.offeringId) : null;
+    if (slot && off) {
+      eventBlocks.push(buildIcsEventLines(bk, slot, off, reminderMinutes));
+    }
+  });
+
+  if (eventBlocks.length === 0) return;
+
+  const ics = buildIcsCalendar(eventBlocks);
+  triggerIcsFileDownload(ics, `monitoraplus-agenda-${user.ra}.ics`);
+  const label = eventBlocks.length === 1 ? "1 monitoria exportada" : `${eventBlocks.length} monitorias exportadas`;
+  showToast(`Agenda .ics baixada (${label}).`, null, "success");
 }
 
 async function copyProof(bookingId) {
@@ -2467,8 +2613,12 @@ function bindEvents() {
   });
   document.getElementById("btn-profile-logout")?.addEventListener("click", performLogout);
 
+  document.getElementById("profile-sheet-backdrop")?.addEventListener("click", () => closeProfileMenu(true));
+
   document.addEventListener("click", (e) => {
-    if (!e.target.closest("#profile-menu-wrap")) closeProfileMenu();
+    if (!e.target.closest("#profile-menu-wrap") && !e.target.closest("#profile-dropdown")) {
+      closeProfileMenu(false);
+    }
     if (!e.target.closest(".bc-select-wrap") && !e.target.closest(".bc-select-popover")) {
       closeAllCustomSelects();
     }
@@ -2603,6 +2753,19 @@ function bindEvents() {
     applyThemeAndA11y();
     announceA11y(`Filtro de daltonismo alterado para ${e.target.selectedOptions[0]?.textContent || e.target.value}.`);
   });
+
+  document.getElementById("ics-reminder-group")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-ics-reminder]");
+    if (!btn) return;
+    const mins = Number(btn.dataset.icsReminder);
+    getPrefs().icsReminderMinutes = mins;
+    saveState();
+    applyThemeAndA11y();
+    const label = mins === 0 ? "sem alerta" : mins === 60 ? "1 hora antes" : `${mins} minutos antes`;
+    announceA11y(`Antecedência do lembrete .ics definida para ${label}.`);
+  });
+
+  document.getElementById("btn-export-confirmed-ics")?.addEventListener("click", downloadAllConfirmedIcs);
 
   document.getElementById("btn-speak-screen")?.addEventListener("click", speakCurrentScreen);
   document.getElementById("btn-stop-speak")?.addEventListener("click", stopSpeaking);
@@ -3039,6 +3202,11 @@ function bindEvents() {
         trapFocusInModal(e, settingsModal);
         return;
       }
+      const profileSheet = document.getElementById("profile-dropdown");
+      if (profileSheet && !profileSheet.classList.contains("is-hidden") && profileSheet.classList.contains("is-mobile-sheet")) {
+        trapFocusInModal(e, profileSheet);
+        return;
+      }
     }
     if (e.key === "Escape") {
       if (document.querySelector(".bc-select-wrap.is-open")) {
@@ -3055,8 +3223,16 @@ function bindEvents() {
         closeFaqModal();
         return;
       }
-      closeSettingsModal();
-      closeProfileMenu();
+      const settingsModal = document.getElementById("settings-modal");
+      if (settingsModal && !settingsModal.classList.contains("is-hidden")) {
+        closeSettingsModal();
+        return;
+      }
+      const profileDropdown = document.getElementById("profile-dropdown");
+      if (profileDropdown && !profileDropdown.classList.contains("is-hidden")) {
+        closeProfileMenu(true);
+        return;
+      }
       stopSpeaking();
       return;
     }
@@ -3369,6 +3545,13 @@ function initCustomSelects() {
 
   window.addEventListener("resize", () => {
     if (getPrefs().vlibras) positionVlibrasShadowAccess();
+    const dd = document.getElementById("profile-dropdown");
+    if (dd && !dd.classList.contains("is-hidden")) {
+      const wantMobile = isMobileSheetViewport();
+      if (wantMobile !== dd.classList.contains("is-mobile-sheet")) {
+        openProfileMenu();
+      }
+    }
     const openWrap = document.querySelector(".bc-select-wrap.is-open");
     if (!openWrap) return;
     const trigger = openWrap.querySelector(".bc-select-trigger");
