@@ -269,6 +269,7 @@ const ui = {
   step3Completed: false,
   reschedulingBookingId: null,
   lastCreatedBookingId: null,
+  highlightedBookingId: null,
   bookingFilter: "todos",
   monitorFilter: "active",
 };
@@ -563,6 +564,109 @@ function announceA11y(message) {
   }, 20);
 }
 
+function prefersReducedMotion() {
+  const prefs = getPrefs();
+  return Boolean(
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      prefs.reducedMotion ||
+      prefs.pauseDistractions
+  );
+}
+
+function syncSlidingIndicator(container, activeSelector, kind = "pill", forceInstant = false) {
+  if (!container) return;
+  const clsHost = kind === "pill" ? "has-sliding-pill" : "has-sliding-underline";
+  const clsReady = kind === "pill" ? "is-pill-ready" : "is-underline-ready";
+  const clsInd = kind === "pill" ? "sliding-pill" : "sliding-underline";
+
+  container.classList.add(clsHost);
+  let ind = container.querySelector(`:scope > .${clsInd}`);
+  const isFirst = !ind;
+  if (!ind) {
+    ind = document.createElement("span");
+    ind.className = clsInd;
+    ind.setAttribute("aria-hidden", "true");
+    container.prepend(ind);
+  }
+
+  const activeEl = container.querySelector(activeSelector);
+  if (!activeEl || activeEl.offsetParent === null || activeEl.offsetWidth === 0) {
+    container.classList.remove(clsReady);
+    return;
+  }
+
+  const instant = isFirst || forceInstant || prefersReducedMotion();
+  if (instant) ind.classList.add("is-instant");
+  else ind.classList.remove("is-instant");
+
+  const x = activeEl.offsetLeft;
+  const y = activeEl.offsetTop;
+  const w = activeEl.offsetWidth;
+  const h = activeEl.offsetHeight;
+
+  if (kind === "pill") {
+    ind.style.width = `${w}px`;
+    ind.style.height = `${h}px`;
+    ind.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  } else {
+    ind.style.width = `${w}px`;
+    ind.style.transform = `translate3d(${x}px, 0, 0)`;
+  }
+
+  container.classList.add(clsReady);
+  if (instant) {
+    void ind.offsetWidth;
+    ind.classList.remove("is-instant");
+  }
+}
+
+function syncAllSlidingIndicators(forceInstant = false) {
+  requestAnimationFrame(() => {
+    syncSlidingIndicator(document.getElementById("main-nav"), ".nav-link.is-active", "underline", forceInstant);
+    syncSlidingIndicator(document.getElementById("subject-tabs"), ".u-tab.is-active", "underline", forceInstant);
+    syncSlidingIndicator(
+      document.querySelector("#view-agendamentos .underline-tabs"),
+      ".u-tab.is-active",
+      "underline",
+      forceInstant
+    );
+    syncSlidingIndicator(document.getElementById("mode-filter-group"), ".layout-btn.is-active", "pill", forceInstant);
+    syncSlidingIndicator(
+      document.querySelector(".step1-tools-row .layout-toggle"),
+      ".layout-btn.is-active",
+      "pill",
+      forceInstant
+    );
+    syncSlidingIndicator(
+      document.querySelector("#view-monitor .layout-toggle"),
+      ".layout-btn.is-active",
+      "pill",
+      forceInstant
+    );
+    syncSlidingIndicator(
+      document.querySelector(".profile-dd-theme-row"),
+      ".profile-dd-theme-btn.is-active",
+      "pill",
+      forceInstant
+    );
+    syncSlidingIndicator(
+      document.getElementById("ics-reminder-group"),
+      ".ics-reminder-opt.is-active",
+      "pill",
+      forceInstant
+    );
+  });
+}
+
+function animateRowExitAndRun(rowEl, callback) {
+  if (!rowEl || prefersReducedMotion()) {
+    callback();
+    return;
+  }
+  rowEl.classList.add("is-row-exiting");
+  setTimeout(callback, 170);
+}
+
 function applyThemeAndA11y() {
   const prefs = getPrefs();
   const theme = state.theme || "light";
@@ -571,6 +675,7 @@ function applyThemeAndA11y() {
 
   document.body.classList.remove("theme-dark", "theme-light", "theme-contrast");
   document.body.classList.add(`theme-${theme}`);
+  document.documentElement.style.colorScheme = theme === "light" ? "light" : "dark";
   document.documentElement.style.setProperty("--font-scale", String(scale));
 
   document.body.classList.toggle("a11y-dyslexia", Boolean(prefs.dyslexiaSpacing));
@@ -650,6 +755,7 @@ function applyThemeAndA11y() {
     if (prefs.reducedMotion || prefs.pauseDistractions) stopPhraseCarousel();
     else startPhraseCarousel();
   }
+  syncAllSlidingIndicators();
 }
 
 function setSettingsTab(tabKey, shouldFocus = false) {
@@ -673,6 +779,7 @@ function setSettingsTab(tabKey, shouldFocus = false) {
     const panel = document.getElementById(`settings-tab-${k}`);
     if (panel) panel.classList.toggle("is-hidden", k !== key);
   });
+  syncAllSlidingIndicators(true);
 }
 
 function syncSettingsAccountBox() {
@@ -787,12 +894,14 @@ function positionVlibrasShadowAccess() {
   if (window.innerWidth <= 720) {
     const hasSticky = document.body.classList.contains("has-mobile-sticky-cta");
     accessEl.style.top = "auto";
+    accessEl.style.right = "12px";
     accessEl.style.bottom = hasSticky
       ? "calc(152px + env(safe-area-inset-bottom))"
       : "calc(82px + env(safe-area-inset-bottom))";
   } else {
-    accessEl.style.top = "calc(50vh - 20px)";
-    accessEl.style.bottom = "auto";
+    accessEl.style.top = "auto";
+    accessEl.style.right = "20px";
+    accessEl.style.bottom = "24px";
   }
 }
 
@@ -1097,6 +1206,7 @@ function openProfileMenu() {
 
   dd.classList.remove("is-hidden");
   btn.setAttribute("aria-expanded", "true");
+  syncAllSlidingIndicators(true);
 
   if (isMobileSheetViewport()) {
     const firstFocus = dd.querySelector("button:not(.is-hidden):not([disabled])");
@@ -1244,8 +1354,9 @@ function switchView(viewName) {
   if (viewName === "agendamentos") renderBookings();
   if (viewName === "monitor") renderMonitorPanel();
   syncMobileChrome();
+  syncAllSlidingIndicators();
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });
 }
 
 // ==================== AUTH & OTP ASSAAD ====================
@@ -1584,9 +1695,10 @@ function renderStep1() {
   const tabsEl = document.getElementById("subject-tabs");
   const subjects = ["Todas", ...OFFERINGS.map((o) => o.shortSubject)];
 
-  tabsEl.innerHTML = subjects
-    .map(
-      (subj) => `
+  if (!tabsEl.querySelector("[data-subject-tab]")) {
+    tabsEl.innerHTML = subjects
+      .map(
+        (subj) => `
       <button
         type="button"
         class="u-tab ${ui.subjectFilter === subj ? "is-active" : ""}"
@@ -1597,8 +1709,16 @@ function renderStep1() {
         ${escapeHtml(subj)}
       </button>
     `
-    )
-    .join("");
+      )
+      .join("");
+  } else {
+    tabsEl.querySelectorAll("[data-subject-tab]").forEach((btn) => {
+      const active = btn.dataset.subjectTab === ui.subjectFilter;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-selected", String(active));
+    });
+  }
+  syncAllSlidingIndicators();
 
   const query = normalizeText(ui.search);
   const filteredOfferings = OFFERINGS.filter((off) => {
@@ -1946,6 +2066,7 @@ function handleConfirmBooking(e) {
         }
         reschedBk.slotId = oldSlotId;
         reschedBk.topic = oldTopic;
+        ui.highlightedBookingId = reschedBk.id;
         saveState();
         renderTopbar();
         if (ui.activeView === "agendamentos") renderBookings();
@@ -1970,6 +2091,7 @@ function handleConfirmBooking(e) {
       ui.lastCreatedBookingId = booking.id;
     }
 
+    ui.highlightedBookingId = ui.lastCreatedBookingId;
     ui.step3Completed = true;
     saveState();
     renderTopbar();
@@ -2061,6 +2183,7 @@ function renderBookings() {
         <button type="button" class="btn btn-primary" id="btn-bookings-go-agendar">Agendar monitoria →</button>
       </div>
     `;
+    syncAllSlidingIndicators();
     return;
   }
 
@@ -2076,9 +2199,12 @@ function renderBookings() {
 
       const dateParts = getDateBadgeParts(slot.dateIso, slot.dayName);
       const isInactive = bk.status !== "Confirmado";
+      const isHighlight = bk.id === ui.highlightedBookingId;
 
       return `
-        <div class="booking-row ${isInactive ? "is-status-inactive" : "is-status-active"}">
+        <div class="booking-row ${isInactive ? "is-status-inactive" : "is-status-active"} ${
+        isHighlight ? "is-row-highlight" : ""
+      }" data-booking-row="${escapeHtml(bk.id)}">
           <div class="booking-main">
             <div class="booking-date-block" aria-hidden="true">
               <span class="booking-date-day">${escapeHtml(dateParts.day)}</span>
@@ -2112,6 +2238,8 @@ function renderBookings() {
       `;
     })
     .join("");
+  ui.highlightedBookingId = null;
+  syncAllSlidingIndicators();
 }
 
 // ==================== PAINEL DO MONITOR ====================
@@ -2149,6 +2277,7 @@ function renderMonitorPanel() {
     listEl.innerHTML = `<div class="empty-box" style="border:none"><p>Nenhum aluno agendado nesta disciplina${
       ui.monitorFilter === "active" ? " no momento" : ""
     }.</p></div>`;
+    syncAllSlidingIndicators();
     return;
   }
 
@@ -2162,9 +2291,12 @@ function renderMonitorPanel() {
 
       const dateParts = getDateBadgeParts(slot.dateIso, slot.dayName);
       const isInactive = bk.status !== "Confirmado";
+      const isHighlight = bk.id === ui.highlightedBookingId;
 
       return `
-        <div class="booking-row ${isInactive ? "is-status-inactive" : "is-status-active"}">
+        <div class="booking-row ${isInactive ? "is-status-inactive" : "is-status-active"} ${
+        isHighlight ? "is-row-highlight" : ""
+      }" data-booking-row="${escapeHtml(bk.id)}">
           <div class="booking-main">
             <div class="booking-date-block" aria-hidden="true">
               <span class="booking-date-day">${escapeHtml(dateParts.day)}</span>
@@ -2194,6 +2326,8 @@ function renderMonitorPanel() {
       `;
     })
     .join("");
+  ui.highlightedBookingId = null;
+  syncAllSlidingIndicators();
 }
 
 function handlePublishNewSlot(e) {
@@ -2258,6 +2392,15 @@ function handlePublishNewSlot(e) {
       state.slots.push(newSlot);
       saveState();
       document.getElementById("ms-prof-code").value = "";
+      if (!prefersReducedMotion()) {
+        const panel = document.getElementById("form-new-slot");
+        if (panel) {
+          panel.classList.remove("is-flash-confirm");
+          void panel.offsetWidth;
+          panel.classList.add("is-flash-confirm");
+          setTimeout(() => panel.classList.remove("is-flash-confirm"), 620);
+        }
+      }
       showToast(`Novo horário publicado (${dayName}, ${formatDateBr(dateIso)} às ${time.split(" - ")[0]}).`);
       renderMonitorPanel();
     },
@@ -3095,16 +3238,20 @@ function bindEvents() {
         confirmText: "Sim, cancelar vaga",
         danger: true,
         onConfirm: () => {
-          bk.status = "Cancelado";
-          saveState();
-          renderTopbar();
-          renderBookings();
-          showToast(`Agendamento ${bk.protocol} cancelado.`, () => {
-            bk.status = "Confirmado";
+          const rowEl = document.querySelector(`#bookings-list [data-booking-row="${bk.id}"]`);
+          animateRowExitAndRun(rowEl, () => {
+            bk.status = "Cancelado";
             saveState();
             renderTopbar();
             renderBookings();
-            showToast(`Cancelamento desfeito (${bk.protocol}).`);
+            showToast(`Agendamento ${bk.protocol} cancelado.`, () => {
+              bk.status = "Confirmado";
+              ui.highlightedBookingId = bk.id;
+              saveState();
+              renderTopbar();
+              renderBookings();
+              showToast(`Cancelamento desfeito (${bk.protocol}).`);
+            });
           });
         },
       });
@@ -3172,14 +3319,18 @@ function bindEvents() {
       confirmText: "Sim, concluir",
       danger: false,
       onConfirm: () => {
-        bk.status = "Concluído";
-        saveState();
-        renderMonitorPanel();
-        showToast(`Atendimento ${bk.protocol} concluído.`, () => {
-          bk.status = "Confirmado";
+        const rowEl = document.querySelector(`#monitor-bookings-list [data-booking-row="${bk.id}"]`);
+        animateRowExitAndRun(rowEl, () => {
+          bk.status = "Concluído";
           saveState();
           renderMonitorPanel();
-          showToast(`Conclusão desfeita (${bk.protocol}).`);
+          showToast(`Atendimento ${bk.protocol} concluído.`, () => {
+            bk.status = "Confirmado";
+            ui.highlightedBookingId = bk.id;
+            saveState();
+            renderMonitorPanel();
+            showToast(`Conclusão desfeita (${bk.protocol}).`);
+          });
         });
       },
     });
@@ -3545,6 +3696,7 @@ function initCustomSelects() {
 
   window.addEventListener("resize", () => {
     if (getPrefs().vlibras) positionVlibrasShadowAccess();
+    syncAllSlidingIndicators(true);
     const dd = document.getElementById("profile-dropdown");
     if (dd && !dd.classList.contains("is-hidden")) {
       const wantMobile = isMobileSheetViewport();

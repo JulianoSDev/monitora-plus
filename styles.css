@@ -54,10 +54,21 @@
   --font-display: "Space Grotesk", "DM Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-micro: 140ms;
+  --dur-view: 200ms;
+  --dur-modal: 230ms;
+
+  --scroll-track: transparent;
+  --scroll-thumb: rgba(255, 255, 255, 0.16);
+  --scroll-thumb-hover: rgba(255, 255, 255, 0.32);
 }
 
 body.theme-light {
+  color-scheme: light;
+  --scroll-track: transparent;
+  --scroll-thumb: rgba(20, 27, 41, 0.16);
+  --scroll-thumb-hover: rgba(20, 27, 41, 0.32);
   --bg: #f6f6f4;
   --surface: #ffffff;
   --surface-2: #f4f4f5;
@@ -98,7 +109,15 @@ body.theme-light {
   --danger-text: #9f1239;
 }
 
+body.theme-dark {
+  color-scheme: dark;
+}
+
 body.theme-contrast {
+  color-scheme: dark;
+  --scroll-track: #0a0a0a;
+  --scroll-thumb: rgba(250, 204, 21, 0.65);
+  --scroll-thumb-hover: #facc15;
   --bg: #000000;
   --surface: #0a0a0a;
   --surface-2: #18181b;
@@ -143,6 +162,45 @@ body.theme-contrast {
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+  }
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-thumb-hover);
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 html {
@@ -2078,6 +2136,10 @@ body.theme-contrast .cal-shell {
   margin: 0 auto;
 }
 
+#view-monitor .narrow-container {
+  max-width: 1020px;
+}
+
 .view-head-row {
   display: flex;
   justify-content: space-between;
@@ -3161,10 +3223,18 @@ body.a11y-pause-distractions .split-geo-dot {
 
 body.a11y-reduced-motion *,
 body.a11y-reduced-motion *::before,
-body.a11y-reduced-motion *::after {
+body.a11y-reduced-motion *::after,
+body.a11y-pause-distractions *,
+body.a11y-pause-distractions *::before,
+body.a11y-pause-distractions *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
+}
+
+body.a11y-reduced-motion *:active,
+body.a11y-pause-distractions *:active {
+  transform: none !important;
 }
 
 .reading-mask {
@@ -4468,5 +4538,284 @@ div[vw].is-vlibras-hidden {
 
   .agenda-export-row .btn {
     width: 100%;
+  }
+}
+
+/* ==================== SISTEMA DE MOTION & MICRO-INTERAÇÕES (LINEAR / CAL.COM) ==================== */
+@keyframes surfaceEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes checkPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes popoverOriginIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes rowHighlightPulse {
+  0% {
+    opacity: 0.4;
+    transform: translateY(6px);
+    background-color: var(--accent-soft);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(0);
+    background-color: var(--accent-soft);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    background-color: transparent;
+  }
+}
+
+/* 1. Entrada sutil de views e etapas (sem prender position:fixed no mobile) */
+@media (min-width: 721px) {
+  .view-section.is-active,
+  .step-panel:not(.is-hidden) {
+    animation: surfaceEnter var(--dur-view) var(--ease-out);
+  }
+}
+
+@media (max-width: 720px) {
+  .view-section.is-active .step-header-centered,
+  .view-section.is-active #step1-list-box:not(.is-hidden),
+  .view-section.is-active #step1-matrix-box:not(.is-hidden),
+  .view-section.is-active .cal-left,
+  .view-section.is-active .cal-center,
+  .view-section.is-active .cal-day-heading,
+  .view-section.is-active .timeslot-stack,
+  .view-section.is-active .step3-form > :not(.step3-actions),
+  .view-section.is-active .success-shell:not(.is-hidden),
+  .view-section.is-active .narrow-container {
+    animation: surfaceEnter var(--dur-view) var(--ease-out);
+  }
+}
+
+/* 2. Indicadores deslizantes (sliding pill e sliding underline) */
+.has-sliding-pill,
+.has-sliding-underline {
+  position: relative;
+}
+
+.has-sliding-pill > button,
+.has-sliding-underline > button {
+  position: relative;
+  z-index: 1;
+}
+
+.sliding-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: calc(var(--radius-sm) - 1px);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  opacity: 0;
+  transition: transform var(--dur-view) var(--ease-out), width var(--dur-view) var(--ease-out),
+    height var(--dur-view) var(--ease-out), opacity var(--dur-micro) ease;
+  will-change: transform, width;
+}
+
+.profile-dd-theme-row.has-sliding-pill .sliding-pill {
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+}
+
+body.theme-contrast .profile-dd-theme-row.has-sliding-pill .sliding-pill {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  box-shadow: none;
+}
+
+.ics-reminder-group.has-sliding-pill .sliding-pill {
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.has-sliding-pill.is-pill-ready .sliding-pill {
+  opacity: 1;
+}
+
+.has-sliding-pill.is-pill-ready .layout-btn.is-active,
+.has-sliding-pill.is-pill-ready .profile-dd-theme-btn.is-active,
+.has-sliding-pill.is-pill-ready .profile-dd-theme-btn.theme-opt.is-active,
+.has-sliding-pill.is-pill-ready .ics-reminder-opt.is-active {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.sliding-underline {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 2px;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: 0;
+  transition: transform var(--dur-view) var(--ease-out), width var(--dur-view) var(--ease-out),
+    opacity var(--dur-micro) ease;
+  will-change: transform, width;
+}
+
+.has-sliding-underline.is-underline-ready .sliding-underline {
+  opacity: 1;
+}
+
+.has-sliding-underline.is-underline-ready .nav-link.is-active::after,
+.has-sliding-underline.is-underline-ready .u-tab.is-active::after {
+  opacity: 0;
+}
+
+.sliding-pill.is-instant,
+.sliding-underline.is-instant {
+  transition: none !important;
+}
+
+/* 3. Feedback tátil nos elementos clicáveis */
+.btn,
+.list-row-btn,
+.slot-pick-btn,
+.cal-day-btn.is-available,
+.matrix-slot-btn,
+.topic-chip,
+.select-card,
+.ics-reminder-opt,
+.mobile-tab-btn,
+.icon-btn {
+  transition: transform var(--dur-micro) var(--ease-out), border-color var(--dur-micro) ease,
+    background-color var(--dur-micro) ease, color var(--dur-micro) ease;
+}
+
+.btn:active:not(:disabled),
+.list-row-btn:active:not(:disabled),
+.slot-pick-btn:active:not(:disabled),
+.cal-day-btn.is-available:active:not(:disabled),
+.matrix-slot-btn:active:not(:disabled),
+.topic-chip:active:not(:disabled),
+.select-card:active:not(:disabled),
+.ics-reminder-opt:active:not(:disabled),
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.mobile-tab-btn:active {
+  transform: scale(0.96);
+}
+
+.slot-pick-btn.is-selected .slot-check-icon {
+  animation: checkPopIn 150ms var(--ease-out);
+}
+
+/* 4. Transição suave de saída e destaque em listas */
+.booking-row {
+  transition: opacity 170ms var(--ease-out), transform 170ms var(--ease-out),
+    background-color 200ms ease;
+}
+
+.booking-row.is-row-exiting {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.99);
+  pointer-events: none;
+}
+
+.booking-row.is-row-highlight {
+  animation: rowHighlightPulse 600ms var(--ease-out);
+}
+
+.panel-box.is-flash-confirm {
+  animation: rowHighlightPulse 600ms var(--ease-out);
+}
+
+/* 5. Modais, Popover Desktop, Bottom Sheet e Toast */
+.modal-backdrop:not(.is-hidden) {
+  animation: backdropFadeIn 180ms ease-out;
+}
+
+.modal-backdrop:not(.is-hidden) .modal-box,
+.modal-backdrop:not(.is-hidden) .settings-window {
+  animation: modalEnter var(--dur-modal) var(--ease-out);
+}
+
+.profile-dropdown:not(.is-hidden):not(.is-mobile-sheet) {
+  transform-origin: top right;
+  animation: popoverOriginIn 160ms var(--ease-out);
+}
+
+@media (max-width: 768px) {
+  .profile-sheet-backdrop:not(.is-hidden) {
+    animation: backdropFadeIn 180ms ease-out;
+  }
+
+  .profile-dropdown.is-mobile-sheet:not(.is-hidden) {
+    animation: sheetSlideUp var(--dur-modal) var(--ease-out);
+  }
+}
+
+.toast:not(.is-hidden) {
+  animation: toastSlideUp 220ms var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sliding-pill,
+  .sliding-underline {
+    transition: none !important;
+  }
+
+  *:active {
+    transform: none !important;
   }
 }
