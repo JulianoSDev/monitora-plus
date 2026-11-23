@@ -19,7 +19,7 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="styles.css?v=20261123b5" />
+  <link rel="stylesheet" href="styles.css?v=20261123b6" />
 </head>
 <body class="theme-light is-landing-mode">
   <a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
@@ -1113,6 +1113,80 @@
                 </label>
               </div>
             </div>
+
+            <div class="settings-section-block">
+              <details class="settings-advanced" id="settings-appearance-advanced">
+                <summary class="settings-advanced-summary">
+                  <div class="settings-advanced-title-wrap">
+                    <strong>Avançado</strong>
+                    <span>Fundo e primeiro plano personalizados com validador WCAG 2.1</span>
+                  </div>
+                  <svg class="settings-advanced-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </summary>
+
+                <div class="settings-advanced-body">
+                  <div class="color-pills-grid">
+                    <div class="color-control-col">
+                      <label class="color-control-label" for="custom-bg-hex">Fundo</label>
+                      <div class="color-pill">
+                        <label class="color-dot-btn" title="Escolher cor de fundo">
+                          <span class="color-dot-preview" id="custom-bg-dot" aria-hidden="true"></span>
+                          <input type="color" id="custom-bg-picker" class="color-native-input" aria-label="Selecionar cor de fundo" value="#f6f6f4" />
+                        </label>
+                        <input
+                          type="text"
+                          id="custom-bg-hex"
+                          class="color-hex-input"
+                          maxlength="7"
+                          spellcheck="false"
+                          autocomplete="off"
+                          value="#F6F6F4"
+                          aria-label="Código hexadecimal do fundo"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="color-control-col">
+                      <label class="color-control-label" for="custom-fg-hex">Primeiro plano (Texto)</label>
+                      <div class="color-pill">
+                        <label class="color-dot-btn" title="Escolher cor do texto">
+                          <span class="color-dot-preview" id="custom-fg-dot" aria-hidden="true"></span>
+                          <input type="color" id="custom-fg-picker" class="color-native-input" aria-label="Selecionar cor do primeiro plano" value="#141b29" />
+                        </label>
+                        <input
+                          type="text"
+                          id="custom-fg-hex"
+                          class="color-hex-input"
+                          maxlength="7"
+                          spellcheck="false"
+                          autocomplete="off"
+                          value="#141B29"
+                          aria-label="Código hexadecimal do primeiro plano"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Zona de escape imune a cores quebradas -->
+                  <div class="wcag-guard-strip" id="wcag-guard-strip" data-level="aaa">
+                    <div class="wcag-guard-status" role="status" aria-live="polite">
+                      <span class="wcag-status-badge" id="wcag-contrast-badge">16.3:1 · WCAG AAA</span>
+                      <span class="wcag-guard-hint" id="wcag-contrast-hint">Contraste excelente para leitura prolongada.</span>
+                    </div>
+                    <div class="wcag-escape-actions">
+                      <button type="button" class="wcag-escape-btn is-fix is-hidden" id="btn-fix-contrast">
+                        Corrigir contraste
+                      </button>
+                      <button type="button" class="wcag-escape-btn is-reset" id="btn-reset-custom-colors">
+                        Restaurar aparência padrão
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </details>
+            </div>
           </div>
 
           <!-- ABA 3: ACESSIBILIDADE (TECNOLOGIA ASSISTIVA WCAG 2.2) -->
@@ -1436,6 +1510,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261123b5"></script>
+  <script src="app.js?v=20261123b6"></script>
 </body>
 </html>

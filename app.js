@@ -218,6 +218,8 @@ const DEFAULT_PREFS = {
   largeTargets: false,
   reducedMotion: false,
   vlibras: false,
+  customBg: null,
+  customFg: null,
 };
 
 const SETTINGS_TAB_META = {
@@ -667,6 +669,208 @@ function animateRowExitAndRun(rowEl, callback) {
   setTimeout(callback, 170);
 }
 
+const THEME_BASE_COLORS = {
+  light: { bg: "#f6f6f4", fg: "#141b29" },
+  dark: { bg: "#09090b", fg: "#fafafa" },
+  contrast: { bg: "#000000", fg: "#ffffff" },
+};
+
+const CUSTOM_COLOR_VARS = [
+  "--bg",
+  "--text",
+  "--surface",
+  "--surface-2",
+  "--surface-elevated",
+  "--surface-hover",
+  "--border",
+  "--border-strong",
+  "--text-secondary",
+  "--text-muted",
+  "--scroll-thumb",
+  "--scroll-thumb-hover",
+];
+
+function normalizeHexColor(raw) {
+  const clean = String(raw ?? "").trim().replace(/^#/, "");
+  if (/^[0-9a-fA-F]{3}$/.test(clean)) {
+    const [r, g, b] = clean.split("");
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+  if (/^[0-9a-fA-F]{6}$/.test(clean)) {
+    return `#${clean}`.toLowerCase();
+  }
+  return null;
+}
+
+function hexToRgb(hex) {
+  const norm = normalizeHexColor(hex) || "#000000";
+  return [
+    parseInt(norm.slice(1, 3), 16),
+    parseInt(norm.slice(3, 5), 16),
+    parseInt(norm.slice(5, 7), 16),
+  ];
+}
+
+function rgbToHex(r, g, b) {
+  const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
+  return (
+    "#" +
+    [clamp(r), clamp(g), clamp(b)]
+      .map((v) => v.toString(16).padStart(2, "0"))
+      .join("")
+  );
+}
+
+function getRelativeLuminance(hex) {
+  const [r, g, b] = hexToRgb(hex).map((v) => {
+    const s = v / 255;
+    return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function getContrastRatio(hex1, hex2) {
+  const l1 = getRelativeLuminance(hex1);
+  const l2 = getRelativeLuminance(hex2);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
+function mixRgb(rgbA, rgbB, t) {
+  return [
+    rgbA[0] + (rgbB[0] - rgbA[0]) * t,
+    rgbA[1] + (rgbB[1] - rgbA[1]) * t,
+    rgbA[2] + (rgbB[2] - rgbA[2]) * t,
+  ];
+}
+
+function findNearestReadableFg(bgHex, fgHex, targetRatio = 7.0) {
+  if (getContrastRatio(bgHex, fgHex) >= targetRatio) return normalizeHexColor(fgHex) || fgHex;
+
+  const fgRgb = hexToRgb(fgHex);
+  const searchToward = (extremeRgb) => {
+    const extremeHex = rgbToHex(...extremeRgb);
+    const maxRatio = getContrastRatio(bgHex, extremeHex);
+    if (maxRatio < targetRatio) {
+      return { reachable: false, t: 1, hex: extremeHex, ratio: maxRatio };
+    }
+    let lo = 0;
+    let hi = 1;
+    let bestHex = extremeHex;
+    for (let i = 0; i < 18; i += 1) {
+      const mid = (lo + hi) / 2;
+      const candHex = rgbToHex(...mixRgb(fgRgb, extremeRgb, mid));
+      if (getContrastRatio(bgHex, candHex) >= targetRatio) {
+        bestHex = candHex;
+        hi = mid;
+      } else {
+        lo = mid;
+      }
+    }
+    return { reachable: true, t: hi, hex: bestHex, ratio: getContrastRatio(bgHex, bestHex) };
+  };
+
+  const toWhite = searchToward([255, 255, 255]);
+  const toBlack = searchToward([0, 0, 0]);
+
+  if (toWhite.reachable && toBlack.reachable) {
+    return toWhite.t <= toBlack.t ? toWhite.hex : toBlack.hex;
+  }
+  if (toWhite.reachable) return toWhite.hex;
+  if (toBlack.reachable) return toBlack.hex;
+  return toWhite.ratio >= toBlack.ratio ? toWhite.hex : toBlack.hex;
+}
+
+function clearCustomColorsFromDom() {
+  CUSTOM_COLOR_VARS.forEach((v) => document.body.style.removeProperty(v));
+}
+
+function syncWcagGuardUI(bgHex, fgHex) {
+  const bgPicker = document.getElementById("custom-bg-picker");
+  const fgPicker = document.getElementById("custom-fg-picker");
+  const bgHexInput = document.getElementById("custom-bg-hex");
+  const fgHexInput = document.getElementById("custom-fg-hex");
+  const bgDot = document.getElementById("custom-bg-dot");
+  const fgDot = document.getElementById("custom-fg-dot");
+  const strip = document.getElementById("wcag-guard-strip");
+  const badge = document.getElementById("wcag-contrast-badge");
+  const hint = document.getElementById("wcag-contrast-hint");
+  const fixBtn = document.getElementById("btn-fix-contrast");
+
+  if (bgPicker && bgPicker.value.toLowerCase() !== bgHex) bgPicker.value = bgHex;
+  if (fgPicker && fgPicker.value.toLowerCase() !== fgHex) fgPicker.value = fgHex;
+  if (bgHexInput && document.activeElement !== bgHexInput) bgHexInput.value = bgHex.toUpperCase();
+  if (fgHexInput && document.activeElement !== fgHexInput) fgHexInput.value = fgHex.toUpperCase();
+  if (bgDot) bgDot.style.backgroundColor = bgHex;
+  if (fgDot) fgDot.style.backgroundColor = fgHex;
+
+  if (!strip || !badge) return;
+  const ratio = getContrastRatio(bgHex, fgHex);
+  const ratioTxt = `${ratio.toFixed(1)}:1`;
+
+  if (ratio >= 7.0) {
+    strip.dataset.level = "aaa";
+    badge.textContent = `${ratioTxt} · WCAG AAA`;
+    if (hint) hint.textContent = "Contraste excelente para leitura prolongada.";
+    fixBtn?.classList.add("is-hidden");
+  } else if (ratio >= 4.5) {
+    strip.dataset.level = "aa";
+    badge.textContent = `${ratioTxt} · WCAG AA`;
+    if (hint) hint.textContent = "Legível conforme padrão mínimo WCAG 2.1 AA.";
+    fixBtn?.classList.add("is-hidden");
+  } else {
+    strip.dataset.level = "fail";
+    badge.textContent = `${ratioTxt} · Contraste baixo (abaixo de WCAG AA)`;
+    if (hint) hint.textContent = "Texto difícil de ler sobre este fundo. Use a correção automática abaixo.";
+    fixBtn?.classList.remove("is-hidden");
+  }
+}
+
+function applyCustomColors() {
+  const prefs = getPrefs();
+  const theme = state.theme || "light";
+  const base = THEME_BASE_COLORS[theme] || THEME_BASE_COLORS.light;
+  const customBg = normalizeHexColor(prefs.customBg);
+  const customFg = normalizeHexColor(prefs.customFg);
+  const activeBg = customBg || base.bg;
+  const activeFg = customFg || base.fg;
+
+  if (!customBg && !customFg) {
+    clearCustomColorsFromDom();
+    document.documentElement.style.colorScheme = theme === "light" ? "light" : "dark";
+    syncWcagGuardUI(activeBg, activeFg);
+    return;
+  }
+
+  const isDarkBg = getRelativeLuminance(activeBg) < 0.25;
+  const s = document.body.style;
+  s.setProperty("--bg", activeBg);
+  s.setProperty("--text", activeFg);
+
+  if (isDarkBg) {
+    s.setProperty("--surface", `color-mix(in srgb, ${activeBg} 93%, #ffffff 7%)`);
+    s.setProperty("--surface-2", `color-mix(in srgb, ${activeBg} 88%, #ffffff 12%)`);
+    s.setProperty("--surface-elevated", `color-mix(in srgb, ${activeBg} 88%, #ffffff 12%)`);
+    s.setProperty("--surface-hover", `color-mix(in srgb, ${activeBg} 85%, #ffffff 15%)`);
+    s.setProperty("--border", `color-mix(in srgb, ${activeBg} 78%, ${activeFg} 22%)`);
+    s.setProperty("--border-strong", `color-mix(in srgb, ${activeBg} 66%, ${activeFg} 34%)`);
+  } else {
+    s.setProperty("--surface", `color-mix(in srgb, ${activeBg} 55%, #ffffff 45%)`);
+    s.setProperty("--surface-2", `color-mix(in srgb, ${activeBg} 93%, #000000 7%)`);
+    s.setProperty("--surface-elevated", `color-mix(in srgb, ${activeBg} 55%, #ffffff 45%)`);
+    s.setProperty("--surface-hover", `color-mix(in srgb, ${activeBg} 90%, #000000 10%)`);
+    s.setProperty("--border", `color-mix(in srgb, ${activeBg} 84%, ${activeFg} 16%)`);
+    s.setProperty("--border-strong", `color-mix(in srgb, ${activeBg} 72%, ${activeFg} 28%)`);
+  }
+
+  s.setProperty("--text-secondary", `color-mix(in srgb, ${activeFg} 76%, ${activeBg} 24%)`);
+  s.setProperty("--text-muted", `color-mix(in srgb, ${activeFg} 58%, ${activeBg} 42%)`);
+  s.setProperty("--scroll-thumb", `color-mix(in srgb, ${activeFg} 22%, transparent)`);
+  s.setProperty("--scroll-thumb-hover", `color-mix(in srgb, ${activeFg} 40%, transparent)`);
+  document.documentElement.style.colorScheme = isDarkBg ? "dark" : "light";
+
+  syncWcagGuardUI(activeBg, activeFg);
+}
+
 function applyThemeAndA11y() {
   const prefs = getPrefs();
   const theme = state.theme || "light";
@@ -755,6 +959,7 @@ function applyThemeAndA11y() {
     if (prefs.reducedMotion || prefs.pauseDistractions) stopPhraseCarousel();
     else startPhraseCarousel();
   }
+  applyCustomColors();
   syncAllSlidingIndicators();
 }
 
@@ -2792,9 +2997,92 @@ function bindEvents() {
   document.querySelectorAll(".theme-opt").forEach((btn) => {
     btn.addEventListener("click", () => {
       state.theme = btn.dataset.theme;
+      getPrefs().customBg = null;
+      getPrefs().customFg = null;
       saveState();
       applyThemeAndA11y();
     });
+  });
+
+  // Aparência -> Avançado: cores personalizadas + validador WCAG 2.1 ao vivo
+  let customColorSaveTimer = null;
+  const scheduleColorSave = () => {
+    clearTimeout(customColorSaveTimer);
+    customColorSaveTimer = setTimeout(() => saveState(), 120);
+  };
+
+  const setCustomColor = (key, rawHex, immediateSave = false) => {
+    const norm = normalizeHexColor(rawHex);
+    if (!norm) return false;
+    getPrefs()[key] = norm;
+    applyCustomColors();
+    if (immediateSave) {
+      clearTimeout(customColorSaveTimer);
+      saveState();
+    } else {
+      scheduleColorSave();
+    }
+    return true;
+  };
+
+  document.getElementById("custom-bg-picker")?.addEventListener("input", (e) => {
+    setCustomColor("customBg", e.target.value, false);
+  });
+  document.getElementById("custom-bg-picker")?.addEventListener("change", (e) => {
+    setCustomColor("customBg", e.target.value, true);
+  });
+  document.getElementById("custom-fg-picker")?.addEventListener("input", (e) => {
+    setCustomColor("customFg", e.target.value, false);
+  });
+  document.getElementById("custom-fg-picker")?.addEventListener("change", (e) => {
+    setCustomColor("customFg", e.target.value, true);
+  });
+
+  [
+    ["custom-bg-hex", "customBg"],
+    ["custom-fg-hex", "customFg"],
+  ].forEach(([inputId, prefKey]) => {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.addEventListener("input", () => {
+      const val = input.value.trim();
+      if (/^#?[0-9a-fA-F]{6}$/.test(val)) {
+        setCustomColor(prefKey, val, false);
+      }
+    });
+    input.addEventListener("blur", () => {
+      if (!setCustomColor(prefKey, input.value, true)) {
+        applyCustomColors();
+      }
+    });
+  });
+
+  document.getElementById("btn-fix-contrast")?.addEventListener("click", () => {
+    const prefs = getPrefs();
+    const base = THEME_BASE_COLORS[state.theme || "light"] || THEME_BASE_COLORS.light;
+    const bg = normalizeHexColor(prefs.customBg) || base.bg;
+    const fg = normalizeHexColor(prefs.customFg) || base.fg;
+    const fixedFg = findNearestReadableFg(bg, fg, 7.0);
+    prefs.customBg = bg;
+    prefs.customFg = fixedFg;
+    saveState();
+    applyCustomColors();
+    const ratio = getContrastRatio(bg, fixedFg).toFixed(1);
+    announceA11y(`Contraste corrigido automaticamente para ${ratio} para 1.`);
+    showToast(`Contraste ajustado para ${ratio}:1 (${fixedFg.toUpperCase()}).`, null, "success");
+  });
+
+  document.getElementById("btn-reset-custom-colors")?.addEventListener("click", () => {
+    const prefs = getPrefs();
+    prefs.customBg = null;
+    prefs.customFg = null;
+    prefs.reducedMotion = false;
+    state.theme = "light";
+    state.fontScale = 1;
+    saveState();
+    applyThemeAndA11y();
+    announceA11y("Aparência padrão restaurada.");
+    showToast("Aparência padrão restaurada.", null, "success");
   });
 
   const incFont = () => {
