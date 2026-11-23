@@ -4967,21 +4967,25 @@ body.theme-contrast .profile-dd-theme-row.has-sliding-pill .sliding-pill {
   outline: none;
 }
 
-/* ZONA DE ESCAPE IMUNE A CORES CUSTOMIZADAS PELO USUÁRIO (CORES FIXAS HARDCODED) */
+/* Faixa WCAG integrada ao tema quando legível; blindada (cores fixas hardcoded) quando contraste < 4.5:1 */
 .wcag-guard-strip {
   padding: 12px 13px;
   border-radius: 10px;
-  background: #141418 !important;
-  color: #f4f4f5 !important;
-  border: 1.5px solid #3f3f46 !important;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16), 0 4px 12px rgba(0, 0, 0, 0.22) !important;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: 10px;
+  transition: background-color var(--dur-view) ease, border-color var(--dur-view) ease;
 }
 
+/* ZONA DE ESCAPE IMUNE A CORES QUEBRADAS (ATIVADA AUTOMATICAMENTE ABAIXO DE WCAG AA) */
 .wcag-guard-strip[data-level="fail"] {
-  border-color: #f59e0b !important;
+  background: #141418 !important;
+  color: #f4f4f5 !important;
+  border: 1.5px solid #f59e0b !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18), 0 6px 18px rgba(0, 0, 0, 0.32) !important;
 }
 
 .wcag-guard-status {
@@ -5007,15 +5011,20 @@ body.theme-contrast .profile-dd-theme-row.has-sliding-pill .sliding-pill {
 }
 
 .wcag-guard-strip[data-level="aaa"] .wcag-status-badge {
-  background: #052e16 !important;
-  border: 1px solid #22c55e !important;
-  color: #86efac !important;
+  background: var(--green-soft);
+  border: 1px solid var(--green-border);
+  color: var(--green);
 }
 
 .wcag-guard-strip[data-level="aa"] .wcag-status-badge {
-  background: #172554 !important;
-  border: 1px solid #60a5fa !important;
-  color: #bfdbfe !important;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #2563eb;
+}
+
+body.theme-dark .wcag-guard-strip[data-level="aa"] .wcag-status-badge,
+body.theme-contrast .wcag-guard-strip[data-level="aa"] .wcag-status-badge {
+  color: #93c5fd;
 }
 
 .wcag-guard-strip[data-level="fail"] .wcag-status-badge {
@@ -5026,8 +5035,12 @@ body.theme-contrast .profile-dd-theme-row.has-sliding-pill .sliding-pill {
 
 .wcag-guard-hint {
   font-size: 0.76rem;
-  color: #d4d4d8 !important;
+  color: var(--text-secondary);
   line-height: 1.35;
+}
+
+.wcag-guard-strip[data-level="fail"] .wcag-guard-hint {
+  color: #d4d4d8 !important;
 }
 
 .wcag-escape-actions {
@@ -5048,11 +5061,12 @@ body.theme-contrast .profile-dd-theme-row.has-sliding-pill .sliding-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: transform var(--dur-micro) var(--ease-out), filter var(--dur-micro) ease;
+  transition: transform var(--dur-micro) var(--ease-out), filter var(--dur-micro) ease,
+    border-color var(--dur-micro) ease, background-color var(--dur-micro) ease;
 }
 
 .wcag-escape-btn:hover {
-  filter: brightness(1.08);
+  filter: brightness(1.06);
 }
 
 .wcag-escape-btn:active {
@@ -5067,6 +5081,12 @@ body.theme-contrast .profile-dd-theme-row.has-sliding-pill .sliding-pill {
 }
 
 .wcag-escape-btn.is-reset {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+}
+
+.wcag-guard-strip[data-level="fail"] .wcag-escape-btn.is-reset {
   background: #27272a !important;
   color: #fafafa !important;
   border: 1px solid #52525b !important;

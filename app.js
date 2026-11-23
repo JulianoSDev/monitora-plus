@@ -3076,13 +3076,12 @@ function bindEvents() {
     const prefs = getPrefs();
     prefs.customBg = null;
     prefs.customFg = null;
-    prefs.reducedMotion = false;
-    state.theme = "light";
-    state.fontScale = 1;
     saveState();
     applyThemeAndA11y();
-    announceA11y("Aparência padrão restaurada.");
-    showToast("Aparência padrão restaurada.", null, "success");
+    const themeLabel =
+      state.theme === "dark" ? "Escuro" : state.theme === "contrast" ? "Contraste AAA" : "Claro";
+    announceA11y(`Cores padrão do tema ${themeLabel} restauradas.`);
+    showToast(`Cores padrão do tema ${themeLabel} restauradas.`, null, "success");
   });
 
   const incFont = () => {
