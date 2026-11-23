@@ -49,6 +49,8 @@ const MONTH_NAMES = [
   "Dezembro",
 ];
 
+const MONTH_SHORT = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+
 const INITIAL_USERS = [
   {
     id: "usr-stu-1",
@@ -88,6 +90,7 @@ const OFFERINGS = [
     monitor: "Monitora Mariana L.",
     mode: "Presencial / Online",
     location: "Sala 104 · Bloco A / Virtual",
+    shortLocation: "Sala 104 · Presencial / Online",
     duration: "40 minutos",
   },
   {
@@ -98,6 +101,7 @@ const OFFERINGS = [
     monitor: "Monitor Bruno T.",
     mode: "Presencial",
     location: "Presencial · Sala 201, Bloco A",
+    shortLocation: "Sala 201 · Presencial",
     duration: "40 minutos",
   },
   {
@@ -108,6 +112,7 @@ const OFFERINGS = [
     monitor: "Monitor Gabriel N.",
     mode: "Presencial",
     location: "Presencial · Lab Hardware, Bloco C",
+    shortLocation: "Lab Hardware · Presencial",
     duration: "40 minutos",
   },
   {
@@ -118,6 +123,7 @@ const OFFERINGS = [
     monitor: "Monitor Pedro H.",
     mode: "Online",
     location: "Online · Sala Virtual Acadêmica",
+    shortLocation: "Sala Virtual · Online",
     duration: "40 minutos",
   },
   {
@@ -128,6 +134,7 @@ const OFFERINGS = [
     monitor: "Monitor Rafael S.",
     mode: "Presencial",
     location: "Presencial · Lab 02, Bloco B",
+    shortLocation: "Lab 02 · Presencial",
     duration: "40 minutos",
   },
   {
@@ -138,6 +145,7 @@ const OFFERINGS = [
     monitor: "Monitora Sofia M.",
     mode: "Online",
     location: "Online · Sala Virtual Acadêmica",
+    shortLocation: "Sala Virtual · Online",
     duration: "40 minutos",
   },
 ];
@@ -208,6 +216,7 @@ const DEFAULT_PREFS = {
   extraFocus: false,
   largeTargets: false,
   reducedMotion: false,
+  vlibras: false,
 };
 
 const SETTINGS_TAB_META = {
@@ -248,6 +257,7 @@ const ui = {
   step: 1,
   search: "",
   subjectFilter: "Todas",
+  modeFilter: "Todas",
   step1Layout: state.prefs?.defaultLayout || "list",
   activeSettingsTab: "geral",
   selectedOfferingId: null,
@@ -255,6 +265,8 @@ const ui = {
   calMonth: 10,
   selectedDateIso: null,
   selectedSlotId: null,
+  step3Completed: false,
+  reschedulingBookingId: null,
   lastCreatedBookingId: null,
   bookingFilter: "todos",
   monitorFilter: "active",
@@ -320,6 +332,111 @@ function normalizeText(val) {
     .trim();
 }
 
+function formatVagas(count, withAvailable = false) {
+  if (count <= 0) return withAvailable ? "Sem vagas na semana" : "Lotado";
+  if (count === 1) return withAvailable ? "1 vaga disponível" : "1 vaga";
+  return withAvailable ? `${count} vagas disponíveis` : `${count} vagas`;
+}
+
+function getMonitorInitials(monitorName) {
+  const clean = String(monitorName ?? "")
+    .replace(/^(Monitora|Monitor)\s+/i, "")
+    .replace(/\./g, "")
+    .trim();
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "M";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function getDateBadgeParts(dateIso, dayName) {
+  const [, mm, dd] = String(dateIso || "").split("-");
+  const monthIdx = Math.max(0, Math.min(11, Number(mm) - 1));
+  return {
+    day: dd || "--",
+    month: MONTH_SHORT[monthIdx] || "---",
+    weekday: String(dayName || "").slice(0, 3).toUpperCase(),
+  };
+}
+
+const FIELD_ERR_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+
+function setFieldError(fieldEl, message) {
+  if (!fieldEl || !fieldEl.id) return;
+  const errId = `err-${fieldEl.id}`;
+  fieldEl.classList.add("is-invalid");
+  fieldEl.setAttribute("aria-invalid", "true");
+
+  if (fieldEl.dataset.origDescribedby === undefined) {
+    fieldEl.dataset.origDescribedby = fieldEl.getAttribute("aria-describedby") || "";
+  }
+  const tokens = fieldEl.dataset.origDescribedby.split(/\s+/).filter(Boolean);
+  if (!tokens.includes(errId)) tokens.push(errId);
+  fieldEl.setAttribute("aria-describedby", tokens.join(" "));
+
+  const container = fieldEl.closest(".field") || fieldEl.parentElement;
+  let errNode = document.getElementById(errId);
+  if (!errNode) {
+    errNode = document.createElement("p");
+    errNode.id = errId;
+    errNode.className = "field-error";
+    errNode.setAttribute("role", "alert");
+    container.appendChild(errNode);
+  }
+  errNode.innerHTML = `${FIELD_ERR_ICON}<span>${escapeHtml(message)}</span>`;
+}
+
+function clearFieldError(fieldEl) {
+  if (!fieldEl || !fieldEl.id) return;
+  const errId = `err-${fieldEl.id}`;
+  fieldEl.classList.remove("is-invalid");
+  fieldEl.removeAttribute("aria-invalid");
+
+  if (fieldEl.dataset.origDescribedby !== undefined) {
+    if (fieldEl.dataset.origDescribedby) {
+      fieldEl.setAttribute("aria-describedby", fieldEl.dataset.origDescribedby);
+    } else {
+      fieldEl.removeAttribute("aria-describedby");
+    }
+  }
+  document.getElementById(errId)?.remove();
+}
+
+function clearFormErrors(formEl) {
+  if (!formEl) return;
+  formEl.querySelectorAll(".is-invalid").forEach((el) => clearFieldError(el));
+  formEl.querySelectorAll(".field-error").forEach((el) => el.remove());
+  formEl.querySelectorAll(".inline-alert").forEach((el) => {
+    el.classList.add("is-hidden");
+    el.textContent = "";
+  });
+}
+
+function applyFieldErrors(formEl, errors) {
+  clearFormErrors(formEl);
+  if (!errors || errors.length === 0) return false;
+  errors.forEach(({ el, message }) => setFieldError(el, message));
+  const first = errors[0].el;
+  if (first) {
+    first.focus();
+    first.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  return true;
+}
+
+function clearOtpErrors() {
+  const errEl = document.getElementById("otp-error");
+  if (errEl) {
+    errEl.classList.add("is-hidden");
+    errEl.textContent = "";
+  }
+  document.querySelectorAll(".otp-box").forEach((box) => {
+    box.classList.remove("is-invalid");
+    box.removeAttribute("aria-invalid");
+    box.removeAttribute("aria-describedby");
+  });
+}
+
 function getCurrentUser() {
   if (!state.currentUserId) return null;
   return state.users.find((u) => u.id === state.currentUserId) || null;
@@ -353,9 +470,10 @@ function getOfferingRemainingTotal(offeringId) {
     .reduce((acc, s) => acc + getSlotRemaining(s), 0);
 }
 
-function hasScheduleConflict(userId, targetSlot) {
+function hasScheduleConflict(userId, targetSlot, ignoreBookingId = null) {
   if (!userId) return false;
   return state.bookings.some((b) => {
+    if (ignoreBookingId && b.id === ignoreBookingId) return false;
     if (b.studentId !== userId || b.status !== "Confirmado") return false;
     const other = state.slots.find((s) => s.id === b.slotId);
     if (!other) return false;
@@ -504,11 +622,14 @@ function applyThemeAndA11y() {
     ["pref-large-targets", "largeTargets"],
     ["pref-block-conflicts", "blockConflicts"],
     ["pref-auto-ics", "autoIcsHint"],
+    ["pref-vlibras", "vlibras"],
   ];
   switchBindings.forEach(([id, key]) => {
     const input = document.getElementById(id);
     if (input) input.checked = Boolean(prefs[key]);
   });
+
+  syncVlibras(Boolean(prefs.vlibras));
 
   const cvdSelect = document.getElementById("pref-cvd-filter");
   if (cvdSelect) {
@@ -576,7 +697,10 @@ function syncSettingsAccountBox() {
   }
 }
 
+let lastSettingsTriggerEl = null;
+
 function openSettingsModal(initialTab = "geral", mobileDetail = false) {
+  lastSettingsTriggerEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   syncSettingsAccountBox();
   setSettingsTab(initialTab || ui.activeSettingsTab || "geral");
   applyThemeAndA11y();
@@ -585,14 +709,176 @@ function openSettingsModal(initialTab = "geral", mobileDetail = false) {
   document.getElementById("settings-modal")?.classList.remove("is-hidden");
   const body = document.querySelector(".settings-body");
   if (body) body.scrollTop = 0;
+  syncMobileChrome();
   const activeTabBtn = document.querySelector(`[data-settings-tab="${ui.activeSettingsTab}"]`);
   activeTabBtn?.focus();
 }
 
 function closeSettingsModal() {
   closeAllCustomSelects();
+  const modal = document.getElementById("settings-modal");
+  const wasOpen = modal && !modal.classList.contains("is-hidden");
   document.querySelector(".settings-window")?.classList.remove("is-mobile-detail");
-  document.getElementById("settings-modal")?.classList.add("is-hidden");
+  modal?.classList.add("is-hidden");
+  syncMobileChrome();
+  if (wasOpen && lastSettingsTriggerEl && document.contains(lastSettingsTriggerEl)) {
+    lastSettingsTriggerEl.focus();
+  }
+  lastSettingsTriggerEl = null;
+}
+
+// ==================== VLIBRAS OPCIONAL (SOB DEMANDA) ====================
+const vlibrasRuntime = {
+  mounted: false,
+  loading: false,
+};
+
+function getVlibrasHosts() {
+  return Array.from(
+    document.querySelectorAll("#vlibras-access-wrapper, #vlibras-app-root, #monitora-vlibras-root, div[vw]")
+  );
+}
+
+function positionVlibrasShadowAccess() {
+  const wrapper = document.getElementById("vlibras-access-wrapper");
+  const accessEl = wrapper?.shadowRoot?.querySelector("#vlibras-access");
+  if (!accessEl) return;
+
+  accessEl.style.zIndex = "120";
+  if (window.innerWidth <= 720) {
+    const hasSticky = document.body.classList.contains("has-mobile-sticky-cta");
+    accessEl.style.top = "auto";
+    accessEl.style.bottom = hasSticky
+      ? "calc(152px + env(safe-area-inset-bottom))"
+      : "calc(82px + env(safe-area-inset-bottom))";
+  } else {
+    accessEl.style.top = "calc(50vh - 20px)";
+    accessEl.style.bottom = "auto";
+  }
+}
+
+function applyVlibrasVisibility(enabled) {
+  const hosts = getVlibrasHosts();
+  hosts.forEach((el) => {
+    if (!enabled) {
+      el.classList.remove("enabled");
+      el.classList.add("is-vlibras-hidden");
+      el.style.setProperty("display", "none", "important");
+      el.style.setProperty("visibility", "hidden", "important");
+      el.setAttribute("aria-hidden", "true");
+      el.inert = true;
+    } else {
+      if (el.hasAttribute("vw")) el.classList.add("enabled");
+      el.classList.remove("is-vlibras-hidden");
+      el.style.removeProperty("display");
+      el.style.removeProperty("visibility");
+      el.removeAttribute("aria-hidden");
+      el.inert = false;
+      el.style.setProperty("z-index", "120", "important");
+    }
+  });
+  if (enabled) positionVlibrasShadowAccess();
+}
+
+function syncVlibras(enabled) {
+  document.body.classList.toggle("has-vlibras-active", Boolean(enabled));
+
+  if (!enabled) {
+    applyVlibrasVisibility(false);
+    return;
+  }
+
+  applyVlibrasVisibility(true);
+
+  if (vlibrasRuntime.mounted) return;
+
+  const initWidget = () => {
+    if (vlibrasRuntime.mounted) {
+      applyVlibrasVisibility(Boolean(getPrefs().vlibras));
+      return;
+    }
+    if (window.VLibras && typeof window.VLibras.Widget === "function") {
+      try {
+        new window.VLibras.Widget("https://vlibras.gov.br/app");
+        vlibrasRuntime.mounted = true;
+        // VLibras v7 cria #vlibras-access-wrapper no Shadow DOM de forma síncrona ou após 50ms
+        applyVlibrasVisibility(Boolean(getPrefs().vlibras));
+        setTimeout(() => applyVlibrasVisibility(Boolean(getPrefs().vlibras)), 120);
+      } catch {
+        showToast("Não foi possível inicializar o VLibras neste momento.");
+      }
+    }
+  };
+
+  if (window.VLibras && typeof window.VLibras.Widget === "function") {
+    initWidget();
+    return;
+  }
+
+  if (vlibrasRuntime.loading || document.getElementById("vlibras-plugin-script")) return;
+  vlibrasRuntime.loading = true;
+
+  const script = document.createElement("script");
+  script.id = "vlibras-plugin-script";
+  script.src = "https://vlibras.gov.br/app/vlibras-plugin.js";
+  script.async = true;
+  script.onload = () => {
+    vlibrasRuntime.loading = false;
+    initWidget();
+  };
+  script.onerror = () => {
+    vlibrasRuntime.loading = false;
+    script.remove();
+    showToast("Não foi possível carregar o VLibras agora (verifique sua conexão).");
+  };
+  document.body.appendChild(script);
+}
+
+// ==================== AJUDA RÁPIDA / FAQ (HEURÍSTICA 10) & FOCUS TRAP ====================
+let lastFaqTriggerEl = null;
+
+function trapFocusInModal(e, modalEl) {
+  if (e.key !== "Tab" || !modalEl || modalEl.classList.contains("is-hidden")) return;
+  const focusables = Array.from(
+    modalEl.querySelectorAll(
+      'button:not([disabled]):not(.is-hidden), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((el) => el.offsetParent !== null);
+  if (focusables.length === 0) return;
+
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
+function openFaqModal(triggerEl = null) {
+  lastFaqTriggerEl =
+    triggerEl instanceof HTMLElement
+      ? triggerEl
+      : document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+  const modal = document.getElementById("faq-modal");
+  if (!modal) return;
+  modal.classList.remove("is-hidden");
+  document.getElementById("btn-close-faq")?.focus();
+  announceA11y("Ajuda rápida aberta.");
+}
+
+function closeFaqModal() {
+  const modal = document.getElementById("faq-modal");
+  const wasOpen = modal && !modal.classList.contains("is-hidden");
+  modal?.classList.add("is-hidden");
+  if (wasOpen && lastFaqTriggerEl && document.contains(lastFaqTriggerEl)) {
+    lastFaqTriggerEl.focus();
+  }
+  lastFaqTriggerEl = null;
 }
 
 function speakCurrentScreen() {
@@ -779,6 +1065,51 @@ function renderTopbar() {
   document.querySelector(".profile-chevron")?.classList.toggle("is-hidden", !user);
   monitorTab.classList.toggle("is-hidden", !user || user.role !== "monitor");
   document.getElementById("badge-agendamentos").textContent = String(activeCount);
+  syncMobileChrome();
+}
+
+function syncMobileChrome() {
+  const user = getCurrentUser();
+  const activeCount = user
+    ? state.bookings.filter((b) => b.studentId === user.id && b.status === "Confirmado").length
+    : 0;
+
+  const mobileMonitorTab = document.getElementById("mobile-nav-monitor-tab");
+  if (mobileMonitorTab) {
+    mobileMonitorTab.classList.toggle("is-hidden", !user || user.role !== "monitor");
+  }
+
+  const mobileBadge = document.getElementById("mobile-badge-agendamentos");
+  if (mobileBadge) {
+    mobileBadge.textContent = String(activeCount);
+    mobileBadge.classList.toggle("is-hidden", activeCount <= 0);
+  }
+
+  const settingsModal = document.getElementById("settings-modal");
+  const settingsOpen = Boolean(settingsModal && !settingsModal.classList.contains("is-hidden"));
+
+  document.querySelectorAll("[data-mobile-nav]").forEach((btn) => {
+    const active = !settingsOpen && btn.dataset.mobileNav === ui.activeView;
+    btn.classList.toggle("is-active", active);
+    if (active) {
+      btn.setAttribute("aria-current", "page");
+    } else {
+      btn.removeAttribute("aria-current");
+    }
+  });
+
+  const settingsTabBtn = document.getElementById("mobile-nav-settings-btn");
+  if (settingsTabBtn) {
+    settingsTabBtn.classList.toggle("is-active", settingsOpen);
+    settingsTabBtn.setAttribute("aria-expanded", String(settingsOpen));
+  }
+
+  const step3Form = document.getElementById("step3-form-shell");
+  const step3FormVisible = Boolean(step3Form && !step3Form.classList.contains("is-hidden"));
+  const hasStickyCta =
+    ui.activeView === "agendar" && (ui.step === 2 || (ui.step === 3 && step3FormVisible));
+  document.body.classList.toggle("has-mobile-sticky-cta", hasStickyCta);
+  if (getPrefs().vlibras) positionVlibrasShadowAccess();
 }
 
 // ==================== NAVEGAÇÃO ====================
@@ -793,6 +1124,9 @@ function switchView(viewName) {
   }
 
   ui.activeView = viewName;
+  if (viewName !== "agendar") {
+    ui.reschedulingBookingId = null;
+  }
   document.body.classList.toggle("is-landing-mode", viewName === "landing");
 
   document.querySelectorAll(".view-section").forEach((sec) => {
@@ -818,6 +1152,7 @@ function switchView(viewName) {
   if (viewName === "agendar") renderAgendar();
   if (viewName === "agendamentos") renderBookings();
   if (viewName === "monitor") renderMonitorPanel();
+  syncMobileChrome();
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -832,6 +1167,8 @@ function setAuthTab(tabName) {
   });
   document.getElementById("form-login").classList.toggle("is-hidden", tabName !== "login");
   document.getElementById("form-register").classList.toggle("is-hidden", tabName !== "register");
+  clearFormErrors(document.getElementById("form-login"));
+  clearFormErrors(document.getElementById("form-register"));
 
   const switchLine = document.getElementById("assaad-switch-line");
   if (tabName === "login") {
@@ -854,7 +1191,7 @@ function showOtpStage(draft) {
     off ? off.subject : "a disciplina"
   }.`;
   document.getElementById("otp-hint-code").textContent = hintCode;
-  document.getElementById("otp-error").classList.add("is-hidden");
+  clearOtpErrors();
 
   const boxes = Array.from(document.querySelectorAll(".otp-box"));
   boxes.forEach((b) => {
@@ -866,6 +1203,7 @@ function showOtpStage(draft) {
 
 function hideOtpStage() {
   ui.pendingMonitorDraft = null;
+  clearOtpErrors();
   document.getElementById("auth-stage-otp").classList.add("is-hidden");
   document.getElementById("auth-stage-main").classList.remove("is-hidden");
 }
@@ -878,19 +1216,32 @@ function getOtpValue() {
 
 function handleLoginSubmit(e) {
   e.preventDefault();
-  const errEl = document.getElementById("login-error");
-  errEl.classList.add("is-hidden");
+  const form = document.getElementById("form-login");
+  clearFormErrors(form);
 
-  const identifier = document.getElementById("login-identifier").value.trim().toLowerCase();
-  const password = document.getElementById("login-password").value;
+  const idInput = document.getElementById("login-identifier");
+  const passInput = document.getElementById("login-password");
+  const identifier = idInput.value.trim().toLowerCase();
+  const password = passInput.value;
+
+  const errors = [];
+  if (!identifier) {
+    errors.push({ el: idInput, message: "Informe sua matrícula ou e-mail institucional." });
+  }
+  if (!password) {
+    errors.push({ el: passInput, message: "Digite sua senha para continuar." });
+  }
+  if (applyFieldErrors(form, errors)) return;
 
   const user = state.users.find(
     (u) => (u.ra.toLowerCase() === identifier || u.email.toLowerCase() === identifier) && u.password === password
   );
 
   if (!user) {
-    errEl.textContent = "Matrícula/e-mail ou senha inválidos.";
-    errEl.classList.remove("is-hidden");
+    idInput.classList.add("is-invalid");
+    idInput.setAttribute("aria-invalid", "true");
+    setFieldError(passInput, "Matrícula/e-mail ou senha inválidos. Confira os dados e tente novamente.");
+    passInput.focus();
     return;
   }
 
@@ -908,14 +1259,29 @@ function handleLoginSubmit(e) {
 }
 
 function validateNewAccountFields({ name, ra, email, password }) {
-  if (name.length < 3) return "Informe seu nome completo.";
-  if (!/^\d{5,12}$/.test(ra)) return "A matrícula deve conter de 5 a 12 números.";
-  if (!email.includes("@") || !email.includes(".")) return "Informe um e-mail válido.";
-  if (password.length < 4) return "A senha deve ter no mínimo 4 caracteres.";
-  if (state.users.some((u) => u.ra === ra || u.email.toLowerCase() === email.toLowerCase())) {
-    return "Já existe uma conta cadastrada com esta matrícula ou e-mail.";
+  const errors = [];
+  const nameEl = document.getElementById("reg-name");
+  const raEl = document.getElementById("reg-ra");
+  const emailEl = document.getElementById("reg-email");
+  const passEl = document.getElementById("reg-password");
+
+  if (name.length < 3) {
+    errors.push({ el: nameEl, message: "Informe seu nome completo (mínimo 3 caracteres)." });
   }
-  return null;
+  if (!/^\d{5,12}$/.test(ra)) {
+    errors.push({ el: raEl, message: "A matrícula deve conter de 5 a 12 números." });
+  } else if (state.users.some((u) => u.ra === ra)) {
+    errors.push({ el: raEl, message: "Já existe uma conta cadastrada com esta matrícula." });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.push({ el: emailEl, message: "Informe um e-mail institucional válido." });
+  } else if (state.users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
+    errors.push({ el: emailEl, message: "Já existe uma conta cadastrada com este e-mail." });
+  }
+  if (password.length < 4) {
+    errors.push({ el: passEl, message: "A senha deve ter no mínimo 4 caracteres." });
+  }
+  return errors;
 }
 
 function finalizeCreateUser({ role, name, ra, email, password, course, offeringId }) {
@@ -937,8 +1303,8 @@ function finalizeCreateUser({ role, name, ra, email, password, course, offeringI
 
 function handleRegisterSubmit(e) {
   e.preventDefault();
-  const errEl = document.getElementById("register-error");
-  errEl.classList.add("is-hidden");
+  const form = document.getElementById("form-register");
+  clearFormErrors(form);
 
   const draft = {
     role: ui.regRole,
@@ -950,12 +1316,8 @@ function handleRegisterSubmit(e) {
     offeringId: document.getElementById("reg-subject").value,
   };
 
-  const errMsg = validateNewAccountFields(draft);
-  if (errMsg) {
-    errEl.textContent = errMsg;
-    errEl.classList.remove("is-hidden");
-    return;
-  }
+  const errors = validateNewAccountFields(draft);
+  if (applyFieldErrors(form, errors)) return;
 
   if (draft.role === "monitor") {
     showOtpStage(draft);
@@ -963,7 +1325,8 @@ function handleRegisterSubmit(e) {
   }
 
   finalizeCreateUser(draft);
-  document.getElementById("form-register").reset();
+  form.reset();
+  clearFormErrors(form);
   renderTopbar();
   ui.step = 1;
   switchView("agendar");
@@ -975,8 +1338,8 @@ function handleVerifyOtpSubmit(e) {
   const draft = ui.pendingMonitorDraft;
   if (!draft) return;
 
+  clearOtpErrors();
   const errEl = document.getElementById("otp-error");
-  errEl.classList.add("is-hidden");
 
   const codeEntered = getOtpValue();
   const expected = PROFESSOR_CODES[draft.offeringId];
@@ -984,6 +1347,13 @@ function handleVerifyOtpSubmit(e) {
   if (!expected || codeEntered !== expected) {
     errEl.textContent = "Código inválido para esta disciplina. Solicite o código ao professor.";
     errEl.classList.remove("is-hidden");
+    const boxes = document.querySelectorAll(".otp-box");
+    boxes.forEach((box) => {
+      box.classList.add("is-invalid");
+      box.setAttribute("aria-invalid", "true");
+      box.setAttribute("aria-describedby", "otp-error");
+    });
+    boxes[0]?.focus();
     return;
   }
 
@@ -996,8 +1366,75 @@ function handleVerifyOtpSubmit(e) {
 }
 
 // ==================== AGENDAR (3 ETAPAS) ====================
+const STEP_CHECK_SVG = `<svg class="step-crumb-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+function getActiveReschedulingBooking() {
+  if (!ui.reschedulingBookingId) return null;
+  const bk = state.bookings.find((b) => b.id === ui.reschedulingBookingId && b.status === "Confirmado");
+  if (!bk) {
+    ui.reschedulingBookingId = null;
+    return null;
+  }
+  return bk;
+}
+
+function syncRescheduleBanner() {
+  const banner = document.getElementById("reschedule-banner");
+  if (!banner) return;
+  const bk = getActiveReschedulingBooking();
+  if (!bk || ui.step < 2 || ui.step3Completed) {
+    banner.classList.add("is-hidden");
+    return;
+  }
+  const oldSlot = state.slots.find((s) => s.id === bk.slotId);
+  const off = oldSlot ? getOffering(oldSlot.offeringId) : null;
+  document.getElementById("reschedule-banner-title").textContent = `Reagendando ${bk.protocol}${
+    off ? ` · ${off.shortSubject}` : ""
+  }`;
+  document.getElementById("reschedule-banner-desc").textContent = oldSlot
+    ? `Vaga atual (${oldSlot.dayName}, ${formatDateBr(oldSlot.dateIso)} às ${oldSlot.time.split(" - ")[0]}) garantida até confirmar o novo horário.`
+    : "Sua vaga atual permanece garantida até confirmar o novo horário.";
+  banner.classList.remove("is-hidden");
+}
+
+function startReschedule(bookingId) {
+  const bk = state.bookings.find((b) => b.id === bookingId && b.status === "Confirmado");
+  if (!bk) return;
+  const oldSlot = state.slots.find((s) => s.id === bk.slotId);
+  const off = oldSlot ? getOffering(oldSlot.offeringId) : null;
+  if (!oldSlot || !off) return;
+
+  const altSlot = state.slots.find(
+    (s) => s.offeringId === off.id && s.id !== oldSlot.id && getSlotRemaining(s) > 0
+  );
+
+  ui.reschedulingBookingId = bk.id;
+  ui.selectedOfferingId = off.id;
+  ui.selectedDateIso = altSlot ? altSlot.dateIso : oldSlot.dateIso;
+  ui.selectedSlotId = null;
+  ui.step3Completed = false;
+  ui.step = 2;
+
+  const topicEl = document.getElementById("s3-topic");
+  if (topicEl) topicEl.value = bk.topic || "";
+
+  switchView("agendar");
+  announceA11y(`Reagendando atendimento ${bk.protocol}. Escolha a nova data e horário.`);
+}
+
+function cancelReschedule(returnToBookings = false) {
+  ui.reschedulingBookingId = null;
+  syncRescheduleBanner();
+  if (returnToBookings) {
+    switchView("agendamentos");
+    showToast("Reagendamento cancelado. Sua vaga original foi mantida.");
+  }
+}
+
 function setStep(stepNumber) {
   ui.step = stepNumber;
+  if (stepNumber === 1) ui.reschedulingBookingId = null;
+  if (stepNumber < 3) ui.step3Completed = false;
   renderAgendar();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1012,15 +1449,27 @@ function renderStepper() {
   c2.disabled = !ui.selectedOfferingId;
   c3.disabled = !ui.selectedSlotId;
 
+  c1.innerHTML = `<span>1. Escolher monitoria</span>`;
+  c2.innerHTML = `<span>2. Data e horário</span>`;
+  c3.innerHTML = `<span>3. Confirmar</span>`;
+
   if (ui.step === 1) c1.classList.add("is-active");
   if (ui.step === 2) {
     c1.classList.add("is-done");
+    c1.innerHTML = `${STEP_CHECK_SVG}<span>1. Escolher monitoria</span>`;
     c2.classList.add("is-active");
   }
   if (ui.step === 3) {
     c1.classList.add("is-done");
+    c1.innerHTML = `${STEP_CHECK_SVG}<span>1. Escolher monitoria</span>`;
     c2.classList.add("is-done");
-    c3.classList.add("is-active");
+    c2.innerHTML = `${STEP_CHECK_SVG}<span>2. Data e horário</span>`;
+    if (ui.step3Completed) {
+      c3.classList.add("is-done");
+      c3.innerHTML = `${STEP_CHECK_SVG}<span>3. Confirmado</span>`;
+    } else {
+      c3.classList.add("is-active");
+    }
   }
 
   document.getElementById("step-1").classList.toggle("is-hidden", ui.step !== 1);
@@ -1031,6 +1480,12 @@ function renderStepper() {
 function renderStep1() {
   document.querySelectorAll("[data-step1-layout]").forEach((b) => {
     const active = b.dataset.step1Layout === ui.step1Layout;
+    b.classList.toggle("is-active", active);
+    b.setAttribute("aria-pressed", String(active));
+  });
+
+  document.querySelectorAll("[data-mode-filter]").forEach((b) => {
+    const active = b.dataset.modeFilter === ui.modeFilter;
     b.classList.toggle("is-active", active);
     b.setAttribute("aria-pressed", String(active));
   });
@@ -1057,8 +1512,11 @@ function renderStep1() {
   const query = normalizeText(ui.search);
   const filteredOfferings = OFFERINGS.filter((off) => {
     if (ui.subjectFilter !== "Todas" && off.shortSubject !== ui.subjectFilter) return false;
+    if (ui.modeFilter !== "Todas" && !off.mode.includes(ui.modeFilter)) return false;
     if (query) {
-      const hay = normalizeText(`${off.subject} ${off.shortSubject} ${off.title} ${off.monitor} ${off.location}`);
+      const hay = normalizeText(
+        `${off.subject} ${off.shortSubject} ${off.title} ${off.monitor} ${off.location} ${off.shortLocation} ${off.mode}`
+      );
       if (!hay.includes(query)) return false;
     }
     return true;
@@ -1085,13 +1543,21 @@ function renderStep1() {
       .map((off) => {
         const free = getOfferingRemainingTotal(off.id);
         const dotClass = free === 0 ? "dot-muted" : free <= 3 ? "dot-amber" : "dot-green";
-        const vacText = free === 0 ? "Sem vagas na semana" : `${free} vagas disponíveis`;
+        const vacText = formatVagas(free, true);
+        const initials = getMonitorInitials(off.monitor);
+        const placeTag = off.shortLocation || off.location;
 
         return `
           <button type="button" class="list-row-btn" data-select-offering="${escapeHtml(off.id)}">
-            <div>
-              <p class="row-title">${escapeHtml(off.subject)} — ${escapeHtml(off.title)}</p>
-              <p class="row-meta">${escapeHtml(off.monitor)} · ${escapeHtml(off.mode)} · ${escapeHtml(off.duration)}</p>
+            <div class="row-left">
+              <span class="monitor-monogram" aria-hidden="true">${escapeHtml(initials)}</span>
+              <div class="row-body">
+                <p class="row-title">${escapeHtml(off.subject)} — ${escapeHtml(off.title)}</p>
+                <div class="row-meta-line">
+                  <span class="row-meta">${escapeHtml(off.monitor)}</span>
+                  <span class="row-loc-tag">${escapeHtml(placeTag)}</span>
+                </div>
+              </div>
             </div>
             <div class="row-right">
               <span class="status-dot-inline ${dotClass}" aria-hidden="true"></span>
@@ -1133,7 +1599,7 @@ function renderStep1() {
                 ${rem <= 0 ? "disabled" : ""}
               >
                 <strong>${escapeHtml(off.shortSubject)}</strong>
-                <span>${rem <= 0 ? "Lotado" : `${rem} vaga(s)`} · ${formatDateBr(sl.dateIso).slice(0, 5)}</span>
+                <span>${escapeHtml(formatVagas(rem, false))} · ${formatDateBr(sl.dateIso).slice(0, 5)}</span>
               </button>
             `;
           })
@@ -1215,25 +1681,38 @@ function renderStep2() {
 
   dayLabel.textContent = formatDayHeading(ui.selectedDateIso, daySlots[0].dayName);
 
-  if (!daySlots.some((s) => s.id === ui.selectedSlotId && getSlotRemaining(s) > 0)) {
+  const reschedBk = getActiveReschedulingBooking();
+  if (
+    !daySlots.some(
+      (s) => s.id === ui.selectedSlotId && getSlotRemaining(s) > 0 && (!reschedBk || s.id !== reschedBk.slotId)
+    )
+  ) {
     ui.selectedSlotId = null;
   }
+
+  const slotCheckSvg = `<svg class="slot-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`;
 
   listEl.innerHTML = daySlots
     .map((slot) => {
       const rem = getSlotRemaining(slot);
-      const selected = slot.id === ui.selectedSlotId;
+      const isCurrentReschedSlot = Boolean(reschedBk && slot.id === reschedBk.slotId);
+      const selected = !isCurrentReschedSlot && slot.id === ui.selectedSlotId;
       const startTime = slot.time.split(" - ")[0];
-      const vacLabel = rem <= 0 ? "Lotado" : `${rem} ${rem === 1 ? "vaga" : "vagas"}`;
+      const vacLabel = isCurrentReschedSlot ? "Horário atual" : formatVagas(rem, false);
+      const disabled = isCurrentReschedSlot || rem <= 0;
 
       return `
         <button
           type="button"
           class="slot-pick-btn ${selected ? "is-selected" : ""}"
           data-pick-slot="${escapeHtml(slot.id)}"
-          ${rem <= 0 ? "disabled" : ""}
+          aria-pressed="${selected}"
+          ${disabled ? "disabled" : ""}
         >
-          <span class="slot-time-mono">${escapeHtml(startTime)}</span>
+          <span class="slot-pick-main">
+            ${selected ? slotCheckSvg : ""}
+            <span class="slot-time-mono">${escapeHtml(startTime)}</span>
+          </span>
           <span class="slot-vac-label">${escapeHtml(vacLabel)}</span>
         </button>
       `;
@@ -1255,8 +1734,16 @@ function renderStep3() {
   const off = slot ? getOffering(slot.offeringId) : null;
   if (!slot || !off) return;
 
+  const reschedBk = getActiveReschedulingBooking();
+  ui.step3Completed = false;
+  clearFormErrors(document.getElementById("form-confirm-booking"));
   document.getElementById("step3-form-shell").classList.remove("is-hidden");
   document.getElementById("step3-success-shell").classList.add("is-hidden");
+
+  const headingEl = document.getElementById("s3-form-heading");
+  const submitBtn = document.getElementById("btn-s3-submit");
+  if (headingEl) headingEl.textContent = reschedBk ? "Confirmar reagendamento" : "Confirmar atendimento";
+  if (submitBtn) submitBtn.textContent = reschedBk ? "Confirmar novo horário" : "Confirmar agendamento";
 
   document.getElementById("s3-subject").textContent = off.subject.toUpperCase();
   document.getElementById("s3-title").textContent = off.title;
@@ -1265,7 +1752,10 @@ function renderStep3() {
   )}<br>${escapeHtml(slot.time.replace(" - ", " — "))}`;
   document.getElementById("s3-monitor").textContent = off.monitor;
   document.getElementById("s3-location").textContent = off.location;
-  document.getElementById("s3-vacancies").textContent = `${getSlotRemaining(slot)} de ${slot.capacity} livres`;
+  const remCount = getSlotRemaining(slot);
+  document.getElementById("s3-vacancies").textContent = `${remCount} de ${slot.capacity} ${
+    remCount === 1 ? "livre" : "livres"
+  }`;
 
   const user = getCurrentUser();
   if (!user) {
@@ -1278,7 +1768,7 @@ function renderStep3() {
 
   const errBox = document.getElementById("s3-error-box");
   errBox.classList.add("is-hidden");
-  if (user && hasScheduleConflict(user.id, slot)) {
+  if (user && hasScheduleConflict(user.id, slot, reschedBk?.id || null)) {
     errBox.textContent = `Você já possui outro atendimento confirmado em ${slot.dayName} às ${slot.time}.`;
     errBox.classList.remove("is-hidden");
   }
@@ -1286,15 +1776,18 @@ function renderStep3() {
 
 function renderAgendar() {
   renderStepper();
+  syncRescheduleBanner();
   if (ui.step === 1) renderStep1();
   if (ui.step === 2) renderStep2();
   if (ui.step === 3) renderStep3();
+  syncMobileChrome();
 }
 
 function handleConfirmBooking(e) {
   e.preventDefault();
+  const form = document.getElementById("form-confirm-booking");
   const errBox = document.getElementById("s3-error-box");
-  errBox.classList.add("is-hidden");
+  clearFormErrors(form);
 
   const slot = state.slots.find((s) => s.id === ui.selectedSlotId);
   const off = slot ? getOffering(slot.offeringId) : null;
@@ -1306,11 +1799,19 @@ function handleConfirmBooking(e) {
     return;
   }
 
-  const topic = document.getElementById("s3-topic").value.trim();
+  const reschedBk = getActiveReschedulingBooking();
+  const topicEl = document.getElementById("s3-topic");
+  const topic = topicEl.value.trim();
   if (topic.length < 4) {
-    errBox.textContent = "Descreva brevemente sua dúvida (mínimo 4 caracteres).";
+    setFieldError(topicEl, "Descreva brevemente sua dúvida (mínimo 4 caracteres).");
+    topicEl.focus();
+    topicEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
+  if (reschedBk && slot.id === reschedBk.slotId) {
+    errBox.textContent = "Selecione um horário diferente do atual para reagendar.";
     errBox.classList.remove("is-hidden");
-    document.getElementById("s3-topic").focus();
     return;
   }
 
@@ -1320,7 +1821,7 @@ function handleConfirmBooking(e) {
     return;
   }
 
-  if (getPrefs().blockConflicts && hasScheduleConflict(user.id, slot)) {
+  if (getPrefs().blockConflicts && hasScheduleConflict(user.id, slot, reschedBk?.id || null)) {
     errBox.textContent = `Você já possui um atendimento confirmado em ${slot.dayName} às ${slot.time}.`;
     errBox.classList.remove("is-hidden");
     return;
@@ -1333,38 +1834,89 @@ function handleConfirmBooking(e) {
       return;
     }
 
-    const seq = String(state.nextSeq).padStart(3, "0");
-    state.nextSeq += 1;
-    const protocol = `#MON-2026-${seq}`;
+    let protocol = "";
+    let undoRescheduleFn = null;
+    const isReschedule = Boolean(reschedBk);
 
-    const booking = {
-      id: `bk-${Date.now()}`,
-      protocol,
-      studentId: user.id,
-      slotId: slot.id,
-      topic,
-      status: "Confirmado",
-      createdAt: new Date().toLocaleString("pt-BR"),
-    };
+    if (reschedBk) {
+      const oldSlotId = reschedBk.slotId;
+      const oldTopic = reschedBk.topic;
+      reschedBk.slotId = slot.id;
+      reschedBk.topic = topic;
+      protocol = reschedBk.protocol;
+      ui.lastCreatedBookingId = reschedBk.id;
+      ui.reschedulingBookingId = null;
 
-    state.bookings.push(booking);
-    ui.lastCreatedBookingId = booking.id;
+      undoRescheduleFn = () => {
+        const prevSlot = state.slots.find((s) => s.id === oldSlotId);
+        if (!prevSlot || getSlotRemaining(prevSlot) <= 0) {
+          showToast("O horário anterior não possui mais vagas disponíveis.");
+          return;
+        }
+        reschedBk.slotId = oldSlotId;
+        reschedBk.topic = oldTopic;
+        saveState();
+        renderTopbar();
+        if (ui.activeView === "agendamentos") renderBookings();
+        showToast(`Reagendamento desfeito (${protocol}).`);
+      };
+    } else {
+      const seq = String(state.nextSeq).padStart(3, "0");
+      state.nextSeq += 1;
+      protocol = `#MON-2026-${seq}`;
+
+      const booking = {
+        id: `bk-${Date.now()}`,
+        protocol,
+        studentId: user.id,
+        slotId: slot.id,
+        topic,
+        status: "Confirmado",
+        createdAt: new Date().toLocaleString("pt-BR"),
+      };
+
+      state.bookings.push(booking);
+      ui.lastCreatedBookingId = booking.id;
+    }
+
+    ui.step3Completed = true;
     saveState();
     renderTopbar();
+
+    const successTitle = document.getElementById("success-title");
+    const successSub = document.getElementById("success-sub");
+    if (successTitle) successTitle.textContent = isReschedule ? "Monitoria reagendada" : "Monitoria confirmada";
+    if (successSub) {
+      successSub.textContent = isReschedule
+        ? "Seu horário foi atualizado mantendo o mesmo protocolo abaixo."
+        : "Seu atendimento está reservado. Guarde o código de protocolo abaixo.";
+    }
 
     document.getElementById("success-protocol").textContent = protocol;
     document.getElementById("success-summary").innerHTML = `
       <div><dt>Estudante</dt><dd>${escapeHtml(user.name)}</dd></div>
       <div><dt>Disciplina</dt><dd>${escapeHtml(off.subject)}</dd></div>
       <div><dt>Data e horário</dt><dd>${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}</dd></div>
-      <div><dt>Local / Monitor</dt><dd>${escapeHtml(off.location)}</dd></div>
+      <div><dt>Monitor</dt><dd>${escapeHtml(off.monitor)}</dd></div>
+      <div class="success-grid-wide"><dt>Local</dt><dd>${escapeHtml(off.location)}</dd></div>
     `;
 
     document.getElementById("btn-download-ics")?.classList.toggle("is-emphasized", Boolean(getPrefs().autoIcsHint));
     document.getElementById("step3-form-shell").classList.add("is-hidden");
     document.getElementById("step3-success-shell").classList.remove("is-hidden");
-    announceA11y(`Agendamento confirmado. Protocolo ${protocol}.`);
-    showToast(`Agendamento confirmado (${protocol})`);
+    renderStepper();
+    syncRescheduleBanner();
+    syncMobileChrome();
+    announceA11y(
+      isReschedule
+        ? `Monitoria reagendada com sucesso. Protocolo ${protocol}.`
+        : `Agendamento confirmado. Protocolo ${protocol}.`
+    );
+    showToast(
+      isReschedule ? `Horário reagendado (${protocol})` : `Agendamento confirmado (${protocol})`,
+      undoRescheduleFn,
+      "success"
+    );
   };
 
   if (!getPrefs().confirmBeforeBook) {
@@ -1373,15 +1925,17 @@ function handleConfirmBooking(e) {
   }
 
   openConfirmDialog({
-    title: "Confirmar agendamento?",
-    desc: "Confira os dados abaixo antes de reservar sua vaga.",
+    title: reschedBk ? "Confirmar troca de horário?" : "Confirmar agendamento?",
+    desc: reschedBk
+      ? "A vaga anterior só será liberada após confirmar este novo horário."
+      : "Confira os dados abaixo antes de reservar sua vaga.",
     summaryHtml: `
       <strong>${escapeHtml(off.subject)}</strong><br>
       ${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}<br>
       ${escapeHtml(off.monitor)} · ${escapeHtml(off.location)}<br>
       <strong>Dúvida:</strong> ${escapeHtml(topic)}
     `,
-    confirmText: "Sim, confirmar vaga",
+    confirmText: reschedBk ? "Sim, trocar horário" : "Sim, confirmar vaga",
     danger: false,
     onConfirm: executeBooking,
   });
@@ -1419,33 +1973,46 @@ function renderBookings() {
     return;
   }
 
+  const statusRank = { Confirmado: 0, "Concluído": 1, Cancelado: 2 };
   listEl.innerHTML = filtered
     .slice()
     .reverse()
+    .sort((a, b) => (statusRank[a.status] ?? 9) - (statusRank[b.status] ?? 9))
     .map((bk) => {
       const slot = state.slots.find((s) => s.id === bk.slotId);
       const off = slot ? getOffering(slot.offeringId) : null;
       if (!slot || !off) return "";
 
+      const dateParts = getDateBadgeParts(slot.dateIso, slot.dayName);
+      const isInactive = bk.status !== "Confirmado";
+
       return `
-        <div class="booking-row">
-          <div>
-            <div class="booking-meta-top">
-              <span class="mono-badge">${escapeHtml(bk.protocol)}</span>
-              <span class="status-tag is-${escapeHtml(bk.status)}">${escapeHtml(bk.status)}</span>
+        <div class="booking-row ${isInactive ? "is-status-inactive" : "is-status-active"}">
+          <div class="booking-main">
+            <div class="booking-date-block" aria-hidden="true">
+              <span class="booking-date-day">${escapeHtml(dateParts.day)}</span>
+              <span class="booking-date-month">${escapeHtml(dateParts.month)}</span>
+              <span class="booking-date-wk">${escapeHtml(dateParts.weekday)}</span>
             </div>
-            <p class="row-title">${escapeHtml(off.subject)} — ${escapeHtml(off.title)}</p>
-            <p class="row-meta">
-              ${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)} · ${escapeHtml(
-        off.location
+            <div class="booking-info">
+              <div class="booking-meta-top">
+                <span class="mono-badge">${escapeHtml(bk.protocol)}</span>
+                <span class="status-tag is-${escapeHtml(bk.status)}">${escapeHtml(bk.status)}</span>
+              </div>
+              <p class="row-title">${escapeHtml(off.subject)} — ${escapeHtml(off.title)}</p>
+              <p class="row-meta">
+                ${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)} · ${escapeHtml(
+        off.shortLocation || off.location
       )}
-            </p>
-            <p class="row-meta" style="margin-top:4px">Dúvida: ${escapeHtml(bk.topic)}</p>
+              </p>
+              <p class="row-meta" style="margin-top:4px">Dúvida: ${escapeHtml(bk.topic)}</p>
+            </div>
           </div>
           <div class="booking-actions">
             ${
               bk.status === "Confirmado"
-                ? `<button type="button" class="btn btn-secondary" data-ics="${escapeHtml(bk.id)}">.ics</button>
+                ? `<button type="button" class="btn btn-secondary" data-reschedule-bk="${escapeHtml(bk.id)}">Reagendar</button>
+                   <button type="button" class="btn btn-secondary" data-ics="${escapeHtml(bk.id)}">.ics</button>
                    <button type="button" class="btn btn-danger" data-cancel-bk="${escapeHtml(bk.id)}">Cancelar</button>`
                 : ""
             }
@@ -1502,16 +2069,26 @@ function renderMonitorPanel() {
       const stu = getUserById(bk.studentId);
       if (!slot) return "";
 
+      const dateParts = getDateBadgeParts(slot.dateIso, slot.dayName);
+      const isInactive = bk.status !== "Confirmado";
+
       return `
-        <div class="booking-row">
-          <div>
-            <div class="booking-meta-top">
-              <span class="mono-badge">${escapeHtml(bk.protocol)}</span>
-              <span class="status-tag is-${escapeHtml(bk.status)}">${escapeHtml(bk.status)}</span>
+        <div class="booking-row ${isInactive ? "is-status-inactive" : "is-status-active"}">
+          <div class="booking-main">
+            <div class="booking-date-block" aria-hidden="true">
+              <span class="booking-date-day">${escapeHtml(dateParts.day)}</span>
+              <span class="booking-date-month">${escapeHtml(dateParts.month)}</span>
+              <span class="booking-date-wk">${escapeHtml(dateParts.weekday)}</span>
             </div>
-            <p class="row-title">${escapeHtml(stu ? stu.name : "Estudante")} (${escapeHtml(stu ? stu.ra : "—")})</p>
-            <p class="row-meta">${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}</p>
-            <p class="row-meta" style="margin-top:4px">Dúvida: ${escapeHtml(bk.topic)}</p>
+            <div class="booking-info">
+              <div class="booking-meta-top">
+                <span class="mono-badge">${escapeHtml(bk.protocol)}</span>
+                <span class="status-tag is-${escapeHtml(bk.status)}">${escapeHtml(bk.status)}</span>
+              </div>
+              <p class="row-title">${escapeHtml(stu ? stu.name : "Estudante")} (${escapeHtml(stu ? stu.ra : "—")})</p>
+              <p class="row-meta">${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}</p>
+              <p class="row-meta" style="margin-top:4px">Dúvida: ${escapeHtml(bk.topic)}</p>
+            </div>
           </div>
           <div class="booking-actions">
             ${
@@ -1530,30 +2107,38 @@ function renderMonitorPanel() {
 
 function handlePublishNewSlot(e) {
   e.preventDefault();
-  const errEl = document.getElementById("monitor-slot-error");
-  errEl.classList.add("is-hidden");
+  const form = document.getElementById("form-new-slot");
+  clearFormErrors(form);
 
   const user = getCurrentUser();
   if (!user || user.role !== "monitor") return;
 
   const offeringId = user.offeringId;
   const expectedCode = PROFESSOR_CODES[offeringId];
-  const dateIso = document.getElementById("ms-date").value;
-  const time = document.getElementById("ms-time").value;
-  const capacity = Number(document.getElementById("ms-capacity").value);
-  const profCode = document.getElementById("ms-prof-code").value.trim().toUpperCase();
+  const dateEl = document.getElementById("ms-date");
+  const timeEl = document.getElementById("ms-time");
+  const capEl = document.getElementById("ms-capacity");
+  const codeEl = document.getElementById("ms-prof-code");
 
-  if (!expectedCode || profCode !== expectedCode) {
-    errEl.textContent = "Código do professor inválido para esta disciplina.";
-    errEl.classList.remove("is-hidden");
-    return;
+  const dateIso = dateEl.value;
+  const time = timeEl.value;
+  const capacity = Number(capEl.value);
+  const profCode = codeEl.value.trim().toUpperCase();
+
+  const errors = [];
+  if (!dateIso) {
+    errors.push({ el: dateEl, message: "Selecione a data do atendimento." });
+  }
+  if (!Number.isInteger(capacity) || capacity < 1 || capacity > 15) {
+    errors.push({ el: capEl, message: "Informe um limite entre 1 e 15 vagas." });
+  }
+  if (!profCode) {
+    errors.push({ el: codeEl, message: "Informe o código autorizado pelo docente." });
+  } else if (!expectedCode || profCode !== expectedCode) {
+    errors.push({ el: codeEl, message: "Código do professor inválido para esta disciplina." });
   }
 
-  if (!dateIso || capacity < 1 || capacity > 15) {
-    errEl.textContent = "Informe uma data válida e capacidade entre 1 e 15 vagas.";
-    errEl.classList.remove("is-hidden");
-    return;
-  }
+  if (applyFieldErrors(form, errors)) return;
 
   const off = getOffering(offeringId);
   const dayName = getWeekdayNameFromIso(dateIso);
@@ -1590,8 +2175,10 @@ function handlePublishNewSlot(e) {
 
 // ==================== UTILITÁRIOS: MODAL, .ICS, TOAST ====================
 let pendingConfirmCallback = null;
+let lastConfirmTriggerEl = null;
 
 function openConfirmDialog({ title, desc, summaryHtml = "", confirmText = "Confirmar", danger = false, onConfirm }) {
+  lastConfirmTriggerEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const modal = document.getElementById("confirm-modal");
   const summaryEl = document.getElementById("confirm-modal-summary");
   const proceedBtn = document.getElementById("btn-confirm-proceed");
@@ -1617,8 +2204,14 @@ function openConfirmDialog({ title, desc, summaryHtml = "", confirmText = "Confi
 }
 
 function closeConfirmDialog() {
+  const modal = document.getElementById("confirm-modal");
+  const wasOpen = modal && !modal.classList.contains("is-hidden");
   pendingConfirmCallback = null;
-  document.getElementById("confirm-modal").classList.add("is-hidden");
+  modal?.classList.add("is-hidden");
+  if (wasOpen && lastConfirmTriggerEl && document.contains(lastConfirmTriggerEl)) {
+    lastConfirmTriggerEl.focus();
+  }
+  lastConfirmTriggerEl = null;
 }
 
 function downloadIcs(bookingId) {
@@ -1858,6 +2451,16 @@ function bindEvents() {
     closeProfileMenu();
     openSettingsModal("geral", false);
   });
+  document.getElementById("btn-profile-faq")?.addEventListener("click", () => {
+    closeProfileMenu();
+    openFaqModal(document.getElementById("btn-account-action"));
+  });
+  document.getElementById("btn-close-faq")?.addEventListener("click", closeFaqModal);
+  document.getElementById("btn-close-faq-foot")?.addEventListener("click", closeFaqModal);
+  document.getElementById("faq-modal")?.addEventListener("click", (e) => {
+    if (e.target.id === "faq-modal") closeFaqModal();
+  });
+  document.getElementById("btn-cancel-reschedule")?.addEventListener("click", () => cancelReschedule(true));
   document.getElementById("btn-profile-export")?.addEventListener("click", () => {
     closeProfileMenu();
     exportUserBookingsJson();
@@ -1876,6 +2479,21 @@ function bindEvents() {
       if (btn.dataset.view === "agendar") ui.step = 1;
       switchView(btn.dataset.view);
     });
+  });
+
+  document.querySelectorAll("[data-mobile-nav]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      closeProfileMenu();
+      closeSettingsModal();
+      const targetView = btn.dataset.mobileNav;
+      if (targetView === "agendar") ui.step = 1;
+      switchView(targetView);
+    });
+  });
+
+  document.getElementById("mobile-nav-settings-btn")?.addEventListener("click", () => {
+    closeProfileMenu();
+    openSettingsModal("geral", false);
   });
 
   document.querySelectorAll(".theme-opt").forEach((btn) => {
@@ -1968,6 +2586,7 @@ function bindEvents() {
     ["pref-large-targets", "largeTargets", "Alvos de toque ampliados"],
     ["pref-block-conflicts", "blockConflicts", "Bloqueio de choque de horário"],
     ["pref-auto-ics", "autoIcsHint", "Destaque de lembrete .ics"],
+    ["pref-vlibras", "vlibras", "Tradutor em Libras (VLibras)"],
   ];
   switchPrefMap.forEach(([id, key, label]) => {
     document.getElementById(id)?.addEventListener("change", (e) => {
@@ -2118,6 +2737,13 @@ function bindEvents() {
     renderStep1();
   });
 
+  document.getElementById("mode-filter-group")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-mode-filter]");
+    if (!btn) return;
+    ui.modeFilter = btn.dataset.modeFilter;
+    renderStep1();
+  });
+
   document.querySelectorAll("[data-step1-layout]").forEach((btn) => {
     btn.addEventListener("click", () => {
       ui.step1Layout = btn.dataset.step1Layout;
@@ -2133,6 +2759,7 @@ function bindEvents() {
   document.getElementById("btn-clear-search").addEventListener("click", () => {
     ui.search = "";
     ui.subjectFilter = "Todas";
+    ui.modeFilter = "Todas";
     document.getElementById("input-search").value = "";
     renderStep1();
   });
@@ -2216,7 +2843,9 @@ function bindEvents() {
 
   document.getElementById("btn-go-step3").addEventListener("click", () => {
     if (!ui.selectedSlotId) return;
-    document.getElementById("s3-topic").value = "";
+    if (!ui.reschedulingBookingId) {
+      document.getElementById("s3-topic").value = "";
+    }
     setStep(3);
   });
 
@@ -2227,19 +2856,38 @@ function bindEvents() {
     const chip = e.target.closest("[data-topic]");
     if (!chip) return;
     topicInput.value = chip.dataset.topic;
+    clearFieldError(topicInput);
     syncTopicChips();
     topicInput.focus();
   });
-  topicInput.addEventListener("input", syncTopicChips);
+  topicInput.addEventListener("input", () => {
+    clearFieldError(topicInput);
+    syncTopicChips();
+  });
 
   document.getElementById("btn-back-step2").addEventListener("click", () => setStep(2));
-  document.getElementById("btn-s3-cancel").addEventListener("click", () => setStep(2));
   document.getElementById("btn-s3-switch-account").addEventListener("click", () => {
     state.currentUserId = null;
     saveState();
     renderTopbar();
     switchView("landing");
   });
+
+  // Limpeza automática de erros inline ao digitar (Heurística 9)
+  ["form-login", "form-register", "form-new-slot"].forEach((formId) => {
+    const formEl = document.getElementById(formId);
+    if (!formEl) return;
+    const clearTarget = (ev) => {
+      const target = ev.target;
+      if (target && target.matches("input, textarea, select")) {
+        clearFieldError(target);
+      }
+    };
+    formEl.addEventListener("input", clearTarget);
+    formEl.addEventListener("change", clearTarget);
+  });
+
+  document.getElementById("otp-grid")?.addEventListener("input", clearOtpErrors);
 
   document.getElementById("form-confirm-booking").addEventListener("submit", handleConfirmBooking);
   document.getElementById("btn-download-ics").addEventListener("click", () => {
@@ -2260,6 +2908,11 @@ function bindEvents() {
   });
 
   document.getElementById("bookings-list").addEventListener("click", (e) => {
+    const reschedBtn = e.target.closest("[data-reschedule-bk]");
+    if (reschedBtn) {
+      startReschedule(reschedBtn.dataset.rescheduleBk);
+      return;
+    }
     const cancelBtn = e.target.closest("[data-cancel-bk]");
     if (cancelBtn) {
       const bk = state.bookings.find((b) => b.id === cancelBtn.dataset.cancelBk);
@@ -2370,6 +3023,23 @@ function bindEvents() {
   });
 
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Tab") {
+      const confirmModal = document.getElementById("confirm-modal");
+      if (confirmModal && !confirmModal.classList.contains("is-hidden")) {
+        trapFocusInModal(e, confirmModal);
+        return;
+      }
+      const faqModal = document.getElementById("faq-modal");
+      if (faqModal && !faqModal.classList.contains("is-hidden")) {
+        trapFocusInModal(e, faqModal);
+        return;
+      }
+      const settingsModal = document.getElementById("settings-modal");
+      if (settingsModal && !settingsModal.classList.contains("is-hidden")) {
+        trapFocusInModal(e, settingsModal);
+        return;
+      }
+    }
     if (e.key === "Escape") {
       if (document.querySelector(".bc-select-wrap.is-open")) {
         closeAllCustomSelects();
@@ -2378,6 +3048,11 @@ function bindEvents() {
       const confirmModal = document.getElementById("confirm-modal");
       if (confirmModal && !confirmModal.classList.contains("is-hidden")) {
         closeConfirmDialog();
+        return;
+      }
+      const faqModal = document.getElementById("faq-modal");
+      if (faqModal && !faqModal.classList.contains("is-hidden")) {
+        closeFaqModal();
         return;
       }
       closeSettingsModal();
@@ -2693,6 +3368,7 @@ function initCustomSelects() {
   );
 
   window.addEventListener("resize", () => {
+    if (getPrefs().vlibras) positionVlibrasShadowAccess();
     const openWrap = document.querySelector(".bc-select-wrap.is-open");
     if (!openWrap) return;
     const trigger = openWrap.querySelector(".bc-select-trigger");
