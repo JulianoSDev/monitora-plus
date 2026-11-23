@@ -218,6 +218,10 @@ const DEFAULT_PREFS = {
   largeTargets: false,
   reducedMotion: false,
   vlibras: false,
+  colorMode: null,
+  themePreset: "monitora",
+  customAccent: null,
+  uiFont: "dm-sans",
   customBg: null,
   customFg: null,
 };
@@ -274,6 +278,7 @@ const ui = {
   highlightedBookingId: null,
   bookingFilter: "todos",
   monitorFilter: "active",
+  monitorTab: "bookings",
 };
 
 // ==================== PERSISTÊNCIA ====================
@@ -634,13 +639,25 @@ function syncAllSlidingIndicators(forceInstant = false) {
     );
     syncSlidingIndicator(document.getElementById("mode-filter-group"), ".layout-btn.is-active", "pill", forceInstant);
     syncSlidingIndicator(
-      document.querySelector(".step1-tools-row .layout-toggle"),
+      document.querySelector(".step1-layout-desktop"),
       ".layout-btn.is-active",
       "pill",
       forceInstant
     );
     syncSlidingIndicator(
-      document.querySelector("#view-monitor .layout-toggle"),
+      document.querySelector(".step1-layout-mobile"),
+      ".layout-btn.is-active",
+      "pill",
+      forceInstant
+    );
+    syncSlidingIndicator(
+      document.getElementById("monitor-section-tabs"),
+      ".u-tab.is-active",
+      "underline",
+      forceInstant
+    );
+    syncSlidingIndicator(
+      document.getElementById("monitor-filter-toggle"),
       ".layout-btn.is-active",
       "pill",
       forceInstant
@@ -674,6 +691,38 @@ const THEME_BASE_COLORS = {
   dark: { bg: "#09090b", fg: "#fafafa" },
   contrast: { bg: "#000000", fg: "#ffffff" },
 };
+
+const THEME_PRESETS = {
+  monitora: { light: "#b44b1e", dark: "#c2592b", contrast: "#facc15" },
+  "academic-navy": { light: "#1d4ed8", dark: "#3b82f6", contrast: "#38bdf8" },
+  "forest-slate": { light: "#15803d", dark: "#22c55e", contrast: "#4ade80" },
+  "amber-studio": { light: "#ca8a04", dark: "#eab308", contrast: "#facc15" },
+  "olive-moss": { light: "#65a30d", dark: "#a3e635", contrast: "#bef264" },
+  graphite: { light: "#3f3f46", dark: "#d4d4d8", contrast: "#ffffff" },
+};
+
+const UI_FONTS = {
+  "dm-sans": '"DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+  readable: 'Verdana, Geneva, "DM Sans", sans-serif',
+  mono: '"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+};
+
+function getResolvedTheme() {
+  const prefs = getPrefs();
+  if (prefs.colorMode === "system") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  return state.theme || "light";
+}
+
+function getBestOnColor(bgHex) {
+  const darkFg = "#0d0d0f";
+  const lightFg = "#ffffff";
+  const cDark = getContrastRatio(bgHex, darkFg);
+  const cLight = getContrastRatio(bgHex, lightFg);
+  return cDark >= cLight ? darkFg : lightFg;
+}
 
 const CUSTOM_COLOR_VARS = [
   "--bg",
@@ -825,9 +874,65 @@ function syncWcagGuardUI(bgHex, fgHex) {
   }
 }
 
+function applyAccentAndFont(resolvedTheme, activeBg) {
+  const prefs = getPrefs();
+  const presetKey = THEME_PRESETS[prefs.themePreset] ? prefs.themePreset : "monitora";
+  const preset = THEME_PRESETS[presetKey];
+  const accentHex = normalizeHexColor(prefs.customAccent) || preset[resolvedTheme] || preset.light;
+  const accentFg = getBestOnColor(accentHex);
+  const accentText =
+    getContrastRatio(activeBg, accentHex) >= 4.5
+      ? accentHex
+      : findNearestReadableFg(activeBg, accentHex, 4.5);
+
+  const s = document.body.style;
+  s.setProperty("--accent", accentHex);
+  s.setProperty("--accent-hover", `color-mix(in srgb, ${accentHex} 88%, ${accentFg} 12%)`);
+  s.setProperty("--accent-soft", `color-mix(in srgb, ${accentHex} 14%, transparent)`);
+  s.setProperty("--accent-fg", accentFg);
+  s.setProperty("--on-accent", accentFg);
+  s.setProperty("--accent-text", accentText);
+
+  const fontKey = UI_FONTS[prefs.uiFont] ? prefs.uiFont : "dm-sans";
+  document.documentElement.style.setProperty("--font-sans", UI_FONTS[fontKey]);
+
+  const presetSelect = document.getElementById("pref-theme-preset");
+  if (presetSelect) {
+    presetSelect.value = presetKey;
+    syncCustomSelect(presetSelect);
+  }
+  const fontSelect = document.getElementById("pref-ui-font");
+  if (fontSelect) {
+    fontSelect.value = fontKey;
+    syncCustomSelect(fontSelect);
+  }
+
+  let matchedSwatch = false;
+  document.querySelectorAll("[data-accent-hex]").forEach((btn) => {
+    const active = normalizeHexColor(btn.dataset.accentHex) === accentHex;
+    if (active) matchedSwatch = true;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-checked", String(active));
+  });
+
+  const accentPicker = document.getElementById("pref-accent-picker");
+  if (accentPicker && accentPicker.value.toLowerCase() !== accentHex) {
+    accentPicker.value = accentHex;
+  }
+  const customWrap = accentPicker?.closest(".accent-swatch-custom");
+  if (customWrap) {
+    const isCustom = Boolean(normalizeHexColor(prefs.customAccent) && !matchedSwatch);
+    customWrap.style.background = isCustom ? accentHex : "";
+    customWrap.style.color = isCustom ? accentFg : "";
+    customWrap.style.borderStyle = isCustom ? "solid" : "";
+    customWrap.style.borderColor = isCustom ? accentHex : "";
+    customWrap.style.boxShadow = isCustom ? `0 0 0 2px var(--surface), 0 0 0 4px ${accentHex}` : "";
+  }
+}
+
 function applyCustomColors() {
   const prefs = getPrefs();
-  const theme = state.theme || "light";
+  const theme = getResolvedTheme();
   const base = THEME_BASE_COLORS[theme] || THEME_BASE_COLORS.light;
   const customBg = normalizeHexColor(prefs.customBg);
   const customFg = normalizeHexColor(prefs.customFg);
@@ -837,6 +942,7 @@ function applyCustomColors() {
   if (!customBg && !customFg) {
     clearCustomColorsFromDom();
     document.documentElement.style.colorScheme = theme === "light" ? "light" : "dark";
+    applyAccentAndFont(theme, activeBg);
     syncWcagGuardUI(activeBg, activeFg);
     return;
   }
@@ -868,12 +974,14 @@ function applyCustomColors() {
   s.setProperty("--scroll-thumb-hover", `color-mix(in srgb, ${activeFg} 40%, transparent)`);
   document.documentElement.style.colorScheme = isDarkBg ? "dark" : "light";
 
+  applyAccentAndFont(theme, activeBg);
   syncWcagGuardUI(activeBg, activeFg);
 }
 
 function applyThemeAndA11y() {
   const prefs = getPrefs();
-  const theme = state.theme || "light";
+  const theme = getResolvedTheme();
+  const modeSelection = prefs.colorMode === "system" ? "system" : theme;
   const scale = state.fontScale || 1;
   const pct = Math.round(scale * 100);
 
@@ -898,8 +1006,14 @@ function applyThemeAndA11y() {
   const maskEl = document.getElementById("reading-mask");
   if (maskEl) maskEl.classList.toggle("is-hidden", !prefs.readingMask);
 
-  document.querySelectorAll(".theme-opt").forEach((btn) => {
+  document.querySelectorAll(".theme-opt:not([data-mode-opt])").forEach((btn) => {
     const active = btn.dataset.theme === theme;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", String(active));
+  });
+
+  document.querySelectorAll("[data-mode-opt]").forEach((btn) => {
+    const active = btn.dataset.modeOpt === modeSelection;
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   });
@@ -1347,7 +1461,13 @@ function confirmDeleteAccount() {
   openConfirmDialog({
     title: "Excluir conta e dados?",
     desc: "Sua conta e os seus agendamentos salvos neste navegador serão removidos permanentemente.",
-    summaryHtml: `<strong>${escapeHtml(user.name)}</strong> · Mat. ${escapeHtml(user.ra)}`,
+    summaryHtml: buildConfirmSummaryCard({
+      title: user.name,
+      rows: [
+        { label: "Matrícula", value: user.ra },
+        { label: "E-mail", value: user.email },
+      ],
+    }),
     confirmText: "Excluir permanentemente",
     danger: true,
     onConfirm: () => {
@@ -1846,34 +1966,51 @@ function setStep(stepNumber) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function syncSearchPlaceholder() {
+  const input = document.getElementById("input-search");
+  if (!input) return;
+  const isCompactOrTouch =
+    window.innerWidth <= 768 ||
+    Boolean(window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+  input.placeholder = isCompactOrTouch
+    ? "Buscar disciplina ou monitor"
+    : "Buscar disciplina ou monitor (/)";
+}
+
 function renderStepper() {
   const c1 = document.getElementById("crumb-1");
   const c2 = document.getElementById("crumb-2");
   const c3 = document.getElementById("crumb-3");
+  const isMobile = window.innerWidth <= 768;
+
+  const lbl1 = isMobile ? "1. Monitoria" : "1. Escolher monitoria";
+  const lbl2 = isMobile ? "2. Horário" : "2. Data e horário";
+  const lbl3 = "3. Confirmar";
+  const lbl3Done = "3. Confirmado";
 
   [c1, c2, c3].forEach((c) => c.classList.remove("is-active", "is-done"));
   c1.disabled = false;
   c2.disabled = !ui.selectedOfferingId;
   c3.disabled = !ui.selectedSlotId;
 
-  c1.innerHTML = `<span>1. Escolher monitoria</span>`;
-  c2.innerHTML = `<span>2. Data e horário</span>`;
-  c3.innerHTML = `<span>3. Confirmar</span>`;
+  c1.innerHTML = `<span>${lbl1}</span>`;
+  c2.innerHTML = `<span>${lbl2}</span>`;
+  c3.innerHTML = `<span>${lbl3}</span>`;
 
   if (ui.step === 1) c1.classList.add("is-active");
   if (ui.step === 2) {
     c1.classList.add("is-done");
-    c1.innerHTML = `${STEP_CHECK_SVG}<span>1. Escolher monitoria</span>`;
+    c1.innerHTML = `${STEP_CHECK_SVG}<span>${lbl1}</span>`;
     c2.classList.add("is-active");
   }
   if (ui.step === 3) {
     c1.classList.add("is-done");
-    c1.innerHTML = `${STEP_CHECK_SVG}<span>1. Escolher monitoria</span>`;
+    c1.innerHTML = `${STEP_CHECK_SVG}<span>${lbl1}</span>`;
     c2.classList.add("is-done");
-    c2.innerHTML = `${STEP_CHECK_SVG}<span>2. Data e horário</span>`;
+    c2.innerHTML = `${STEP_CHECK_SVG}<span>${lbl2}</span>`;
     if (ui.step3Completed) {
       c3.classList.add("is-done");
-      c3.innerHTML = `${STEP_CHECK_SVG}<span>3. Confirmado</span>`;
+      c3.innerHTML = `${STEP_CHECK_SVG}<span>${lbl3Done}</span>`;
     } else {
       c3.classList.add("is-active");
     }
@@ -2347,12 +2484,20 @@ function handleConfirmBooking(e) {
     desc: reschedBk
       ? "A vaga anterior só será liberada após confirmar este novo horário."
       : "Confira os dados abaixo antes de reservar sua vaga.",
-    summaryHtml: `
-      <strong>${escapeHtml(off.subject)}</strong><br>
-      ${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}<br>
-      ${escapeHtml(off.monitor)} · ${escapeHtml(off.location)}<br>
-      <strong>Dúvida:</strong> ${escapeHtml(topic)}
-    `,
+    summaryHtml: buildConfirmSummaryCard({
+      title: off.subject,
+      rows: [
+        { label: "Data e horário", value: `${slot.dayName}, ${formatDateBr(slot.dateIso)} às ${slot.time}` },
+        { label: "Monitor", value: off.monitor },
+        {
+          label: "Local / Modalidade",
+          value: off.location.toLowerCase().includes(off.mode.toLowerCase())
+            ? off.location
+            : `${off.location} · ${off.mode}`,
+        },
+        { label: "Dúvida", value: topic, stacked: true },
+      ],
+    }),
     confirmText: reschedBk ? "Sim, trocar horário" : "Sim, confirmar vaga",
     danger: false,
     onConfirm: executeBooking,
@@ -2463,9 +2608,23 @@ function renderMonitorPanel() {
   document.getElementById("ms-prof-code").placeholder = expectedCode || "Ex.: IHC026";
   document.getElementById(
     "monitor-sub"
-  ).textContent = `Disciplina vinculada: ${subjectName}. Apenas agendamentos desta matéria aparecem aqui.`;
+  ).textContent = `Disciplina vinculada: ${subjectName}. Apenas agendamentos e horários desta matéria aparecem aqui.`;
 
   const listEl = document.getElementById("monitor-bookings-list");
+  const slotsListEl = document.getElementById("monitor-slots-list");
+  const filterToggleEl = document.getElementById("monitor-filter-toggle");
+  const activeTab = ui.monitorTab === "slots" ? "slots" : "bookings";
+
+  document.querySelectorAll("#monitor-section-tabs [data-mon-tab]").forEach((btn) => {
+    const active = btn.dataset.monTab === activeTab;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-selected", String(active));
+  });
+
+  listEl?.classList.toggle("is-hidden", activeTab !== "bookings");
+  slotsListEl?.classList.toggle("is-hidden", activeTab !== "slots");
+  filterToggleEl?.classList.toggle("is-hidden", activeTab !== "bookings");
+
   const disciplineBookings = state.bookings.filter((bk) => {
     const slot = state.slots.find((s) => s.id === bk.slotId);
     return Boolean(slot && user.offeringId && slot.offeringId === user.offeringId);
@@ -2476,63 +2635,117 @@ function renderMonitorPanel() {
       ? disciplineBookings.filter((bk) => bk.status === "Confirmado")
       : disciplineBookings;
 
-  document.getElementById("monitor-bookings-count").textContent = String(relevantBookings.length);
+  const disciplineSlots = state.slots
+    .filter((s) => user.offeringId && s.offeringId === user.offeringId)
+    .slice()
+    .sort((a, b) => `${a.dateIso} ${a.time}`.localeCompare(`${b.dateIso} ${b.time}`));
+
+  const bookingsCountEl = document.getElementById("monitor-bookings-count");
+  const slotsCountEl = document.getElementById("monitor-slots-count");
+  if (bookingsCountEl) bookingsCountEl.textContent = String(relevantBookings.length);
+  if (slotsCountEl) slotsCountEl.textContent = String(disciplineSlots.length);
 
   if (relevantBookings.length === 0) {
     listEl.innerHTML = `<div class="empty-box" style="border:none"><p>Nenhum aluno agendado nesta disciplina${
       ui.monitorFilter === "active" ? " no momento" : ""
     }.</p></div>`;
-    syncAllSlidingIndicators();
-    return;
+  } else {
+    listEl.innerHTML = relevantBookings
+      .slice()
+      .reverse()
+      .map((bk) => {
+        const slot = state.slots.find((s) => s.id === bk.slotId);
+        const stu = getUserById(bk.studentId);
+        if (!slot) return "";
+
+        const dateParts = getDateBadgeParts(slot.dateIso, slot.dayName);
+        const isInactive = bk.status !== "Confirmado";
+        const isHighlight = bk.id === ui.highlightedBookingId;
+
+        return `
+          <div class="booking-row ${isInactive ? "is-status-inactive" : "is-status-active"} ${
+          isHighlight ? "is-row-highlight" : ""
+        }" data-booking-row="${escapeHtml(bk.id)}">
+            <div class="booking-main">
+              <div class="booking-date-block" aria-hidden="true">
+                <span class="booking-date-day">${escapeHtml(dateParts.day)}</span>
+                <span class="booking-date-month">${escapeHtml(dateParts.month)}</span>
+                <span class="booking-date-wk">${escapeHtml(dateParts.weekday)}</span>
+              </div>
+              <div class="booking-info">
+                <div class="booking-meta-top">
+                  <span class="mono-badge">${escapeHtml(bk.protocol)}</span>
+                  <span class="status-tag is-${escapeHtml(bk.status)}">${escapeHtml(bk.status)}</span>
+                </div>
+                <p class="row-title">${escapeHtml(stu ? stu.name : "Estudante")} (${escapeHtml(stu ? stu.ra : "—")})</p>
+                <p class="row-meta">${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}</p>
+                <p class="row-meta" style="margin-top:4px">Dúvida: ${escapeHtml(bk.topic)}</p>
+              </div>
+            </div>
+            <div class="booking-actions">
+              ${
+                bk.status === "Confirmado"
+                  ? `<button type="button" class="btn btn-secondary" data-complete-bk="${escapeHtml(
+                      bk.id
+                    )}">Concluir</button>`
+                  : ""
+              }
+            </div>
+          </div>
+        `;
+      })
+      .join("");
   }
 
-  listEl.innerHTML = relevantBookings
-    .slice()
-    .reverse()
-    .map((bk) => {
-      const slot = state.slots.find((s) => s.id === bk.slotId);
-      const stu = getUserById(bk.studentId);
-      if (!slot) return "";
+  if (slotsListEl) {
+    if (disciplineSlots.length === 0) {
+      slotsListEl.innerHTML = `<div class="empty-box" style="border:none"><p>Nenhum horário publicado para esta disciplina.</p></div>`;
+    } else {
+      slotsListEl.innerHTML = disciplineSlots
+        .map((slot) => {
+          const dateParts = getDateBadgeParts(slot.dateIso, slot.dayName);
+          const confirmedDynamic = state.bookings.filter(
+            (b) => b.slotId === slot.id && b.status === "Confirmado"
+          ).length;
+          const occupied = Math.min(slot.capacity, getSlotOccupied(slot));
+          const rem = getSlotRemaining(slot);
+          const canRemove = confirmedDynamic === 0;
 
-      const dateParts = getDateBadgeParts(slot.dateIso, slot.dayName);
-      const isInactive = bk.status !== "Confirmado";
-      const isHighlight = bk.id === ui.highlightedBookingId;
-
-      return `
-        <div class="booking-row ${isInactive ? "is-status-inactive" : "is-status-active"} ${
-        isHighlight ? "is-row-highlight" : ""
-      }" data-booking-row="${escapeHtml(bk.id)}">
-          <div class="booking-main">
-            <div class="booking-date-block" aria-hidden="true">
-              <span class="booking-date-day">${escapeHtml(dateParts.day)}</span>
-              <span class="booking-date-month">${escapeHtml(dateParts.month)}</span>
-              <span class="booking-date-wk">${escapeHtml(dateParts.weekday)}</span>
-            </div>
-            <div class="booking-info">
-              <div class="booking-meta-top">
-                <span class="mono-badge">${escapeHtml(bk.protocol)}</span>
-                <span class="status-tag is-${escapeHtml(bk.status)}">${escapeHtml(bk.status)}</span>
+          return `
+            <div class="monitor-slot-row" data-slot-row="${escapeHtml(slot.id)}">
+              <div class="monitor-slot-main">
+                <div class="booking-date-block" aria-hidden="true">
+                  <span class="booking-date-day">${escapeHtml(dateParts.day)}</span>
+                  <span class="booking-date-month">${escapeHtml(dateParts.month)}</span>
+                  <span class="booking-date-wk">${escapeHtml(dateParts.weekday)}</span>
+                </div>
+                <div class="monitor-slot-meta">
+                  <p class="monitor-slot-time">${escapeHtml(slot.time)}</p>
+                  <p class="monitor-slot-sub">${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(
+            formatVagas(rem, false)
+          )}</p>
+                </div>
               </div>
-              <p class="row-title">${escapeHtml(stu ? stu.name : "Estudante")} (${escapeHtml(stu ? stu.ra : "—")})</p>
-              <p class="row-meta">${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}</p>
-              <p class="row-meta" style="margin-top:4px">Dúvida: ${escapeHtml(bk.topic)}</p>
+              <div class="monitor-slot-right">
+                <span class="slot-occ-badge">${occupied}/${slot.capacity} ocupadas</span>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  data-remove-slot="${escapeHtml(slot.id)}"
+                  ${canRemove ? "" : 'disabled title="Há aluno confirmado neste horário"'}
+                >
+                  Remover
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="booking-actions">
-            ${
-              bk.status === "Confirmado"
-                ? `<button type="button" class="btn btn-secondary" data-complete-bk="${escapeHtml(
-                    bk.id
-                  )}">Concluir</button>`
-                : ""
-            }
-          </div>
-        </div>
-      `;
-    })
-    .join("");
+          `;
+        })
+        .join("");
+    }
+  }
+
   ui.highlightedBookingId = null;
-  syncAllSlidingIndicators();
+  syncAllSlidingIndicators(true);
 }
 
 function handlePublishNewSlot(e) {
@@ -2576,11 +2789,13 @@ function handlePublishNewSlot(e) {
   openConfirmDialog({
     title: "Publicar horário na agenda?",
     desc: "Este horário ficará disponível para agendamento dos estudantes.",
-    summaryHtml: `
-      <strong>${escapeHtml(off ? off.subject : "")}</strong><br>
-      ${escapeHtml(dayName)}, ${formatDateBr(dateIso)} · ${escapeHtml(time)}<br>
-      <strong>Vagas:</strong> ${capacity}
-    `,
+    summaryHtml: buildConfirmSummaryCard({
+      title: off ? off.subject : "Monitoria",
+      rows: [
+        { label: "Data e horário", value: `${dayName}, ${formatDateBr(dateIso)} às ${time}` },
+        { label: "Limite de vagas", value: `${capacity} ${capacity === 1 ? "vaga" : "vagas"}` },
+      ],
+    }),
     confirmText: "Sim, publicar horário",
     danger: false,
     onConfirm: () => {
@@ -2615,6 +2830,22 @@ function handlePublishNewSlot(e) {
 // ==================== UTILITÁRIOS: MODAL, .ICS, TOAST ====================
 let pendingConfirmCallback = null;
 let lastConfirmTriggerEl = null;
+
+function buildConfirmSummaryCard({ title = "", rows = [] }) {
+  const titleMarkup = title ? `<p class="confirm-summary-title">${escapeHtml(title)}</p>` : "";
+  const rowsMarkup = rows
+    .filter((r) => r && r.value)
+    .map(
+      (r) => `
+      <div class="confirm-summary-row ${r.stacked ? "is-stacked" : ""}">
+        <dt>${escapeHtml(r.label)}</dt>
+        <dd>${escapeHtml(r.value)}</dd>
+      </div>
+    `
+    )
+    .join("");
+  return `${titleMarkup}${rowsMarkup ? `<dl class="confirm-summary-list">${rowsMarkup}</dl>` : ""}`;
+}
 
 function openConfirmDialog({ title, desc, summaryHtml = "", confirmText = "Confirmar", danger = false, onConfirm }) {
   lastConfirmTriggerEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -2994,14 +3225,82 @@ function bindEvents() {
     openSettingsModal("geral", false);
   });
 
-  document.querySelectorAll(".theme-opt").forEach((btn) => {
+  document.querySelectorAll("[data-mode-opt]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      state.theme = btn.dataset.theme;
-      getPrefs().customBg = null;
-      getPrefs().customFg = null;
+      const mode = btn.dataset.modeOpt;
+      const prefs = getPrefs();
+      prefs.colorMode = mode;
+      if (mode !== "system") {
+        state.theme = mode;
+      }
+      prefs.customBg = null;
+      prefs.customFg = null;
       saveState();
       applyThemeAndA11y();
     });
+  });
+
+  document.querySelectorAll(".theme-opt:not([data-mode-opt])").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const prefs = getPrefs();
+      prefs.colorMode = btn.dataset.theme;
+      state.theme = btn.dataset.theme;
+      prefs.customBg = null;
+      prefs.customFg = null;
+      saveState();
+      applyThemeAndA11y();
+    });
+  });
+
+  if (window.matchMedia) {
+    const schemeMql = window.matchMedia("(prefers-color-scheme: dark)");
+    const onSchemeChange = () => {
+      if (getPrefs().colorMode === "system") applyThemeAndA11y();
+    };
+    if (typeof schemeMql.addEventListener === "function") {
+      schemeMql.addEventListener("change", onSchemeChange);
+    }
+  }
+
+  document.getElementById("pref-theme-preset")?.addEventListener("change", (e) => {
+    const prefs = getPrefs();
+    prefs.themePreset = e.target.value;
+    prefs.customAccent = null;
+    saveState();
+    applyThemeAndA11y();
+    announceA11y(`Tema alterado para ${e.target.selectedOptions[0]?.textContent || e.target.value}.`);
+  });
+
+  document.getElementById("accent-swatches")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-accent-hex]");
+    if (!btn) return;
+    getPrefs().customAccent = btn.dataset.accentHex;
+    saveState();
+    applyThemeAndA11y();
+    announceA11y(`Cor de destaque alterada para ${btn.getAttribute("aria-label") || btn.dataset.accentHex}.`);
+  });
+
+  document.getElementById("pref-accent-picker")?.addEventListener("input", (e) => {
+    const hex = normalizeHexColor(e.target.value);
+    if (!hex) return;
+    getPrefs().customAccent = hex;
+    applyCustomColors();
+  });
+
+  document.getElementById("pref-accent-picker")?.addEventListener("change", (e) => {
+    const hex = normalizeHexColor(e.target.value);
+    if (!hex) return;
+    getPrefs().customAccent = hex;
+    saveState();
+    applyCustomColors();
+  });
+
+  document.getElementById("pref-ui-font")?.addEventListener("change", (e) => {
+    getPrefs().uiFont = e.target.value;
+    saveState();
+    applyThemeAndA11y();
+    syncAllSlidingIndicators(true);
+    announceA11y(`Fonte da interface alterada para ${e.target.selectedOptions[0]?.textContent || e.target.value}.`);
   });
 
   // Aparência -> Avançado: cores personalizadas + validador WCAG 2.1 ao vivo
@@ -3059,7 +3358,8 @@ function bindEvents() {
 
   document.getElementById("btn-fix-contrast")?.addEventListener("click", () => {
     const prefs = getPrefs();
-    const base = THEME_BASE_COLORS[state.theme || "light"] || THEME_BASE_COLORS.light;
+    const resolvedTheme = getResolvedTheme();
+    const base = THEME_BASE_COLORS[resolvedTheme] || THEME_BASE_COLORS.light;
     const bg = normalizeHexColor(prefs.customBg) || base.bg;
     const fg = normalizeHexColor(prefs.customFg) || base.fg;
     const fixedFg = findNearestReadableFg(bg, fg, 7.0);
@@ -3074,12 +3374,13 @@ function bindEvents() {
 
   document.getElementById("btn-reset-custom-colors")?.addEventListener("click", () => {
     const prefs = getPrefs();
+    const resolvedTheme = getResolvedTheme();
     prefs.customBg = null;
     prefs.customFg = null;
     saveState();
     applyThemeAndA11y();
     const themeLabel =
-      state.theme === "dark" ? "Escuro" : state.theme === "contrast" ? "Contraste AAA" : "Claro";
+      resolvedTheme === "dark" ? "Escuro" : resolvedTheme === "contrast" ? "Contraste AAA" : "Claro";
     announceA11y(`Cores padrão do tema ${themeLabel} restauradas.`);
     showToast(`Cores padrão do tema ${themeLabel} restauradas.`, null, "success");
   });
@@ -3372,7 +3673,7 @@ function bindEvents() {
     btn.addEventListener("click", () => {
       ui.step1Layout = btn.dataset.step1Layout;
       document.querySelectorAll("[data-step1-layout]").forEach((b) => {
-        const active = b === btn;
+        const active = b.dataset.step1Layout === ui.step1Layout;
         b.classList.toggle("is-active", active);
         b.setAttribute("aria-pressed", String(active));
       });
@@ -3549,9 +3850,13 @@ function bindEvents() {
         desc: "A vaga será liberada imediatamente para outros estudantes.",
         summaryHtml:
           slot && off
-            ? `<strong>${escapeHtml(bk.protocol)}</strong> · ${escapeHtml(off.subject)}<br>${escapeHtml(
-                slot.dayName
-              )}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}`
+            ? buildConfirmSummaryCard({
+                title: `${bk.protocol} · ${off.subject}`,
+                rows: [
+                  { label: "Data e horário", value: `${slot.dayName}, ${formatDateBr(slot.dateIso)} às ${slot.time}` },
+                  { label: "Monitor", value: off.monitor },
+                ],
+              })
             : "",
         confirmText: "Sim, cancelar vaga",
         danger: true,
@@ -3589,6 +3894,10 @@ function bindEvents() {
 
   // Modal & Desfazer (exclusão LGPD fica somente na Central de Configurações)
   document.getElementById("btn-confirm-abort").addEventListener("click", closeConfirmDialog);
+  document.getElementById("btn-confirm-close")?.addEventListener("click", closeConfirmDialog);
+  document.getElementById("confirm-modal")?.addEventListener("click", (e) => {
+    if (e.target.id === "confirm-modal") closeConfirmDialog();
+  });
   document.getElementById("btn-confirm-proceed").addEventListener("click", () => {
     const fn = pendingConfirmCallback;
     closeConfirmDialog();
@@ -3610,6 +3919,13 @@ function bindEvents() {
   });
 
   // Painel do Monitor
+  document.getElementById("monitor-section-tabs")?.addEventListener("click", (e) => {
+    const tab = e.target.closest("[data-mon-tab]");
+    if (!tab) return;
+    ui.monitorTab = tab.dataset.monTab;
+    renderMonitorPanel();
+  });
+
   document.querySelectorAll("[data-mon-filter]").forEach((btn) => {
     btn.addEventListener("click", () => {
       ui.monitorFilter = btn.dataset.monFilter;
@@ -3621,19 +3937,69 @@ function bindEvents() {
   });
 
   document.getElementById("form-new-slot").addEventListener("submit", handlePublishNewSlot);
+  document.getElementById("monitor-slots-list")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-remove-slot]");
+    if (!btn || btn.disabled) return;
+    const slotId = btn.dataset.removeSlot;
+    const slot = state.slots.find((s) => s.id === slotId);
+    if (!slot) return;
+    const hasConfirmed = state.bookings.some((b) => b.slotId === slot.id && b.status === "Confirmado");
+    if (hasConfirmed) {
+      showToast("Não é possível remover um horário com alunos confirmados.");
+      return;
+    }
+    const off = getOffering(slot.offeringId);
+
+    openConfirmDialog({
+      title: "Remover horário publicado?",
+      desc: "Este horário deixará de aparecer para novos agendamentos.",
+      summaryHtml: buildConfirmSummaryCard({
+        title: off ? off.subject : "Monitoria",
+        rows: [
+          { label: "Data e horário", value: `${slot.dayName}, ${formatDateBr(slot.dateIso)} às ${slot.time}` },
+          { label: "Capacidade", value: `${slot.capacity} ${slot.capacity === 1 ? "vaga" : "vagas"}` },
+        ],
+      }),
+      confirmText: "Sim, remover horário",
+      danger: true,
+      onConfirm: () => {
+        const snapshot = structuredClone(slot);
+        const rowEl = document.querySelector(`#monitor-slots-list [data-slot-row="${slot.id}"]`);
+        animateRowExitAndRun(rowEl, () => {
+          state.slots = state.slots.filter((s) => s.id !== slot.id);
+          saveState();
+          renderMonitorPanel();
+          showToast(`Horário removido (${slot.dayName}, ${slot.time.split(" - ")[0]}).`, () => {
+            if (!state.slots.some((s) => s.id === snapshot.id)) {
+              state.slots.push(snapshot);
+              saveState();
+              renderMonitorPanel();
+              showToast("Remoção de horário desfeita.");
+            }
+          });
+        });
+      },
+    });
+  });
+
   document.getElementById("monitor-bookings-list").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-complete-bk]");
     if (!btn) return;
     const bk = state.bookings.find((b) => b.id === btn.dataset.completeBk);
     if (!bk) return;
     const stu = getUserById(bk.studentId);
+    const slot = state.slots.find((s) => s.id === bk.slotId);
 
     openConfirmDialog({
       title: "Concluir atendimento?",
       desc: "O atendimento será marcado como realizado no histórico do estudante.",
-      summaryHtml: `<strong>${escapeHtml(bk.protocol)}</strong> · ${escapeHtml(
-        stu ? stu.name : "Estudante"
-      )}`,
+      summaryHtml: buildConfirmSummaryCard({
+        title: `${bk.protocol} · ${stu ? stu.name : "Estudante"}`,
+        rows: [
+          slot ? { label: "Data e horário", value: `${slot.dayName}, ${formatDateBr(slot.dateIso)} às ${slot.time}` } : null,
+          { label: "Dúvida", value: bk.topic, stacked: true },
+        ],
+      }),
       confirmText: "Sim, concluir",
       danger: false,
       onConfirm: () => {
@@ -4014,6 +4380,8 @@ function initCustomSelects() {
 
   window.addEventListener("resize", () => {
     if (getPrefs().vlibras) positionVlibrasShadowAccess();
+    syncSearchPlaceholder();
+    if (ui.activeView === "agendar") renderStepper();
     syncAllSlidingIndicators(true);
     const dd = document.getElementById("profile-dropdown");
     if (dd && !dd.classList.contains("is-hidden")) {
@@ -4033,6 +4401,7 @@ function initCustomSelects() {
 // Inicialização
 bindEvents();
 initCustomSelects();
+syncSearchPlaceholder();
 applyThemeAndA11y();
 renderTopbar();
 startPhraseCarousel();

@@ -19,7 +19,7 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="styles.css?v=20261123b7" />
+  <link rel="stylesheet" href="styles.css?v=20261123b9" />
 </head>
 <body class="theme-light is-landing-mode">
   <a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
@@ -511,9 +511,22 @@
       <!-- ETAPA 1 -->
       <div id="step-1" class="step-panel">
         <div class="step-header-centered">
-          <h1 id="agendar-heading">Escolha uma monitoria</h1>
-          <p class="step-sub">
-            Atendimentos de 40 minutos · Selecione a disciplina ou monitor para consultar dias e horários disponíveis.
+          <div class="step1-head-row">
+            <h1 id="agendar-heading">Escolha uma monitoria</h1>
+            <div class="layout-toggle step1-layout-mobile" role="group" aria-label="Formato de exibição">
+              <button type="button" class="layout-btn is-active" data-step1-layout="list" aria-pressed="true" title="Exibir em lista">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                <span>Lista</span>
+              </button>
+              <button type="button" class="layout-btn" data-step1-layout="matrix" aria-pressed="false" title="Exibir em grade semanal">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                <span>Grade</span>
+              </button>
+            </div>
+          </div>
+          <p class="step-sub step1-sub">
+            <span class="sub-desktop">Atendimentos de 40 minutos · Selecione a disciplina ou monitor para consultar dias e horários disponíveis.</span>
+            <span class="sub-mobile">Atendimentos de 40 min · Escolha disciplina ou monitor.</span>
           </p>
 
           <div class="search-wrap">
@@ -543,7 +556,7 @@
               </button>
             </div>
 
-            <div class="layout-toggle" role="group" aria-label="Formato de exibição">
+            <div class="layout-toggle step1-layout-desktop" role="group" aria-label="Formato de exibição">
               <button type="button" class="layout-btn is-active" data-step1-layout="list" aria-pressed="true">
                 Lista
               </button>
@@ -753,7 +766,28 @@
         </div>
 
         <div class="students-split">
-          <form id="form-new-slot" class="panel-box" novalidate>
+          <div class="panel-box monitor-main-panel">
+            <div class="monitor-tabs-head">
+              <div class="underline-tabs" id="monitor-section-tabs" role="tablist" aria-label="Seções do painel do monitor">
+                <button type="button" class="u-tab is-active" role="tab" aria-selected="true" data-mon-tab="bookings">
+                  Alunos agendados <span class="tab-mini-count" id="monitor-bookings-count">0</span>
+                </button>
+                <button type="button" class="u-tab" role="tab" aria-selected="false" data-mon-tab="slots">
+                  Horários publicados <span class="tab-mini-count" id="monitor-slots-count">0</span>
+                </button>
+              </div>
+
+              <div class="layout-toggle" id="monitor-filter-toggle" style="margin-bottom:0" role="group" aria-label="Filtrar agendamentos da monitoria">
+                <button type="button" class="layout-btn is-active" data-mon-filter="active">Ativos</button>
+                <button type="button" class="layout-btn" data-mon-filter="all">Todos</button>
+              </div>
+            </div>
+
+            <div id="monitor-bookings-list" class="monitor-flush-list" aria-live="polite"></div>
+            <div id="monitor-slots-list" class="monitor-flush-list is-hidden" aria-live="polite"></div>
+          </div>
+
+          <form id="form-new-slot" class="panel-box monitor-side-panel" novalidate>
             <h2>Publicar novo horário</h2>
 
             <div class="field">
@@ -792,20 +826,6 @@
 
             <button type="submit" class="btn btn-primary btn-full">Publicar horário na agenda</button>
           </form>
-
-          <div class="panel-box">
-            <div class="panel-box-head">
-              <h2>Alunos agendados</h2>
-              <div style="display:flex;align-items:center;gap:8px">
-                <div class="layout-toggle" style="margin-bottom:0" role="group" aria-label="Filtrar agendamentos da monitoria">
-                  <button type="button" class="layout-btn is-active" data-mon-filter="active">Ativos</button>
-                  <button type="button" class="layout-btn" data-mon-filter="all">Todos</button>
-                </div>
-                <span class="mono-badge" id="monitor-bookings-count">0</span>
-              </div>
-            </div>
-            <div id="monitor-bookings-list" class="hairline-list" style="max-width:none"></div>
-          </div>
         </div>
       </div>
     </section>
@@ -819,11 +839,21 @@
     aria-modal="true"
     aria-labelledby="confirm-modal-title"
   >
-    <div class="modal-box">
-      <h2 id="confirm-modal-title">Confirmar ação?</h2>
-      <p id="confirm-modal-desc" class="step-sub"></p>
-      <div id="confirm-modal-summary" class="confirm-summary-box is-hidden"></div>
-      <div class="modal-actions">
+    <div class="modal-box confirm-modal-box">
+      <div class="confirm-modal-head">
+        <div>
+          <h2 id="confirm-modal-title">Confirmar ação?</h2>
+          <p id="confirm-modal-desc" class="step-sub"></p>
+        </div>
+        <button type="button" class="icon-btn" id="btn-confirm-close" aria-label="Fechar janela de confirmação">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div id="confirm-modal-summary" class="confirm-summary-card is-hidden"></div>
+      <div class="modal-actions confirm-modal-actions">
         <button type="button" class="btn btn-secondary" id="btn-confirm-abort">Voltar</button>
         <button type="button" class="btn btn-primary" id="btn-confirm-proceed">Confirmar</button>
       </div>
@@ -1057,23 +1087,87 @@
           <!-- ABA 2: APARÊNCIA -->
           <div id="settings-tab-aparencia" class="settings-tabpanel is-hidden" role="tabpanel">
             <div class="settings-section-block">
-              <span class="settings-block-title">Tema visual</span>
-              <div class="settings-card-grid-3" role="group" aria-label="Escolher tema visual">
-                <button type="button" class="select-card theme-preview-card theme-opt is-active" data-theme="light" aria-pressed="true">
-                  <span class="swatch-strip swatch-light" aria-hidden="true"><i></i><i></i></span>
+              <span class="settings-block-title">Modo</span>
+              <div class="mode-thumb-grid" role="group" aria-label="Escolher modo de cor">
+                <button type="button" class="mode-thumb-card" data-mode-opt="system" aria-pressed="false">
+                  <span class="mode-thumb-preview is-system" aria-hidden="true">
+                    <i class="mt-half-l"></i><i class="mt-half-r"></i>
+                  </span>
+                  <strong>Sistema</strong>
+                </button>
+                <button type="button" class="mode-thumb-card theme-opt is-active" data-mode-opt="light" data-theme="light" aria-pressed="true">
+                  <span class="mode-thumb-preview is-light" aria-hidden="true">
+                    <i class="mt-bar"></i><i class="mt-line"></i><i class="mt-line short"></i>
+                  </span>
                   <strong>Claro</strong>
-                  <span>Off-white suave e cards brancos.</span>
                 </button>
-                <button type="button" class="select-card theme-preview-card theme-opt" data-theme="dark" aria-pressed="false">
-                  <span class="swatch-strip swatch-dark" aria-hidden="true"><i></i><i></i></span>
+                <button type="button" class="mode-thumb-card theme-opt" data-mode-opt="dark" data-theme="dark" aria-pressed="false">
+                  <span class="mode-thumb-preview is-dark" aria-hidden="true">
+                    <i class="mt-bar"></i><i class="mt-line"></i><i class="mt-line short"></i>
+                  </span>
                   <strong>Escuro</strong>
-                  <span>Baixo brilho para uso noturno.</span>
                 </button>
-                <button type="button" class="select-card theme-preview-card theme-opt" data-theme="contrast" aria-pressed="false">
-                  <span class="swatch-strip swatch-contrast" aria-hidden="true"><i></i><i></i></span>
-                  <strong>Contraste AAA</strong>
-                  <span>Preto puro com destaque amarelo.</span>
+                <button type="button" class="mode-thumb-card theme-opt" data-mode-opt="contrast" data-theme="contrast" aria-pressed="false">
+                  <span class="mode-thumb-preview is-contrast" aria-hidden="true">
+                    <i class="mt-bar"></i><i class="mt-line"></i><i class="mt-line short"></i>
+                  </span>
+                  <strong>AAA</strong>
                 </button>
+              </div>
+            </div>
+
+            <div class="settings-section-block">
+              <span class="settings-block-title">Personalização visual</span>
+              <div class="settings-grouped-list">
+                <div class="settings-row settings-row-wrap">
+                  <div class="appearance-row-label">
+                    <span class="theme-aa-badge" id="appearance-theme-aa" aria-hidden="true">Aa</span>
+                    <div>
+                      <label for="pref-theme-preset"><strong>Tema</strong></label>
+                      <p>Paleta institucional e destaque harmonizado.</p>
+                    </div>
+                  </div>
+                  <select id="pref-theme-preset" class="settings-select" data-custom-select="true">
+                    <option value="monitora">Monitora+ Padrão</option>
+                    <option value="academic-navy">Azul Acadêmico</option>
+                    <option value="forest-slate">Verde Botânico</option>
+                    <option value="amber-studio">Âmbar Editorial</option>
+                    <option value="olive-moss">Oliva Sóbrio</option>
+                    <option value="graphite">Grafite Neutro</option>
+                  </select>
+                </div>
+
+                <div class="settings-row settings-row-wrap">
+                  <div>
+                    <strong>Destaque</strong>
+                    <p>Cor dos botões primários com contraste automático WCAG.</p>
+                  </div>
+                  <div class="accent-swatches" id="accent-swatches" role="radiogroup" aria-label="Cor de destaque">
+                    <button type="button" class="accent-swatch is-active" role="radio" aria-checked="true" data-accent-hex="#b44b1e" style="--swatch:#b44b1e" aria-label="Terracota" title="Terracota"></button>
+                    <button type="button" class="accent-swatch" role="radio" aria-checked="false" data-accent-hex="#2563eb" style="--swatch:#2563eb" aria-label="Azul" title="Azul"></button>
+                    <button type="button" class="accent-swatch" role="radio" aria-checked="false" data-accent-hex="#15803d" style="--swatch:#15803d" aria-label="Verde" title="Verde"></button>
+                    <button type="button" class="accent-swatch" role="radio" aria-checked="false" data-accent-hex="#eab308" style="--swatch:#eab308" aria-label="Amarelo" title="Amarelo"></button>
+                    <button type="button" class="accent-swatch" role="radio" aria-checked="false" data-accent-hex="#a3e635" style="--swatch:#a3e635" aria-label="Oliva claro" title="Oliva claro"></button>
+                    <button type="button" class="accent-swatch" role="radio" aria-checked="false" data-accent-hex="#52525b" style="--swatch:#52525b" aria-label="Grafite" title="Grafite"></button>
+                    <label class="accent-swatch-custom" title="Cor de destaque personalizada">
+                      <span class="accent-custom-ring" id="accent-custom-dot" aria-hidden="true">+</span>
+                      <input type="color" id="pref-accent-picker" class="color-native-input" value="#b44b1e" aria-label="Escolher cor de destaque personalizada" />
+                    </label>
+                  </div>
+                </div>
+
+                <div class="settings-row settings-row-wrap">
+                  <div>
+                    <label for="pref-ui-font"><strong>Fonte da interface</strong></label>
+                    <p>Tipografia aplicada em textos, títulos e controles.</p>
+                  </div>
+                  <select id="pref-ui-font" class="settings-select" data-custom-select="true">
+                    <option value="dm-sans">DM Sans (Padrão)</option>
+                    <option value="system">Sistema Nativo</option>
+                    <option value="readable">Leitura Clara (Verdana)</option>
+                    <option value="mono">Monoespaçada (IBM Plex)</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -1510,6 +1604,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261123b8"></script>
+  <script src="app.js?v=20261123b9"></script>
 </body>
 </html>
