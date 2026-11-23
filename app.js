@@ -3292,21 +3292,52 @@ function bindEvents() {
     });
   });
 
+  const ensureDemoUser = (demoId) => {
+    let user = state.users.find((u) => u.id === demoId);
+    let restored = false;
+    if (!user) {
+      const seed = INITIAL_USERS.find((u) => u.id === demoId);
+      if (seed) {
+        user = structuredClone(seed);
+        state.users.push(user);
+        INITIAL_BOOKINGS.filter((b) => b.studentId === demoId).forEach((seedBk) => {
+          if (!state.bookings.some((b) => b.id === seedBk.id)) {
+            state.bookings.push(structuredClone(seedBk));
+          }
+        });
+        restored = true;
+      }
+    }
+    return { user, restored };
+  };
+
   document.getElementById("btn-demo-student").addEventListener("click", () => {
-    state.currentUserId = "usr-stu-1";
+    const { user, restored } = ensureDemoUser("usr-stu-1");
+    if (!user) return;
+    state.currentUserId = user.id;
     saveState();
     renderTopbar();
     ui.step = 1;
     switchView("agendar");
-    showToast("Conectado como Estudante (Ana Paula Ribeiro).");
+    showToast(
+      restored
+        ? `Conta demo restaurada (${user.name}).`
+        : `Conectado como Estudante (${user.name}).`
+    );
   });
 
   document.getElementById("btn-demo-monitor").addEventListener("click", () => {
-    state.currentUserId = "usr-mon-1";
+    const { user, restored } = ensureDemoUser("usr-mon-1");
+    if (!user) return;
+    state.currentUserId = user.id;
     saveState();
     renderTopbar();
     switchView("monitor");
-    showToast("Conectado como Monitor (Rafael Silva).");
+    showToast(
+      restored
+        ? `Conta demo restaurada (${user.name}).`
+        : `Conectado como Monitor (${user.name}).`
+    );
   });
 
   // Stepper & Passo 1
