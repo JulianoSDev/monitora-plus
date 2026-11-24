@@ -890,9 +890,27 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
 }
 
 .field-row,
-.field-row.field-row-course,
 .field-row.field-row-monitor-code,
 .success-grid {
+  grid-template-columns: 1fr;
+}
+
+.field-row.field-row-course {
+  grid-template-columns: minmax(0, 0.37fr) minmax(0, 0.63fr);
+  gap: 8px;
+}
+
+.field-row.field-row-course .bc-select-trigger {
+  padding: 0 8px 0 9px;
+  gap: 5px;
+  font-size: 0.84rem;
+}
+
+.field-row.field-row-course .bc-select-trigger-main {
+  gap: 6px;
+}
+
+.field-row.field-row-course:has(> .is-hidden) {
   grid-template-columns: 1fr;
 }
 
@@ -1376,7 +1394,7 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
   width: 100%;
   max-width: 440px;
   margin: 0 auto;
-  padding: 4px 0;
+  padding: 2px 0 14px;
 }
 
 .mobile-brand-lockup {
@@ -1408,7 +1426,7 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
 .split-right {
   flex: 1;
   background: var(--surface);
-  padding: max(8px, env(safe-area-inset-top)) 16px max(32px, calc(env(safe-area-inset-bottom) + 24px));
+  padding: max(18px, calc(env(safe-area-inset-top) + 12px)) 16px max(24px, calc(env(safe-area-inset-bottom) + 18px));
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -1418,22 +1436,93 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
 .assaad-card {
   max-width: 440px;
   width: 100%;
-  margin: 8px auto 0;
+  margin: 2px auto 0;
   background: transparent;
   border: none;
   border-radius: 0;
-  padding: 4px 0 10px;
+  padding: 0;
   box-shadow: none;
 }
 
+/* Remove logo quadrada duplicada no mobile — mantém apenas M Monitora+ no topo */
 .card-emblem-btn {
-  width: 44px;
-  height: 44px;
-  margin-bottom: 10px;
+  display: none;
+}
+
+.assaad-head {
+  margin-bottom: 14px;
 }
 
 .assaad-head h2 {
   font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.assaad-head p {
+  font-size: 0.8125rem;
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.auth-sso-block {
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sso-grid {
+  gap: 10px;
+}
+
+.sso-btn {
+  min-height: 42px;
+  height: 42px;
+  font-size: 0.875rem;
+}
+
+.auth-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-panel .field {
+  margin-bottom: 0;
+  gap: 4px;
+}
+
+.auth-panel label {
+  font-size: 0.8rem;
+  line-height: 1.25;
+}
+
+.auth-panel input,
+.auth-panel .bc-select-trigger {
+  min-height: 42px;
+  height: 42px;
+}
+
+.auth-panel .btn-primary {
+  min-height: 44px;
+  margin-top: 2px;
+}
+
+.auth-panel .field-row {
+  gap: 10px;
+}
+
+.role-toggle {
+  padding: 3px;
+  gap: 3px;
+}
+
+.role-opt {
+  min-height: 34px;
+  height: 34px;
+  font-size: 0.82rem;
+}
+
+.assaad-links {
+  margin-top: 12px;
 }
 
 .otp-grid {
@@ -1442,11 +1531,6 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
 
 .otp-box {
   height: 42px;
-}
-
-.sso-btn {
-  min-height: 44px;
-  font-size: 0.88rem;
 }
 
 .password-toggle-btn {

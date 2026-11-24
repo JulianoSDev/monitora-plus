@@ -1127,26 +1127,57 @@ body.theme-contrast .profile-dd-theme-btn.theme-opt.is-active {
 
 /* ==================== ROLE TOGGLE, FORMS & BUTTONS ==================== */
 .role-toggle {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
 }
 
 .role-opt {
-  min-height: 40px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
+  position: relative;
+  z-index: 1;
+  min-height: 36px;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
   color: var(--text-secondary);
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
+  transition: color var(--dur-micro) ease, background-color var(--dur-micro) ease,
+    border-color var(--dur-micro) ease;
+}
+
+.role-opt:hover {
+  color: var(--text);
 }
 
 .role-opt.is-active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-text);
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.role-toggle.is-pill-ready .role-opt.is-active {
+  background: transparent;
+  border-color: transparent;
+}
+
+.role-toggle > .sliding-pill {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: calc(var(--radius-md) - 2px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+body.theme-contrast .role-toggle > .sliding-pill,
+body.theme-contrast .role-opt.is-active {
+  border: 2px solid var(--accent);
 }
 
 .mono-inline {
@@ -4665,23 +4696,30 @@ body.theme-contrast .wcag-guard-strip[data-level="aa"] .wcag-status-badge {
 .auth-sso-block {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   margin-bottom: 14px;
+}
+
+.sso-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .sso-btn {
   width: 100%;
   min-height: 44px;
-  padding: 0 14px;
+  height: 44px;
+  padding: 0 12px;
   border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
   transition: background-color var(--dur-micro) ease, border-color var(--dur-micro) ease,
     transform var(--dur-micro) var(--ease-out);
 }
@@ -4690,75 +4728,33 @@ body.theme-contrast .wcag-guard-strip[data-level="aa"] .wcag-status-badge {
   transform: scale(0.985);
 }
 
-.sso-btn-main {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.sso-btn-gennera {
-  background: color-mix(in srgb, var(--accent) 15%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--accent) 52%, var(--border));
-  color: var(--text);
-}
-
-.sso-btn-gennera:hover {
-  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
-  border-color: var(--accent);
-}
-
-.sso-icon-gennera {
-  color: var(--accent-text);
-  flex-shrink: 0;
-}
-
-.sso-badge {
-  padding: 2px 7px;
-  border-radius: 5px;
-  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
-  color: var(--accent-text);
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  flex-shrink: 0;
-}
-
-.sso-btn-google {
+.sso-btn-neutral {
   background: var(--surface);
   border: 1px solid var(--border-strong);
   color: var(--text);
-  justify-content: center;
 }
 
-.sso-btn-google:hover {
+.sso-btn-neutral:hover {
   background: var(--surface-hover);
   border-color: var(--text-muted);
 }
 
-body.theme-contrast .sso-btn-gennera {
-  background: #18181b;
-  border: 2px solid var(--accent);
+.sso-icon-img,
+.sso-icon-google {
+  flex-shrink: 0;
+  display: block;
+}
+
+body.theme-contrast .sso-btn-neutral {
+  background: #0a0a0a;
+  border: 2px solid #ffffff;
   color: #ffffff;
-}
-
-body.theme-contrast .sso-badge {
-  background: var(--accent);
-  color: var(--accent-fg);
-  border-color: var(--accent);
-}
-
-body.theme-contrast .sso-btn-google {
-  border-width: 2px;
 }
 
 .auth-divider {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 6px;
   color: var(--text-muted);
   font-size: 0.74rem;
 }
@@ -4834,8 +4830,18 @@ body.theme-contrast .sso-btn-google {
 }
 
 .sso-provider-badge.is-gennera {
-  background: var(--accent);
-  color: var(--accent-fg);
+  background: #ffffff;
+  border: 1px solid var(--border);
+}
+
+body.theme-light .sso-provider-badge.is-gennera {
+  background: var(--surface-2);
+}
+
+body.theme-contrast .sso-provider-badge.is-gennera,
+body.theme-contrast .sso-provider-badge.is-google {
+  background: #ffffff;
+  border: 2px solid #ffffff;
 }
 
 .sso-provider-badge.is-google {
