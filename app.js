@@ -266,6 +266,7 @@ const ui = {
   subjectFilter: "Todas",
   modeFilter: "Todas",
   step1Layout: state.prefs?.defaultLayout || "list",
+  mobileMatrixDay: null,
   activeSettingsTab: "geral",
   selectedOfferingId: null,
   calYear: 2026,
@@ -674,6 +675,12 @@ function syncAllSlidingIndicators(forceInstant = false) {
       "pill",
       forceInstant
     );
+    syncSlidingIndicator(
+      document.getElementById("mobile-matrix-days"),
+      ".mmd-btn.is-active",
+      "pill",
+      forceInstant
+    );
   });
 }
 
@@ -1077,6 +1084,57 @@ function applyThemeAndA11y() {
   syncAllSlidingIndicators();
 }
 
+// ==================== SCROLL LOCK REAL PARA iOS SAFARI E ANDROID ====================
+let bodyScrollLocked = false;
+let lockedScrollY = 0;
+
+function hasAnyBlockingOverlayOpen() {
+  const modalIds = ["settings-modal", "confirm-modal", "faq-modal"];
+  const anyModalOpen = modalIds.some((id) => {
+    const el = document.getElementById(id);
+    return Boolean(el && !el.classList.contains("is-hidden"));
+  });
+  const profileSheet = document.getElementById("profile-dropdown");
+  const mobileSheetOpen = Boolean(
+    profileSheet &&
+      !profileSheet.classList.contains("is-hidden") &&
+      profileSheet.classList.contains("is-mobile-sheet")
+  );
+  return anyModalOpen || mobileSheetOpen;
+}
+
+function lockBodyScroll(shouldLock) {
+  const wantLock = Boolean(shouldLock);
+  if (wantLock === bodyScrollLocked) return;
+
+  if (wantLock) {
+    lockedScrollY = window.scrollY || window.pageYOffset || 0;
+    bodyScrollLocked = true;
+    document.body.classList.add("is-scroll-locked");
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${lockedScrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
+  } else {
+    const restoreY = lockedScrollY;
+    bodyScrollLocked = false;
+    document.body.classList.remove("is-scroll-locked");
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    document.body.style.width = "";
+    document.body.style.overflow = "";
+    window.scrollTo(0, restoreY);
+  }
+}
+
+function syncBodyScrollLock() {
+  lockBodyScroll(hasAnyBlockingOverlayOpen());
+}
+
 function setSettingsTab(tabKey, shouldFocus = false) {
   closeAllCustomSelects();
   const key = SETTINGS_TAB_META[tabKey] ? tabKey : "geral";
@@ -1086,13 +1144,25 @@ function setSettingsTab(tabKey, shouldFocus = false) {
   document.getElementById("settings-panel-title").textContent = meta.title;
   document.getElementById("settings-panel-desc").textContent = meta.desc;
 
+  let activeTabEl = null;
   document.querySelectorAll("[data-settings-tab]").forEach((btn) => {
     const active = btn.dataset.settingsTab === key;
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-selected", String(active));
     btn.setAttribute("tabindex", active ? "0" : "-1");
-    if (active && shouldFocus) btn.focus();
+    if (active) {
+      activeTabEl = btn;
+      if (shouldFocus) btn.focus();
+    }
   });
+
+  if (activeTabEl && window.innerWidth <= 768) {
+    activeTabEl.scrollIntoView({
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }
 
   Object.keys(SETTINGS_TAB_META).forEach((k) => {
     const panel = document.getElementById(`settings-tab-${k}`);
@@ -1172,6 +1242,7 @@ function openSettingsModal(initialTab = "geral", mobileDetail = false) {
   const win = document.querySelector(".settings-window");
   if (win) win.classList.toggle("is-mobile-detail", Boolean(mobileDetail));
   document.getElementById("settings-modal")?.classList.remove("is-hidden");
+  syncBodyScrollLock();
   const body = document.querySelector(".settings-body");
   if (body) body.scrollTop = 0;
   syncMobileChrome();
@@ -1185,6 +1256,7 @@ function closeSettingsModal() {
   const wasOpen = modal && !modal.classList.contains("is-hidden");
   document.querySelector(".settings-window")?.classList.remove("is-mobile-detail");
   modal?.classList.add("is-hidden");
+  syncBodyScrollLock();
   syncMobileChrome();
   if (wasOpen && lastSettingsTriggerEl && document.contains(lastSettingsTriggerEl)) {
     lastSettingsTriggerEl.focus();
@@ -1210,13 +1282,13 @@ function positionVlibrasShadowAccess() {
   if (!accessEl) return;
 
   accessEl.style.zIndex = "120";
-  if (window.innerWidth <= 720) {
+  if (window.innerWidth <= 768) {
     const hasSticky = document.body.classList.contains("has-mobile-sticky-cta");
     accessEl.style.top = "auto";
     accessEl.style.right = "12px";
     accessEl.style.bottom = hasSticky
-      ? "calc(152px + env(safe-area-inset-bottom))"
-      : "calc(82px + env(safe-area-inset-bottom))";
+      ? "calc(138px + env(safe-area-inset-bottom))"
+      : "calc(70px + env(safe-area-inset-bottom))";
   } else {
     accessEl.style.top = "auto";
     accessEl.style.right = "20px";
@@ -1334,6 +1406,7 @@ function openFaqModal(triggerEl = null) {
   const modal = document.getElementById("faq-modal");
   if (!modal) return;
   modal.classList.remove("is-hidden");
+  syncBodyScrollLock();
   document.getElementById("btn-close-faq")?.focus();
   announceA11y("Ajuda rápida aberta.");
 }
@@ -1342,6 +1415,7 @@ function closeFaqModal() {
   const modal = document.getElementById("faq-modal");
   const wasOpen = modal && !modal.classList.contains("is-hidden");
   modal?.classList.add("is-hidden");
+  syncBodyScrollLock();
   if (wasOpen && lastFaqTriggerEl && document.contains(lastFaqTriggerEl)) {
     lastFaqTriggerEl.focus();
   }
@@ -1505,6 +1579,7 @@ function closeProfileMenu(restoreFocus = false) {
   dd?.classList.add("is-hidden");
   backdrop?.classList.add("is-hidden");
   restoreProfileDropdownHome();
+  syncBodyScrollLock();
   btn?.setAttribute("aria-expanded", "false");
 
   if (wasOpen && restoreFocus && btn && document.contains(btn)) {
@@ -1530,6 +1605,7 @@ function openProfileMenu() {
   }
 
   dd.classList.remove("is-hidden");
+  syncBodyScrollLock();
   btn.setAttribute("aria-expanded", "true");
   syncAllSlidingIndicators(true);
 
@@ -2161,12 +2237,99 @@ function renderStep1() {
       return `<tr><th scope="row">${escapeHtml(band.split(" - ")[0])}</th>${cols}</tr>`;
     }).join("");
 
+    const dayShortMap = {
+      Segunda: "Seg",
+      "Terça": "Ter",
+      Quarta: "Qua",
+      Quinta: "Qui",
+      Sexta: "Sex",
+    };
+
+    const slotsByDay = Object.fromEntries(DAYS_OF_WEEK.map((d) => [d, []]));
+    filteredSlots.forEach((sl) => {
+      if (slotsByDay[sl.dayName]) slotsByDay[sl.dayName].push(sl);
+    });
+    DAYS_OF_WEEK.forEach((d) => {
+      slotsByDay[d].sort((a, b) => a.time.localeCompare(b.time));
+    });
+
+    if (!ui.mobileMatrixDay || !DAYS_OF_WEEK.includes(ui.mobileMatrixDay)) {
+      ui.mobileMatrixDay = DAYS_OF_WEEK.find((d) => slotsByDay[d].length > 0) || DAYS_OF_WEEK[0];
+    }
+    const activeDaySlots = slotsByDay[ui.mobileMatrixDay] || [];
+
+    const mobileDayTabsHtml = DAYS_OF_WEEK.map((day) => {
+      const count = slotsByDay[day].length;
+      const active = day === ui.mobileMatrixDay;
+      return `
+        <button
+          type="button"
+          class="mmd-btn ${active ? "is-active" : ""} ${count === 0 ? "is-empty" : ""}"
+          role="tab"
+          aria-selected="${active}"
+          data-matrix-day="${escapeHtml(day)}"
+        >
+          <span class="mmd-day">${escapeHtml(dayShortMap[day] || day.slice(0, 3))}</span>
+          <span class="mmd-badge" aria-label="${count} ${count === 1 ? "horário" : "horários"}">${count}</span>
+        </button>
+      `;
+    }).join("");
+
+    const mobileSlotsListHtml =
+      activeDaySlots.length === 0
+        ? `<div class="mobile-matrix-empty">Nenhuma monitoria disponível na ${escapeHtml(
+            ui.mobileMatrixDay.toLowerCase()
+          )} para os filtros atuais.</div>`
+        : activeDaySlots
+            .map((sl) => {
+              const off = getOffering(sl.offeringId);
+              const rem = getSlotRemaining(sl);
+              const [startT, endT] = sl.time.split(" - ");
+              const dotClass = rem === 0 ? "dot-muted" : rem <= 1 ? "dot-amber" : "dot-green";
+              return `
+                <button
+                  type="button"
+                  class="mobile-matrix-slot"
+                  data-mobile-matrix-slot="${escapeHtml(sl.id)}"
+                  ${rem <= 0 ? "disabled" : ""}
+                >
+                  <div class="mms-time">
+                    <strong>${escapeHtml(startT)}</strong>
+                    <span>${escapeHtml(endT || "")}</span>
+                  </div>
+                  <div class="mms-body">
+                    <p class="mms-subject">${escapeHtml(off.subject)}</p>
+                    <p class="mms-meta">${escapeHtml(off.monitor)} · ${escapeHtml(
+                off.shortLocation || off.location
+              )}</p>
+                    <span class="mms-vac">
+                      <span class="status-dot-inline ${dotClass}" aria-hidden="true"></span>
+                      ${escapeHtml(formatVagas(rem, false))} · ${formatDateBr(sl.dateIso).slice(0, 5)}
+                    </span>
+                  </div>
+                  <span class="mms-arrow" aria-hidden="true">→</span>
+                </button>
+              `;
+            })
+            .join("");
+
     matrixBox.innerHTML = `
-      <table class="matrix-table">
-        <thead><tr><th scope="col">Horário</th>${headCols}</tr></thead>
-        <tbody>${bodyRows}</tbody>
-      </table>
+      <div class="matrix-desktop-view">
+        <table class="matrix-table">
+          <thead><tr><th scope="col">Horário</th>${headCols}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+      <div class="matrix-mobile-view">
+        <div class="mobile-matrix-days" id="mobile-matrix-days" role="tablist" aria-label="Dias da semana">
+          ${mobileDayTabsHtml}
+        </div>
+        <div class="mobile-matrix-list" role="tabpanel">
+          ${mobileSlotsListHtml}
+        </div>
+      </div>
     `;
+    syncAllSlidingIndicators(true);
   }
 }
 
@@ -2870,6 +3033,7 @@ function openConfirmDialog({ title, desc, summaryHtml = "", confirmText = "Confi
 
   pendingConfirmCallback = onConfirm;
   modal.classList.remove("is-hidden");
+  syncBodyScrollLock();
   proceedBtn.focus();
 }
 
@@ -2878,6 +3042,7 @@ function closeConfirmDialog() {
   const wasOpen = modal && !modal.classList.contains("is-hidden");
   pendingConfirmCallback = null;
   modal?.classList.add("is-hidden");
+  syncBodyScrollLock();
   if (wasOpen && lastConfirmTriggerEl && document.contains(lastConfirmTriggerEl)) {
     lastConfirmTriggerEl.focus();
   }
@@ -3699,6 +3864,22 @@ function bindEvents() {
   });
 
   document.getElementById("step1-matrix-box").addEventListener("click", (e) => {
+    const dayBtn = e.target.closest("[data-matrix-day]");
+    if (dayBtn) {
+      ui.mobileMatrixDay = dayBtn.dataset.matrixDay;
+      renderStep1();
+      return;
+    }
+    const mobileSlotBtn = e.target.closest("[data-mobile-matrix-slot]");
+    if (mobileSlotBtn && !mobileSlotBtn.disabled) {
+      const slot = state.slots.find((s) => s.id === mobileSlotBtn.dataset.mobileMatrixSlot);
+      if (!slot) return;
+      ui.selectedOfferingId = slot.offeringId;
+      ui.selectedDateIso = slot.dateIso;
+      ui.selectedSlotId = slot.id;
+      setStep(2);
+      return;
+    }
     const btn = e.target.closest("[data-matrix-slot]");
     if (!btn || btn.disabled) return;
     const slot = state.slots.find((s) => s.id === btn.dataset.matrixSlot);
@@ -3735,7 +3916,7 @@ function bindEvents() {
     ui.selectedDateIso = btn.dataset.calDate;
     ui.selectedSlotId = null;
     renderStep2();
-    if (window.innerWidth <= 720) {
+    if (window.innerWidth <= 768) {
       document.getElementById("s2-selected-day-label")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   });
@@ -4390,6 +4571,7 @@ function initCustomSelects() {
         openProfileMenu();
       }
     }
+    syncBodyScrollLock();
     const openWrap = document.querySelector(".bc-select-wrap.is-open");
     if (!openWrap) return;
     const trigger = openWrap.querySelector(".bc-select-trigger");
