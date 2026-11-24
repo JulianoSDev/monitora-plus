@@ -5346,8 +5346,21 @@ body.a11y-pause-distractions .wcag-escape-btn.is-wcag-btn-enter {
 .row-next-slot,
 .vac-mobile-short,
 .mobile-card-datetime,
-.mobile-card-meta-line {
+.mobile-card-meta-line,
+.settings-kicker-mobile,
+.monitor-sub-mobile,
+.monitor-mobile-add-btn,
+.mon-tab-label-mobile,
+.monitor-sheet-handle,
+.monitor-sheet-close,
+.monitor-sheet-backdrop,
+.mon-stu-ra-mobile,
+.monitor-card-protocol-mobile {
   display: none;
+}
+
+.monitor-sheet-head {
+  display: contents;
 }
 
 

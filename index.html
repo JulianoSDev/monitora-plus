@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="styles.css?v=20261124d1" />
-  <link rel="stylesheet" href="mobile.css?v=20261124d1" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="styles.css?v=20261124e1" />
+  <link rel="stylesheet" href="mobile.css?v=20261124e1" media="(max-width: 768px)" />
 </head>
 <body class="theme-light is-landing-mode">
   <a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
@@ -802,13 +802,24 @@
     <!-- ==================== VIEW 3: PAINEL DO MONITOR ==================== -->
     <section id="view-monitor" class="view-section" aria-labelledby="heading-monitor">
       <div class="narrow-container">
-        <div class="view-head-row">
-          <div>
+        <div class="view-head-row monitor-view-head">
+          <div class="monitor-head-copy">
             <h1 id="heading-monitor">Painel do Monitor</h1>
-            <p class="step-sub" id="monitor-sub">
+            <p class="step-sub monitor-sub-desktop" id="monitor-sub">
               Publique novos horários autorizados pelo docente e acompanhe os alunos inscritos.
             </p>
+            <p class="monitor-sub-mobile" id="monitor-sub-mobile"></p>
           </div>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm monitor-mobile-add-btn"
+            id="btn-mobile-open-slot-sheet"
+            aria-haspopup="dialog"
+            aria-controls="form-new-slot"
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Horário</span>
+          </button>
         </div>
 
         <div class="students-split">
@@ -816,10 +827,10 @@
             <div class="monitor-tabs-head">
               <div class="underline-tabs" id="monitor-section-tabs" role="tablist" aria-label="Seções do painel do monitor">
                 <button type="button" class="u-tab is-active" role="tab" aria-selected="true" data-mon-tab="bookings">
-                  Alunos agendados <span class="tab-mini-count" id="monitor-bookings-count">0</span>
+                  <span class="mon-tab-label-desktop">Alunos agendados</span><span class="mon-tab-label-mobile">Alunos</span> <span class="tab-mini-count" id="monitor-bookings-count">0</span>
                 </button>
                 <button type="button" class="u-tab" role="tab" aria-selected="false" data-mon-tab="slots">
-                  Horários publicados <span class="tab-mini-count" id="monitor-slots-count">0</span>
+                  <span class="mon-tab-label-desktop">Horários publicados</span><span class="mon-tab-label-mobile">Horários</span> <span class="tab-mini-count" id="monitor-slots-count">0</span>
                 </button>
               </div>
 
@@ -834,7 +845,13 @@
           </div>
 
           <form id="form-new-slot" class="panel-box monitor-side-panel" novalidate>
-            <h2>Publicar novo horário</h2>
+            <div class="monitor-sheet-handle" aria-hidden="true"><span></span></div>
+            <div class="monitor-sheet-head">
+              <h2>Publicar novo horário</h2>
+              <button type="button" class="icon-btn monitor-sheet-close" id="btn-close-monitor-slot-sheet" aria-label="Fechar formulário de novo horário">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
 
             <div class="field">
               <label for="ms-offering-display">Disciplina autorizada</label>
@@ -995,7 +1012,10 @@
     <div class="settings-window">
       <aside class="settings-sidebar">
         <div class="settings-sidebar-head">
-          <span class="settings-kicker">Configurações</span>
+          <span class="settings-kicker">
+            <span class="settings-kicker-desktop">Configurações</span>
+            <span class="settings-kicker-mobile">Ajustes</span>
+          </span>
           <button type="button" class="settings-close-mobile" id="btn-close-settings-mobile" aria-label="Fechar configurações">
             ✕
           </button>
@@ -1053,9 +1073,9 @@
       <div class="settings-main">
         <div class="settings-main-head">
           <div class="settings-main-title-wrap">
-            <button type="button" class="settings-mobile-back" id="btn-settings-mobile-back" aria-label="Voltar para lista de configurações">
+            <button type="button" class="settings-mobile-back" id="btn-settings-mobile-back" aria-label="Voltar para Ajustes">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-              <span>Configurações</span>
+              <span>Ajustes</span>
             </button>
             <h2 id="settings-panel-title">Geral</h2>
             <p class="step-sub" id="settings-panel-desc">Configure como o catálogo de monitorias e confirmações funcionam.</p>
@@ -1704,6 +1724,7 @@
     </div>
   </div>
 
+  <div id="monitor-slot-sheet-backdrop" class="monitor-sheet-backdrop is-hidden" aria-hidden="true"></div>
   <div id="profile-sheet-backdrop" class="profile-sheet-backdrop is-hidden" aria-hidden="true"></div>
 
   <footer class="site-footer" id="app-footer">
@@ -1713,6 +1734,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261124d1"></script>
+  <script src="app.js?v=20261124e1"></script>
 </body>
 </html>

@@ -1178,7 +1178,13 @@ function hasAnyBlockingOverlayOpen() {
       !profileSheet.classList.contains("is-hidden") &&
       profileSheet.classList.contains("is-mobile-sheet")
   );
-  return anyModalOpen || mobileSheetOpen;
+  const monitorSlotForm = document.getElementById("form-new-slot");
+  const monitorSheetOpen = Boolean(
+    monitorSlotForm &&
+      monitorSlotForm.classList.contains("is-mobile-sheet-open") &&
+      window.innerWidth <= 768
+  );
+  return anyModalOpen || mobileSheetOpen || monitorSheetOpen;
 }
 
 function lockBodyScroll(shouldLock) {
@@ -1225,25 +1231,15 @@ function setSettingsTab(tabKey, shouldFocus = false) {
   document.getElementById("settings-panel-title").textContent = meta.title;
   document.getElementById("settings-panel-desc").textContent = meta.desc;
 
-  let activeTabEl = null;
   document.querySelectorAll("[data-settings-tab]").forEach((btn) => {
     const active = btn.dataset.settingsTab === key;
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-selected", String(active));
     btn.setAttribute("tabindex", active ? "0" : "-1");
-    if (active) {
-      activeTabEl = btn;
-      if (shouldFocus) btn.focus();
+    if (active && shouldFocus) {
+      btn.focus();
     }
   });
-
-  if (activeTabEl && window.innerWidth <= 768) {
-    activeTabEl.scrollIntoView({
-      behavior: prefersReducedMotion() ? "auto" : "smooth",
-      block: "nearest",
-      inline: "center",
-    });
-  }
 
   Object.keys(SETTINGS_TAB_META).forEach((k) => {
     const panel = document.getElementById(`settings-tab-${k}`);
@@ -1324,11 +1320,15 @@ function openSettingsModal(initialTab = "geral", mobileDetail = false) {
   if (win) win.classList.toggle("is-mobile-detail", Boolean(mobileDetail));
   document.getElementById("settings-modal")?.classList.remove("is-hidden");
   syncBodyScrollLock();
+  const sidebar = document.querySelector(".settings-sidebar");
+  if (sidebar && !mobileDetail) sidebar.scrollTop = 0;
   const body = document.querySelector(".settings-body");
   if (body) body.scrollTop = 0;
   syncMobileChrome();
-  const activeTabBtn = document.querySelector(`[data-settings-tab="${ui.activeSettingsTab}"]`);
-  activeTabBtn?.focus();
+  if (window.innerWidth > 768 || mobileDetail) {
+    const activeTabBtn = document.querySelector(`[data-settings-tab="${ui.activeSettingsTab}"]`);
+    activeTabBtn?.focus();
+  }
 }
 
 function closeSettingsModal() {
@@ -1362,18 +1362,24 @@ function positionVlibrasShadowAccess() {
   const accessEl = wrapper?.shadowRoot?.querySelector("#vlibras-access");
   if (!accessEl) return;
 
-  accessEl.style.zIndex = "120";
   if (window.innerWidth <= 768) {
     const hasSticky = document.body.classList.contains("has-mobile-sticky-cta");
+    const blockingOpen = hasAnyBlockingOverlayOpen();
+    accessEl.style.zIndex = blockingOpen ? "30" : "48";
     accessEl.style.top = "auto";
-    accessEl.style.right = "12px";
+    accessEl.style.right = "10px";
     accessEl.style.bottom = hasSticky
-      ? "calc(144px + env(safe-area-inset-bottom))"
-      : "calc(74px + env(safe-area-inset-bottom))";
+      ? "calc(146px + env(safe-area-inset-bottom))"
+      : "calc(76px + env(safe-area-inset-bottom))";
+    accessEl.style.pointerEvents = blockingOpen ? "none" : "auto";
+    accessEl.style.opacity = blockingOpen ? "0" : "1";
   } else {
+    accessEl.style.zIndex = "120";
     accessEl.style.top = "auto";
     accessEl.style.right = "20px";
     accessEl.style.bottom = "24px";
+    accessEl.style.pointerEvents = "auto";
+    accessEl.style.opacity = "1";
   }
 }
 
@@ -1808,6 +1814,7 @@ function syncMobileChrome() {
 
 // ==================== NAVEGAÇÃO ====================
 function switchView(viewName) {
+  closeMonitorSlotSheet(false);
   const user = getCurrentUser();
   if (viewName !== "landing" && !user) {
     viewName = "landing";
@@ -2498,6 +2505,63 @@ function formatMobileCardDatetime(dateIso, dayName, timeStr) {
   return `${parts.day} ${monthCap} · ${wkCap}, ${startTime}`;
 }
 
+function formatMonitorMobileDatetime(dateIso, dayName, timeStr) {
+  const parts = getDateBadgeParts(dateIso, dayName);
+  const monthCap = parts.month ? parts.month[0] + parts.month.slice(1).toLowerCase() : "";
+  const wkCap = parts.weekday ? parts.weekday[0] + parts.weekday.slice(1).toLowerCase() : "";
+  const rangeCompact = String(timeStr || "").replace(/\s*-\s*/g, "–");
+  return `${wkCap}, ${parts.day} ${monthCap} · ${rangeCompact}`;
+}
+
+function formatBookingTopic(topic) {
+  const clean = String(topic || "").trim();
+  if (!clean) return "";
+  return /^d[uú]vidas?\b/i.test(clean) ? clean : `Dúvida: ${clean}`;
+}
+
+function formatCleanMonitorName(monitorStr) {
+  return String(monitorStr || "")
+    .replace(/^Monitora?\s+/i, "")
+    .trim();
+}
+
+let lastMonitorSheetTriggerEl = null;
+
+function openMonitorSlotSheet() {
+  if (window.innerWidth > 768) return;
+  const form = document.getElementById("form-new-slot");
+  const backdrop = document.getElementById("monitor-slot-sheet-backdrop");
+  if (!form || !backdrop) return;
+  lastMonitorSheetTriggerEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  clearFormErrors(form);
+  backdrop.classList.remove("is-hidden");
+  form.classList.add("is-mobile-sheet-open");
+  form.setAttribute("role", "dialog");
+  form.setAttribute("aria-modal", "true");
+  form.setAttribute("aria-label", "Publicar novo horário");
+  syncBodyScrollLock();
+  if (getPrefs().vlibras) positionVlibrasShadowAccess();
+  setTimeout(() => document.getElementById("ms-date")?.focus(), 40);
+}
+
+function closeMonitorSlotSheet(restoreFocus = false) {
+  closeAllCustomSelects();
+  const form = document.getElementById("form-new-slot");
+  const backdrop = document.getElementById("monitor-slot-sheet-backdrop");
+  const wasOpen = Boolean(form && form.classList.contains("is-mobile-sheet-open"));
+  form?.classList.remove("is-mobile-sheet-open");
+  form?.removeAttribute("role");
+  form?.removeAttribute("aria-modal");
+  form?.removeAttribute("aria-label");
+  backdrop?.classList.add("is-hidden");
+  syncBodyScrollLock();
+  if (getPrefs().vlibras) positionVlibrasShadowAccess();
+  if (wasOpen && restoreFocus && lastMonitorSheetTriggerEl && document.contains(lastMonitorSheetTriggerEl)) {
+    lastMonitorSheetTriggerEl.focus();
+  }
+  lastMonitorSheetTriggerEl = null;
+}
+
 function renderStep1() {
   document.querySelectorAll("[data-step1-layout]").forEach((b) => {
     const active = b.dataset.step1Layout === ui.step1Layout;
@@ -2708,7 +2772,7 @@ function renderStep1() {
                   </div>
                   <div class="mms-body">
                     <p class="mms-subject">${escapeHtml(off.subject)}</p>
-                    <p class="mms-meta">${escapeHtml(off.monitor)} · ${escapeHtml(
+                    <p class="mms-meta">${escapeHtml(formatCleanMonitorName(off.monitor))} · ${escapeHtml(
                 off.shortLocation || off.location
               )}</p>
                     <span class="mms-vac">
@@ -2716,7 +2780,7 @@ function renderStep1() {
                       ${escapeHtml(formatVagas(rem, false))} · ${formatDateBr(sl.dateIso).slice(0, 5)}
                     </span>
                   </div>
-                  <span class="mms-arrow" aria-hidden="true">→</span>
+                  <span class="mms-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
                 </button>
               `;
             })
@@ -3151,7 +3215,7 @@ function renderBookings() {
               <p class="mobile-card-meta-line">${escapeHtml(off.monitor)} · ${escapeHtml(
         off.shortLocation || off.location
       )}</p>
-              <p class="row-meta booking-topic-quote" style="margin-top:4px">Dúvida: ${escapeHtml(bk.topic)}</p>
+              <p class="row-meta booking-topic-quote" style="margin-top:4px">${escapeHtml(formatBookingTopic(bk.topic))}</p>
             </div>
           </div>
           ${
@@ -3188,6 +3252,8 @@ function renderMonitorPanel() {
   document.getElementById(
     "monitor-sub"
   ).textContent = `Disciplina vinculada: ${subjectName}. Apenas agendamentos e horários desta matéria aparecem aqui.`;
+  const mobileSubEl = document.getElementById("monitor-sub-mobile");
+  if (mobileSubEl) mobileSubEl.textContent = subjectName;
 
   const listEl = document.getElementById("monitor-bookings-list");
   const slotsListEl = document.getElementById("monitor-slots-list");
@@ -3238,7 +3304,7 @@ function renderMonitorPanel() {
         if (!slot) return "";
 
         const dateParts = getDateBadgeParts(slot.dateIso, slot.dayName);
-        const mobileDt = formatMobileCardDatetime(slot.dateIso, slot.dayName, slot.time);
+        const mobileDt = formatMonitorMobileDatetime(slot.dateIso, slot.dayName, slot.time);
         const isInactive = bk.status !== "Confirmado";
         const isHighlight = bk.id === ui.highlightedBookingId;
 
@@ -3258,15 +3324,24 @@ function renderMonitorPanel() {
                   <span class="mono-badge">${escapeHtml(bk.protocol)}</span>
                   <span class="status-tag is-${escapeHtml(bk.status)}">${escapeHtml(bk.status)}</span>
                 </div>
-                <p class="row-title">${escapeHtml(stu ? stu.name : "Estudante")} (${escapeHtml(stu ? stu.ra : "—")})</p>
+                <p class="row-title"><span class="mon-stu-name">${escapeHtml(
+                  stu ? stu.name : "Estudante"
+                )}</span><span class="mon-stu-ra-desktop"> (${escapeHtml(
+          stu ? stu.ra : "—"
+        )})</span><span class="mon-stu-ra-mobile">${escapeHtml(stu ? stu.ra : "—")}</span></p>
                 <p class="row-meta booking-meta-desktop">${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}</p>
-                <p class="mobile-card-meta-line">${escapeHtml(bk.protocol)} · ${escapeHtml(slot.time)}</p>
-                <p class="row-meta booking-topic-quote" style="margin-top:4px">Dúvida: ${escapeHtml(bk.topic)}</p>
+                <p class="row-meta booking-topic-quote" style="margin-top:4px">${escapeHtml(formatBookingTopic(bk.topic))}</p>
+                ${
+                  bk.status !== "Confirmado"
+                    ? `<span class="monitor-card-protocol-mobile">${escapeHtml(bk.protocol)}</span>`
+                    : ""
+                }
               </div>
             </div>
             ${
               bk.status === "Confirmado"
                 ? `<div class="booking-actions">
+                     <span class="monitor-card-protocol-mobile">${escapeHtml(bk.protocol)}</span>
                      <button type="button" class="btn btn-secondary" data-complete-bk="${escapeHtml(
                        bk.id
                      )}">Concluir</button>
@@ -3286,7 +3361,7 @@ function renderMonitorPanel() {
       slotsListEl.innerHTML = disciplineSlots
         .map((slot) => {
           const dateParts = getDateBadgeParts(slot.dateIso, slot.dayName);
-          const mobileDt = formatMobileCardDatetime(slot.dateIso, slot.dayName, slot.time);
+          const mobileDt = formatMonitorMobileDatetime(slot.dateIso, slot.dayName, slot.time);
           const confirmedDynamic = state.bookings.filter(
             (b) => b.slotId === slot.id && b.status === "Confirmado"
           ).length;
@@ -3396,6 +3471,7 @@ function handlePublishNewSlot(e) {
       state.slots.push(newSlot);
       saveState();
       document.getElementById("ms-prof-code").value = "";
+      closeMonitorSlotSheet(false);
       if (!prefersReducedMotion()) {
         const panel = document.getElementById("form-new-slot");
         if (panel) {
@@ -3924,6 +4000,17 @@ function bindEvents() {
 
   document.getElementById("mobile-nav-settings-btn")?.addEventListener("click", () => {
     closeProfileMenu();
+    closeMonitorSlotSheet(false);
+    const settingsModal = document.getElementById("settings-modal");
+    const win = document.querySelector(".settings-window");
+    if (settingsModal && !settingsModal.classList.contains("is-hidden")) {
+      if (win && win.classList.contains("is-mobile-detail")) {
+        win.classList.remove("is-mobile-detail");
+        const sidebar = document.querySelector(".settings-sidebar");
+        if (sidebar) sidebar.scrollTop = 0;
+      }
+      return;
+    }
     const targetTab = ui.activeSettingsTab && ui.activeSettingsTab !== "atalhos" ? ui.activeSettingsTab : "geral";
     openSettingsModal(targetTab, false);
   });
@@ -4654,6 +4741,10 @@ function bindEvents() {
     });
   });
 
+  document.getElementById("btn-mobile-open-slot-sheet")?.addEventListener("click", openMonitorSlotSheet);
+  document.getElementById("btn-close-monitor-slot-sheet")?.addEventListener("click", () => closeMonitorSlotSheet(true));
+  document.getElementById("monitor-slot-sheet-backdrop")?.addEventListener("click", () => closeMonitorSlotSheet(true));
+
   document.getElementById("form-new-slot").addEventListener("submit", handlePublishNewSlot);
   document.getElementById("monitor-slots-list")?.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-remove-slot]");
@@ -4760,6 +4851,11 @@ function bindEvents() {
         trapFocusInModal(e, settingsModal);
         return;
       }
+      const monitorSlotForm = document.getElementById("form-new-slot");
+      if (monitorSlotForm && monitorSlotForm.classList.contains("is-mobile-sheet-open") && window.innerWidth <= 768) {
+        trapFocusInModal(e, monitorSlotForm);
+        return;
+      }
       const profileSheet = document.getElementById("profile-dropdown");
       if (profileSheet && !profileSheet.classList.contains("is-hidden") && profileSheet.classList.contains("is-mobile-sheet")) {
         trapFocusInModal(e, profileSheet);
@@ -4781,6 +4877,11 @@ function bindEvents() {
         closeConfirmDialog();
         return;
       }
+      const monitorSlotForm = document.getElementById("form-new-slot");
+      if (monitorSlotForm && monitorSlotForm.classList.contains("is-mobile-sheet-open") && window.innerWidth <= 768) {
+        closeMonitorSlotSheet(true);
+        return;
+      }
       const faqModal = document.getElementById("faq-modal");
       if (faqModal && !faqModal.classList.contains("is-hidden")) {
         closeFaqModal();
@@ -4788,6 +4889,11 @@ function bindEvents() {
       }
       const settingsModal = document.getElementById("settings-modal");
       if (settingsModal && !settingsModal.classList.contains("is-hidden")) {
+        const win = document.querySelector(".settings-window");
+        if (window.innerWidth <= 768 && win && win.classList.contains("is-mobile-detail")) {
+          win.classList.remove("is-mobile-detail");
+          return;
+        }
         closeSettingsModal();
         return;
       }
@@ -5112,6 +5218,9 @@ function initCustomSelects() {
     if (getPrefs().vlibras) positionVlibrasShadowAccess();
     syncSearchPlaceholder();
     if (ui.activeView === "agendar") renderStepper();
+    if (window.innerWidth > 768) {
+      closeMonitorSlotSheet(false);
+    }
     if (window.innerWidth <= 768 && ui.activeSettingsTab === "atalhos") {
       setSettingsTab("geral");
     }

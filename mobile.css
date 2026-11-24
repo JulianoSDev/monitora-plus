@@ -3,6 +3,46 @@
    Carregada com media="(max-width: 768px)" — zero impacto no desktop (> 768px)
    ========================================================================== */
 
+/* ==================== 0. TOKENS DE SUPERFÍCIE MOBILE (UI PRO MAX) ==================== */
+:root {
+  --m-card-bg: #141418;
+  --m-card-bg-elevated: #1c1c22;
+  --m-card-border: rgba(255, 255, 255, 0.07);
+  --m-card-border-strong: rgba(255, 255, 255, 0.13);
+  --m-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --m-input-bg: #17171c;
+  --m-chip-bg: rgba(255, 255, 255, 0.045);
+  --m-seg-track: #111115;
+  --m-seg-active: #222229;
+  --m-divider: rgba(255, 255, 255, 0.07);
+}
+
+body.theme-light {
+  --m-card-bg: #ffffff;
+  --m-card-bg-elevated: #f2f2ef;
+  --m-card-border: rgba(20, 27, 41, 0.08);
+  --m-card-border-strong: rgba(20, 27, 41, 0.14);
+  --m-card-shadow: 0 1px 3px rgba(20, 27, 41, 0.05);
+  --m-input-bg: #eeeeeb;
+  --m-chip-bg: rgba(20, 27, 41, 0.045);
+  --m-seg-track: #eaeae7;
+  --m-seg-active: #ffffff;
+  --m-divider: rgba(20, 27, 41, 0.075);
+}
+
+body.theme-contrast {
+  --m-card-bg: #0a0a0a;
+  --m-card-bg-elevated: #18181b;
+  --m-card-border: #ffffff;
+  --m-card-border-strong: #ffffff;
+  --m-card-shadow: none;
+  --m-input-bg: #121214;
+  --m-chip-bg: #18181b;
+  --m-seg-track: #0a0a0a;
+  --m-seg-active: #facc15;
+  --m-divider: #ffffff;
+}
+
 /* ==================== 1. BLINDAGEM DE SCROLL E VIEWPORT ==================== */
 html,
 body {
@@ -17,7 +57,8 @@ body.is-scroll-locked {
 }
 
 .modal-backdrop,
-.profile-sheet-backdrop {
+.profile-sheet-backdrop,
+.monitor-sheet-backdrop {
   touch-action: none;
   overscroll-behavior: none;
 }
@@ -27,7 +68,8 @@ body.is-scroll-locked {
 .faq-list,
 .confirm-modal-box,
 .sso-modal-box,
-.profile-dropdown.is-mobile-sheet {
+.profile-dropdown.is-mobile-sheet,
+#form-new-slot.is-mobile-sheet-open {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   overflow-x: hidden;
@@ -279,9 +321,10 @@ body.theme-contrast .mobile-tab-btn.is-active .mobile-tab-icon-wrap {
   border-radius: 999px;
   background: var(--accent);
   color: var(--on-accent);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 0.625rem;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 16px;
   text-align: center;
 }
@@ -486,7 +529,7 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
   margin: 6px 2px;
 }
 
-/* ==================== 5. AGENDAR — ETAPA 1 ENXUTA E CARDS RESPIRANDO ==================== */
+/* ==================== 5. AGENDAR — UPGRADE ESTÉTICO UI PRO MAX (LISTA E GRADE) ==================== */
 /* Barra de progresso minimalista (3 segmentos de 3px) no lugar do stepper textual longo */
 .stepper-bar {
   display: none !important;
@@ -496,14 +539,18 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .msp-seg {
   height: 3px;
   border-radius: 999px;
-  background: var(--border);
+  background: var(--m-divider);
   transition: background-color 0.18s ease;
+}
+
+body.theme-contrast .msp-seg:not(.is-active):not(.is-done) {
+  background: #3f3f46;
 }
 
 .msp-seg.is-active,
@@ -527,11 +574,12 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
 
 #agendar-heading {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   margin: 0;
   font-size: 1.375rem;
   line-height: 1.15;
+  letter-spacing: -0.025em;
 }
 
 #agendar-heading .heading-desktop {
@@ -545,23 +593,40 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
 .mobile-step-counter {
   display: inline-flex;
   align-items: center;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 500;
+  justify-content: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--m-card-bg-elevated);
+  border: 1px solid var(--m-card-border);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.6875rem;
+  font-weight: 600;
   color: var(--text-muted);
   letter-spacing: 0.01em;
+  line-height: 1.1;
 }
 
 .step1-layout-mobile {
   display: inline-flex;
   flex-shrink: 0;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--m-seg-track);
+  border: 1px solid var(--m-card-border);
 }
 
 .step1-layout-mobile .layout-btn {
-  min-height: 34px;
-  height: 34px;
+  min-height: 32px;
+  height: 32px;
   padding: 0 10px;
+  border-radius: 7px;
   font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.step1-layout-mobile .layout-btn.is-active {
+  font-weight: 600;
 }
 
 .step1-layout-desktop {
@@ -581,25 +646,89 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
 .search-input {
   min-height: 42px;
   height: 42px;
-  padding: 8px 14px 8px 36px;
+  padding: 8px 14px 8px 38px;
   border-radius: 12px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: var(--m-input-bg);
+  border: 1px solid var(--m-card-border);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+
+body.theme-contrast .search-input {
+  border: 2px solid var(--border);
 }
 
 .search-icon {
-  left: 12px;
+  left: 13px;
   width: 16px;
   height: 16px;
+  opacity: 0.72;
 }
 
-/* Área única enxuta de filtros: chips horizontais de disciplina + 2 toggles Presencial/Online (sem duplicar "Todas") */
+/* Faixa horizontal de disciplinas com fade suave à direita (nunca corta seco) */
+.filter-bar-row {
+  order: 3;
+  margin-top: 10px;
+  border-bottom: none !important;
+}
+
+.underline-tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  gap: 6px;
+  border-bottom: none;
+  padding: 2px 24px 2px 0;
+  -webkit-mask-image: linear-gradient(to right, black 88%, transparent);
+  mask-image: linear-gradient(to right, black 88%, transparent);
+}
+
+.underline-tabs .sliding-underline {
+  display: none !important;
+}
+
+.u-tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--m-card-border);
+  background: var(--m-card-bg);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 500;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, transform var(--dur-micro) var(--ease-out);
+}
+
+.u-tab:active {
+  transform: scale(0.97);
+}
+
+.u-tab::after {
+  display: none !important;
+}
+
+.u-tab.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+/* Filtros secundários Presencial / Online: leves e compactos sem concorrer com disciplinas */
 .step1-tools-row {
   order: 4;
   margin-top: 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .mode-filter-group {
@@ -619,77 +748,41 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
 
 .mode-filter-group .layout-btn {
   flex: 0 0 auto;
-  min-height: 32px;
-  height: 32px;
-  padding: 0 12px;
+  min-height: 28px;
+  height: 28px;
+  padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-secondary);
-  font-size: 0.78rem;
+  border: 1px solid transparent;
+  background: var(--m-chip-bg);
+  color: var(--text-muted);
+  font-size: 0.75rem;
   font-weight: 500;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, transform var(--dur-micro) var(--ease-out);
+}
+
+.mode-filter-group .layout-btn:active {
+  transform: scale(0.97);
 }
 
 .mode-filter-group .layout-btn.is-active {
-  border-color: var(--accent) !important;
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent) !important;
   background: var(--accent-soft) !important;
   color: var(--accent-text) !important;
   font-weight: 600;
 }
 
+body.theme-contrast .mode-filter-group .layout-btn {
+  border: 1.5px solid var(--border);
+  color: var(--text);
+}
+
 body.theme-contrast .mode-filter-group .layout-btn.is-active {
+  border-color: var(--accent) !important;
   background: var(--accent) !important;
   color: var(--accent-fg) !important;
 }
 
-.filter-bar-row {
-  order: 3;
-  margin-top: 10px;
-  border-bottom: none !important;
-}
-
-/* Chips horizontais deslizáveis de disciplinas sem scrollbar visível */
-.underline-tabs {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  gap: 6px;
-  border-bottom: none;
-  padding: 2px 16px 2px 0;
-  -webkit-mask-image: linear-gradient(to right, #000 90%, transparent);
-  mask-image: linear-gradient(to right, #000 90%, transparent);
-}
-
-.underline-tabs .sliding-underline {
-  display: none !important;
-}
-
-.u-tab {
-  flex: 0 0 auto;
-  white-space: nowrap;
-  min-height: 32px;
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-secondary);
-  font-size: 0.78rem;
-  font-weight: 500;
-}
-
-.u-tab::after {
-  display: none !important;
-}
-
-.u-tab.is-active {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-fg);
-  font-weight: 600;
-}
-
-/* Cards da Etapa 1 (Modo Lista): limpos, arejados, sem monograma gigante */
+/* Cards da Etapa 1 (Modo Lista): contraste real de superfície, tipografia tabular-nums e respiro */
 #step1-list-box.hairline-list {
   display: flex;
   flex-direction: column;
@@ -704,18 +797,28 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
   width: 100%;
   padding: 14px 16px;
   border-radius: 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  background: var(--m-card-bg);
+  border: 1px solid var(--m-card-border);
+  border-bottom: 1px solid var(--m-card-border);
+  box-shadow: var(--m-card-shadow);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 10px;
   row-gap: 6px;
   align-items: start;
+  transition: background-color 140ms ease, border-color 140ms ease, transform var(--dur-micro) var(--ease-out);
+}
+
+.list-row-btn:active {
+  transform: scale(0.99);
 }
 
 .list-row-btn:last-child {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--m-card-border);
+}
+
+body.theme-contrast .list-row-btn {
+  border: 2px solid var(--border);
 }
 
 .monitor-monogram {
@@ -737,6 +840,7 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
   font-size: 0.9375rem;
   font-weight: 600;
   line-height: 1.3;
+  letter-spacing: -0.01em;
   color: var(--text);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -752,13 +856,15 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 0.74rem;
   font-weight: 600;
   white-space: nowrap;
-  padding: 3px 8px;
+  padding: 3px 9px;
   border-radius: 999px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: var(--m-card-bg-elevated);
+  border: 1px solid var(--m-card-border);
   color: var(--text-secondary);
 }
 
@@ -782,7 +888,7 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
   min-width: 0;
   overflow: hidden;
   font-size: 0.8125rem;
-  line-height: 1.3;
+  line-height: 1.32;
   color: var(--text-secondary);
 }
 
@@ -819,8 +925,11 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
   justify-content: space-between;
   padding-top: 8px;
   margin-top: 2px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--m-divider);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 0.76rem;
+  font-weight: 500;
   color: var(--text-muted);
 }
 
@@ -828,12 +937,16 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
   font-size: 1rem;
   line-height: 1;
   color: var(--text-muted);
+  opacity: 0.75;
 }
 
-/* Grade Semanal Mobile: visão nativa por dia com cards limpos e arejados */
+/* Grade Semanal Mobile: seletor de dias separado + cards individuais respirando */
 .matrix-card {
-  border-radius: 14px;
-  overflow: hidden;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0;
+  box-shadow: none !important;
+  overflow: visible;
   padding: 0;
 }
 
@@ -842,34 +955,55 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
 }
 
 .matrix-mobile-view {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .mobile-matrix-days {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 4px;
-  padding: 8px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
+  padding: 5px;
+  border-radius: 14px;
+  background: var(--m-card-bg);
+  border: 1px solid var(--m-card-border);
+  box-shadow: var(--m-card-shadow);
+}
+
+body.theme-contrast .mobile-matrix-days {
+  border: 2px solid var(--border);
+}
+
+.mobile-matrix-days .sliding-pill {
+  background: var(--accent-soft) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+body.theme-contrast .mobile-matrix-days .sliding-pill {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
 }
 
 .mmd-btn {
   position: relative;
   z-index: 1;
   min-height: 44px;
-  padding: 5px 4px;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  padding: 6px 4px;
+  border: none;
+  border-radius: 10px;
   background: transparent;
   color: var(--text-secondary);
-  font-family: inherit;
+  font-family: var(--font-sans);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   transition: color var(--dur-micro) ease, transform var(--dur-micro) var(--ease-out);
 }
 
@@ -878,11 +1012,15 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
 }
 
 .mmd-btn.is-active {
-  color: var(--text);
+  color: var(--accent-text);
+}
+
+body.theme-contrast .mmd-btn.is-active {
+  color: var(--accent-fg);
 }
 
 .mmd-btn.is-empty:not(.is-active) {
-  opacity: 0.55;
+  opacity: 0.48;
 }
 
 .mmd-day {
@@ -892,7 +1030,8 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
 }
 
 .mmd-badge {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 0.6875rem;
   font-weight: 600;
   color: var(--text-muted);
@@ -903,30 +1042,36 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
   color: var(--accent-text);
 }
 
+body.theme-contrast .mmd-btn.is-active .mmd-badge {
+  color: var(--accent-fg);
+}
+
 .mobile-matrix-list {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
+  gap: 10px;
+  background: transparent;
 }
 
 .mobile-matrix-slot {
   width: 100%;
-  border: none;
-  border-bottom: 1px solid var(--border);
-  background: transparent;
-  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--m-card-border);
+  background: var(--m-card-bg);
+  box-shadow: var(--m-card-shadow);
+  padding: 14px;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 12px;
   text-align: left;
   cursor: pointer;
   color: var(--text);
-  font-family: inherit;
-  transition: background-color var(--dur-micro) ease, transform var(--dur-micro) var(--ease-out);
+  font-family: var(--font-sans);
+  transition: background-color var(--dur-micro) ease, border-color var(--dur-micro) ease, transform var(--dur-micro) var(--ease-out);
 }
 
-.mobile-matrix-slot:last-child {
-  border-bottom: none;
+body.theme-contrast .mobile-matrix-slot {
+  border: 2px solid var(--border);
 }
 
 .mobile-matrix-slot:active:not(:disabled) {
@@ -935,31 +1080,53 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
 }
 
 .mobile-matrix-slot:disabled {
-  opacity: 0.52;
+  opacity: 0.54;
   cursor: not-allowed;
 }
 
 .mms-time {
+  position: relative;
   flex-shrink: 0;
-  width: 56px;
-  padding-right: 10px;
-  border-right: 1px solid var(--border);
+  width: 54px;
+  padding-right: 12px;
+  border-right: none;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  font-family: var(--font-mono);
+  justify-content: center;
+  gap: 2px;
+  font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
 }
 
+.mms-time::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 2.5px;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: 0.85;
+}
+
+.mobile-matrix-slot:disabled .mms-time::after {
+  background: var(--border-strong);
+  opacity: 0.45;
+}
+
 .mms-time strong {
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   color: var(--text);
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
 .mms-time span {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
+  font-weight: 500;
   color: var(--text-muted);
   line-height: 1.2;
 }
@@ -969,15 +1136,17 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  justify-content: center;
+  gap: 3px;
 }
 
 .mms-subject {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text);
-  line-height: 1.25;
+  line-height: 1.26;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -986,7 +1155,7 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
 
 .mms-meta {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -996,21 +1165,36 @@ body.theme-contrast .mode-filter-group .layout-btn.is-active {
 .mms-vac {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  margin-top: 2px;
-  font-size: 0.74rem;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
+  gap: 6px;
+  width: fit-content;
+  margin-top: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--m-card-bg-elevated);
+  border: 1px solid var(--m-card-border);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.2;
 }
 
 .mms-arrow {
   flex-shrink: 0;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  opacity: 0.65;
 }
 
 .mobile-matrix-empty {
-  padding: 24px 16px;
+  padding: 28px 18px;
+  border-radius: 14px;
+  background: var(--m-card-bg);
+  border: 1px solid var(--m-card-border);
   text-align: center;
   font-size: 0.84rem;
   color: var(--text-secondary);
@@ -1204,10 +1388,65 @@ body.theme-contrast #step3-form-shell .step3-actions {
   min-height: 44px;
 }
 
-/* ==================== 7. MEUS AGENDAMENTOS E PAINEL DO MONITOR (CARDS VERTICAIS FULL-WIDTH) ==================== */
+/* ==================== 7. MEUS AGENDAMENTOS E PAINEL DO MONITOR (CARDS VERTICAIS + BOTTOM SHEET) ==================== */
 .view-head-row {
   margin-bottom: 14px;
   gap: 10px;
+}
+
+.monitor-view-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.monitor-head-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.monitor-sub-desktop {
+  display: none !important;
+}
+
+.monitor-sub-mobile {
+  display: inline-block;
+  margin: 2px 0 0;
+  max-width: 100%;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.monitor-mobile-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-shrink: 0;
+  min-height: 36px;
+  height: 36px;
+  padding: 0 13px;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+.monitor-mobile-add-btn:active {
+  transform: scale(0.97);
+}
+
+body.theme-contrast .monitor-mobile-add-btn {
+  box-shadow: none;
 }
 
 /* Remove coluna lateral de data no mobile — cards ocupam 100% da largura */
@@ -1232,18 +1471,29 @@ body.theme-contrast #step3-form-shell .step3-actions {
   width: 100%;
   padding: 14px 16px;
   border-radius: 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  background: var(--m-card-bg);
+  border: 1px solid var(--m-card-border);
+  border-bottom: 1px solid var(--m-card-border);
+  box-shadow: var(--m-card-shadow);
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 10px;
 }
 
+body.theme-contrast .booking-row,
+body.theme-contrast .monitor-slot-row {
+  border: 2px solid var(--border);
+}
+
 .booking-row:last-child,
 .monitor-slot-row:last-child {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--m-card-border);
+}
+
+body.theme-contrast .booking-row:last-child,
+body.theme-contrast .monitor-slot-row:last-child {
+  border-bottom: 2px solid var(--border);
 }
 
 .booking-main,
@@ -1279,19 +1529,51 @@ body.theme-contrast #step3-form-shell .step3-actions {
 .mobile-card-datetime {
   display: inline-flex;
   align-items: center;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--accent-text);
   letter-spacing: -0.01em;
 }
 
-/* Linha 2: disciplina full-width + meta limpa em 1 linha */
+.booking-meta-top .status-tag {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.booking-meta-top .status-tag.is-Confirmado {
+  background: var(--green-soft);
+  color: var(--green);
+  border: 1px solid var(--green-border);
+}
+
+/* Linha 2: disciplina/aluno em destaque + meta limpa */
 .booking-info .row-title {
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: 0.96875rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
   line-height: 1.3;
   -webkit-line-clamp: 2;
+}
+
+.mon-stu-ra-desktop {
+  display: none !important;
+}
+
+.mon-stu-ra-mobile {
+  display: inline-block;
+  margin-left: 8px;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .booking-meta-desktop {
@@ -1309,27 +1591,32 @@ body.theme-contrast #step3-form-shell .step3-actions {
   text-overflow: ellipsis;
 }
 
-/* Linha 3: dúvida em bloco de citação full-width */
+/* Linha 3: dúvida em bloco leve sem borda pesada */
 .booking-topic-quote {
   display: block;
   margin: 4px 0 0 !important;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: var(--surface-2);
-  border-left: 2.5px solid var(--border-strong);
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--m-card-bg-elevated);
+  border: none;
   font-size: 0.8125rem;
-  line-height: 1.4;
+  line-height: 1.42;
   color: var(--text-secondary);
 }
 
-/* Linha 4: ações separadas por divisor 1px em linha horizontal equilibrada */
+body.theme-contrast .booking-topic-quote {
+  border: 1px solid var(--border);
+}
+
+/* Linha 4: ações equilibradas */
 .booking-actions {
   width: 100%;
   padding-left: 0;
   padding-top: 10px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--m-divider);
   display: flex;
   flex-wrap: nowrap;
+  align-items: center;
   gap: 8px;
 }
 
@@ -1338,12 +1625,50 @@ body.theme-contrast #step3-form-shell .step3-actions {
 }
 
 .booking-actions .btn {
-  min-height: 38px;
-  height: 38px;
-  padding: 0 10px;
-  font-size: 0.8rem;
+  min-height: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 600;
   flex: 1 1 0;
   justify-content: center;
+}
+
+#view-monitor .booking-actions {
+  justify-content: space-between;
+}
+
+.monitor-card-protocol-mobile {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.78;
+}
+
+#view-monitor .booking-actions .btn {
+  flex: 0 0 auto;
+  min-width: 112px;
+  min-height: 40px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 10px;
+  background: var(--m-card-bg-elevated);
+  border: 1px solid var(--m-card-border-strong);
+  color: var(--text);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+#view-monitor .booking-actions .btn:active {
+  transform: scale(0.97);
+}
+
+body.theme-contrast #view-monitor .booking-actions .btn {
+  border: 2px solid var(--border);
 }
 
 .students-split {
@@ -1361,51 +1686,297 @@ body.theme-contrast #step3-form-shell .step3-actions {
   border-radius: 0;
 }
 
-.monitor-side-panel {
-  padding: 16px;
-}
-
+/* Navegação do Monitor: Segmented Control full-width + filtro secundário underline discreto */
 .monitor-tabs-head {
-  padding: 0 0 10px;
+  padding: 0 0 12px;
   border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
-.monitor-tabs-head .underline-tabs {
-  padding-right: 0;
+.mon-tab-label-desktop {
+  display: none !important;
+}
+
+.mon-tab-label-mobile {
+  display: inline;
+}
+
+#monitor-section-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  padding: 4px;
+  gap: 4px;
+  border-radius: 12px;
+  background: var(--m-seg-track);
+  border: 1px solid var(--m-card-border);
+  overflow: visible;
   -webkit-mask-image: none;
   mask-image: none;
 }
 
-.monitor-slot-meta .monitor-slot-time {
-  margin: 0;
-  font-size: 0.9375rem;
+body.theme-contrast #monitor-section-tabs {
+  border: 2px solid var(--border);
+}
+
+#monitor-section-tabs .u-tab {
+  width: 100%;
+  min-height: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+#monitor-section-tabs .u-tab.is-active {
+  background: var(--m-seg-active);
+  color: var(--text);
   font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+}
+
+body.theme-contrast #monitor-section-tabs .u-tab.is-active {
+  background: var(--accent);
+  color: var(--accent-fg);
+  box-shadow: none;
+}
+
+#monitor-section-tabs .tab-mini-count {
+  margin-left: 0;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--m-chip-bg);
+  border: none;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+#monitor-section-tabs .u-tab.is-active .tab-mini-count {
+  color: var(--text-secondary);
+}
+
+body.theme-contrast #monitor-section-tabs .u-tab.is-active .tab-mini-count {
+  background: #000000;
+  color: #facc15;
+}
+
+#monitor-filter-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 18px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--m-divider);
+  border-radius: 0;
+  padding: 0 2px;
+  margin: 0 !important;
+}
+
+#monitor-filter-toggle .sliding-pill {
+  display: none !important;
+}
+
+#monitor-filter-toggle .layout-btn {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 34px;
+  height: 34px;
+  padding: 0 2px;
+  border: none;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+#monitor-filter-toggle .layout-btn.is-active {
+  color: var(--text);
+  font-weight: 600;
+}
+
+#monitor-filter-toggle .layout-btn.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+/* Horários publicados no mobile: sem repetir horário */
+.monitor-slot-meta .monitor-slot-time {
+  display: none;
 }
 
 .monitor-slot-meta .monitor-slot-sub {
   margin: 0;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 0.8125rem;
+  color: var(--text-secondary);
 }
 
 .monitor-slot-right {
   width: 100%;
   padding-left: 0;
   padding-top: 10px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--m-divider);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
-.monitor-slot-right .btn {
-  min-height: 38px;
-  padding: 0 14px;
+.slot-occ-badge {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--m-card-bg-elevated);
+  border: 1px solid var(--m-card-border);
 }
 
-/* ==================== 8. CONFIGURAÇÕES MOBILE: ABA NATIVA COM ABAS STICKY (BOTTOM TAB BAR SEMPRE VISÍVEL) ==================== */
+.monitor-slot-right .btn {
+  min-height: 38px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+}
+
+/* Formulário Publicar novo horário: oculto na listagem e apresentado em Bottom Sheet limpo */
+.monitor-sheet-backdrop {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 185;
+  background: rgba(0, 0, 0, 0.62);
+}
+
+.monitor-sheet-backdrop:not(.is-hidden) {
+  animation: backdropFadeIn 180ms ease-out;
+}
+
+.monitor-sheet-backdrop.is-hidden {
+  display: none;
+}
+
+#form-new-slot.monitor-side-panel {
+  display: none;
+}
+
+#form-new-slot.monitor-side-panel.is-mobile-sheet-open {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 195;
+  width: 100%;
+  max-height: 88dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 18px 18px 0 0;
+  border: 1px solid var(--border-strong);
+  border-bottom: none;
+  background: var(--surface);
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.36);
+  padding: 8px 16px calc(18px + env(safe-area-inset-bottom));
+  animation: sheetSlideUp var(--dur-modal) var(--ease-out);
+}
+
+body.theme-contrast #form-new-slot.monitor-side-panel.is-mobile-sheet-open {
+  border-width: 2px;
+  border-bottom: none;
+  box-shadow: none;
+}
+
+.monitor-sheet-handle {
+  display: flex;
+  justify-content: center;
+  padding: 2px 0 4px;
+}
+
+.monitor-sheet-handle span {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border-strong);
+}
+
+.monitor-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.monitor-sheet-head h2 {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.monitor-sheet-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+#form-new-slot.is-mobile-sheet-open .field {
+  margin-bottom: 0;
+  gap: 5px;
+}
+
+#form-new-slot.is-mobile-sheet-open label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+#form-new-slot.is-mobile-sheet-open .field-row {
+  gap: 10px;
+}
+
+#form-new-slot.is-mobile-sheet-open .field-row.field-row-monitor-code {
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 10px;
+}
+
+#form-new-slot.is-mobile-sheet-open .btn-primary {
+  min-height: 46px;
+  border-radius: 12px;
+  margin-top: 4px;
+}
+
+/* ==================== 8. CONFIGURAÇÕES MOBILE: LISTA → DETALHE FIEL À WEB (TAB BAR SEMPRE VISÍVEL) ==================== */
 body.is-mobile-settings-open .main-shell {
   visibility: hidden;
 }
@@ -1442,6 +2013,7 @@ body.is-landing-mode #settings-modal {
   max-height: none;
   border-radius: 0;
   border: none;
+  box-shadow: none;
   background: var(--bg);
   display: flex;
   flex-direction: column;
@@ -1449,47 +2021,72 @@ body.is-landing-mode #settings-modal {
   animation: surfaceEnter var(--dur-view) var(--ease-out);
 }
 
-/* Mantém painel ativo imediatamente visível abaixo das abas sticky (sem tela intermediária) */
-.settings-window:not(.is-mobile-detail) .settings-main,
-.settings-window.is-mobile-detail .settings-main,
-.settings-window.is-mobile-detail .settings-sidebar {
+/* Padrão Lista → Detalhe: tela raiz mostra sidebar agrupada; detalhe mostra painel selecionado */
+.settings-window:not(.is-mobile-detail) .settings-sidebar {
   display: flex !important;
 }
 
-/* Barra superior sticky de abas horizontais espelhando a web */
+.settings-window:not(.is-mobile-detail) .settings-main {
+  display: none !important;
+}
+
+.settings-window.is-mobile-detail .settings-sidebar {
+  display: none !important;
+}
+
+.settings-window.is-mobile-detail .settings-main {
+  display: flex !important;
+  animation: surfaceEnter var(--dur-view) var(--ease-out);
+}
+
+/* Tela Raiz (Ajustes) espelhando a sidebar da web */
 .settings-sidebar {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   width: 100%;
+  height: 100%;
   border-right: none;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-  padding: 10px 16px;
+  border-bottom: none;
+  background: var(--bg);
+  padding: 14px 16px 28px;
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  touch-action: pan-x;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 18px;
+  overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Remove cabeçalho redundante, cartão duplicado, botões X / < Configurações e aba Atalhos no mobile */
-.settings-sidebar-head,
-.settings-user-foot,
-.settings-group-label,
-.settings-chevron,
-.settings-mobile-back,
+.settings-sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 2px 0;
+}
+
+.settings-kicker {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.settings-kicker-desktop {
+  display: none;
+}
+
+.settings-kicker-mobile {
+  display: inline;
+}
+
+/* Sem botão X no topo quando logado; oculta apenas Atalhos no mobile */
 .settings-close-desktop,
 .settings-close-mobile,
 [data-settings-tab="atalhos"] {
   display: none !important;
-}
-
-body.is-landing-mode .settings-sidebar-head {
-  display: flex !important;
-  flex-shrink: 0;
-  padding-right: 8px;
 }
 
 body.is-landing-mode .settings-close-mobile {
@@ -1498,63 +2095,164 @@ body.is-landing-mode .settings-close-mobile {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   border: 1px solid var(--border);
-  background: var(--surface-2);
+  background: var(--m-card-bg);
   color: var(--text);
 }
 
 .settings-nav-wrap {
   flex: 0 0 auto;
-  width: max-content;
+  width: 100%;
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 18px;
   overflow: visible;
 }
 
 .settings-nav-group {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 0;
   background: transparent;
   border: none;
   padding: 0;
   margin: 0;
 }
 
+.settings-group-label {
+  display: block;
+  padding: 0 4px 7px;
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
 .settings-nav-item {
-  width: auto;
-  flex: 0 0 auto;
-  min-height: 36px;
-  height: 36px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text-secondary);
-  font-size: 0.8125rem;
+  width: 100%;
+  min-height: 48px;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: 0;
+  border: none;
+  border-left: 1px solid var(--m-card-border);
+  border-right: 1px solid var(--m-card-border);
+  border-top: 1px solid var(--m-divider);
+  background: var(--m-card-bg);
+  color: var(--text);
+  font-size: 0.9rem;
   font-weight: 500;
   white-space: nowrap;
-  gap: 6px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  transition: background-color 140ms ease;
 }
 
-.settings-nav-item svg {
-  width: 15px;
-  height: 15px;
+.settings-nav-item:active {
+  background: var(--surface-hover);
+}
+
+.settings-nav-item:first-of-type {
+  border-top: 1px solid var(--m-card-border);
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+}
+
+/* Último item visível de cada grupo (Agenda em Preferências, pois Atalhos está oculto; e Conta em Sistema) */
+.settings-nav-item[data-settings-tab="agenda"],
+.settings-nav-item[data-settings-tab="conta"] {
+  border-bottom: 1px solid var(--m-card-border);
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+}
+
+body.theme-contrast .settings-nav-item {
+  border-left: 2px solid var(--border);
+  border-right: 2px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+
+body.theme-contrast .settings-nav-item:first-of-type {
+  border-top: 2px solid var(--border);
+}
+
+body.theme-contrast .settings-nav-item[data-settings-tab="agenda"],
+body.theme-contrast .settings-nav-item[data-settings-tab="conta"] {
+  border-bottom: 2px solid var(--border);
+}
+
+.settings-nav-item svg:first-child {
+  width: 17px;
+  height: 17px;
   flex-shrink: 0;
+  color: var(--text-secondary);
 }
 
+/* Na tela raiz Lista → Detalhe, todos os itens mantêm superfície agrupada limpa */
 .settings-nav-item.is-active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-fg);
+  background: var(--m-card-bg);
+  color: var(--text);
   box-shadow: none;
-  font-weight: 600;
+  font-weight: 500;
 }
 
+.settings-chevron {
+  display: inline-flex !important;
+  margin-left: auto;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+/* Card compacto do usuário em superfície limpa agrupada */
+.settings-user-foot {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--m-card-bg);
+  border: 1px solid var(--m-card-border);
+  box-shadow: var(--m-card-shadow);
+  margin-top: 2px;
+}
+
+body.theme-contrast .settings-user-foot {
+  border: 2px solid var(--border);
+}
+
+.settings-user-foot .settings-avatar {
+  width: 38px;
+  height: 38px;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.settings-user-foot .settings-user-meta {
+  gap: 1px;
+}
+
+.settings-user-foot .settings-user-meta strong {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.settings-user-foot .settings-user-meta span {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+/* Tela Detalhe (Geral, Aparência, Acessibilidade, Agenda, Conta e LGPD) */
 .settings-main {
   min-width: 0;
   width: 100%;
@@ -1567,11 +2265,34 @@ body.is-landing-mode .settings-close-mobile {
 
 .settings-main-head {
   flex: 0 0 auto;
-  padding: 14px 16px 6px;
-  background: transparent;
-  border-bottom: none;
+  padding: 10px 16px 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--m-divider);
   align-items: flex-start;
   gap: 8px;
+}
+
+.settings-mobile-back {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 8px -6px;
+  padding: 4px 8px 4px 4px;
+  min-height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--accent-text);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 140ms ease, transform var(--dur-micro) var(--ease-out);
+}
+
+.settings-mobile-back:active {
+  opacity: 0.72;
+  transform: scale(0.97);
 }
 
 .settings-main-title-wrap {
@@ -1580,19 +2301,20 @@ body.is-landing-mode .settings-close-mobile {
 }
 
 .settings-main-head h2 {
-  font-size: 1.1875rem;
+  font-size: 1.25rem;
   line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .settings-main-head .step-sub {
   font-size: 0.8125rem;
-  line-height: 1.35;
+  line-height: 1.38;
   margin-top: 3px;
 }
 
 .settings-body {
   flex: 1 1 auto;
-  padding: 8px 16px 28px;
+  padding: 16px 16px 32px;
   width: 100%;
   min-width: 0;
   overflow-y: auto;
@@ -1600,7 +2322,36 @@ body.is-landing-mode .settings-close-mobile {
 }
 
 .settings-section-block {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
+}
+
+.settings-grouped-list {
+  background: var(--m-card-bg);
+  border: 1px solid var(--m-card-border);
+  border-radius: 14px;
+  box-shadow: var(--m-card-shadow);
+}
+
+body.theme-contrast .settings-grouped-list {
+  border: 2px solid var(--border);
+}
+
+.settings-grouped-list > .settings-row:first-child {
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+}
+
+.settings-grouped-list > .settings-row:last-child {
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+}
+
+.settings-row {
+  border-bottom: 1px solid var(--m-divider);
+}
+
+body.theme-contrast .settings-row {
+  border-bottom: 1px solid var(--border);
 }
 
 .settings-card-grid-2,
@@ -1614,30 +2365,38 @@ body.is-landing-mode .settings-close-mobile {
 }
 
 .settings-layout-grid .select-card {
-  padding: 12px;
-  gap: 4px;
-  border-radius: 12px;
+  padding: 13px;
+  gap: 5px;
+  border-radius: 14px;
+  background: var(--m-card-bg);
+  border-color: var(--m-card-border);
+  box-shadow: var(--m-card-shadow);
+}
+
+.settings-layout-grid .select-card.is-selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 
 .settings-layout-grid .select-card strong {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   line-height: 1.25;
 }
 
 .settings-layout-grid .select-card span:not(.select-card-check) {
   font-size: 0.75rem;
-  line-height: 1.32;
+  line-height: 1.36;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .settings-layout-grid .select-card-check {
-  top: 8px;
-  right: 8px;
-  width: 19px;
-  height: 19px;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
 }
 
 .settings-row {
@@ -1671,6 +2430,7 @@ body.is-landing-mode .settings-close-mobile {
 .agenda-export-row .btn {
   width: 100%;
   min-height: 42px;
+  border-radius: 10px;
   justify-content: center;
 }
 
@@ -2047,10 +2807,18 @@ body.has-mobile-sticky-cta .toast {
 
 div[vw] [vw-access-button] {
   top: auto !important;
-  bottom: calc(74px + env(safe-area-inset-bottom)) !important;
+  right: 10px !important;
+  bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+  z-index: 48 !important;
   transform: none !important;
+  transition: opacity 150ms ease;
 }
 
 body.has-mobile-sticky-cta div[vw] [vw-access-button] {
-  bottom: calc(144px + env(safe-area-inset-bottom)) !important;
+  bottom: calc(146px + env(safe-area-inset-bottom)) !important;
+}
+
+body.is-scroll-locked div[vw] [vw-access-button] {
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
