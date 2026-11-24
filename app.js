@@ -1955,16 +1955,15 @@ function validateNewAccountFields({ name, ra, email, password }) {
 }
 
 // ==================== SSO INSTITUCIONAL (GENNERA UNIFSA / GOOGLE) ====================
-const SSO_GENNERA_ICON_SVG = `<img src="assets/gennera-icon.svg" alt="" width="20" height="20" class="sso-icon-img" aria-hidden="true" />`;
+const SSO_GENNERA_ICON_SVG = `<img src="assets/gennera-icon.svg?v=20261124b1" alt="" width="34" height="34" class="sso-provider-img" aria-hidden="true" />`;
 const SSO_GOOGLE_ICON_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`;
-const SSO_USER_ICON_SVG = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
 
 const SSO_PROVIDERS = {
   gennera: {
     name: "Gennera",
-    loadingHeader: "Gennera SSO",
-    title: "Acesso Institucional · Gennera (UNIFSA)",
-    desc: "Selecione a conta vinculada ao portal acadêmico.",
+    loadingHeader: "Gennera · UNIFSA",
+    title: "Gennera · UNIFSA",
+    desc: "Escolha a conta acadêmica para entrar.",
     loadingTitle: "Sincronizando matrícula e disciplinas do Gennera...",
     footer: "Fluxo simulado · Pronto para integração via SAML / API da UNIFSA",
     iconSvg: SSO_GENNERA_ICON_SVG,
@@ -1973,8 +1972,8 @@ const SSO_PROVIDERS = {
   google: {
     name: "Google",
     loadingHeader: "Google Institucional",
-    title: "Continuar com Google Institucional",
-    desc: "Escolha uma conta @academico.edu.br.",
+    title: "Google Institucional",
+    desc: "Escolha sua conta @academico.edu.br.",
     loadingTitle: "Validando conta institucional...",
     footer: "Fluxo simulado · Pronto para OAuth 2.0 institucional",
     iconSvg: SSO_GOOGLE_ICON_SVG,
@@ -2036,16 +2035,9 @@ function ensureDemoUser(demoId) {
 function renderSsoAccountList() {
   const listEl = document.getElementById("sso-account-list");
   if (!listEl) return;
-  const isGoogle = ssoState.provider === "google";
 
   listEl.innerHTML = SSO_ACCOUNTS.map((acc) => {
     const selected = acc.userId === ssoState.selectedUserId;
-    const avatarMarkup = isGoogle
-      ? `<span class="sso-avatar is-initials" aria-hidden="true">${escapeHtml(acc.initials)}</span>`
-      : `<span class="sso-avatar is-icon" aria-hidden="true">${SSO_USER_ICON_SVG}</span>`;
-    const metaLine = isGoogle
-      ? `${escapeHtml(acc.roleLabel)} · ${escapeHtml(acc.detail)} · Mat. ${escapeHtml(acc.ra)}`
-      : `<span class="sso-role-pill">${escapeHtml(acc.roleLabel)}</span><span>${escapeHtml(acc.detail)} · Mat. ${escapeHtml(acc.ra)}</span>`;
 
     return `
       <button
@@ -2055,10 +2047,13 @@ function renderSsoAccountList() {
         aria-checked="${selected}"
         data-sso-account="${escapeHtml(acc.userId)}"
       >
-        ${avatarMarkup}
+        <span class="sso-avatar" aria-hidden="true">${escapeHtml(acc.initials)}</span>
         <span class="sso-account-info">
-          <strong class="sso-account-name">${escapeHtml(acc.name)}</strong>
-          <span class="sso-account-meta">${metaLine}</span>
+          <span class="sso-account-top">
+            <strong class="sso-account-name">${escapeHtml(acc.name)}</strong>
+            <span class="sso-role-pill">${escapeHtml(acc.roleLabel)}</span>
+          </span>
+          <span class="sso-account-meta">${escapeHtml(acc.detail)} · ${escapeHtml(acc.ra)}</span>
           <span class="sso-account-email">${escapeHtml(acc.email)}</span>
         </span>
         <span class="sso-account-chevron" aria-hidden="true">
@@ -2135,13 +2130,9 @@ function startSsoSync(userId) {
   document.getElementById("sso-loading-provider-name").textContent = cfg.loadingHeader;
   document.getElementById("sso-loading-title").textContent = cfg.loadingTitle;
 
-  const isGoogle = ssoState.provider === "google";
-  const avatarMarkup = isGoogle
-    ? `<span class="sso-avatar is-initials is-sm" aria-hidden="true">${escapeHtml(acc.initials)}</span>`
-    : `<span class="sso-avatar is-icon is-sm" aria-hidden="true">${SSO_USER_ICON_SVG}</span>`;
   document.getElementById("sso-loading-profile").innerHTML = `
     <span class="sso-loading-profile-main">
-      ${avatarMarkup}
+      <span class="sso-avatar is-sm" aria-hidden="true">${escapeHtml(acc.initials)}</span>
       <strong>${escapeHtml(acc.name)}</strong>
     </span>
     <span class="sso-loading-check" aria-hidden="true">

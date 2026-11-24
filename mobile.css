@@ -1577,13 +1577,23 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
   background: var(--border-strong);
 }
 
-.sso-account-card {
-  padding: 12px;
+.sso-account-list {
+  margin-top: 14px;
   border-radius: 12px;
 }
 
+.sso-account-card {
+  padding: 13px 12px;
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.sso-account-card:last-child {
+  border-bottom: none;
+}
+
 .sso-account-card.is-selected {
-  border-color: var(--accent);
   background: var(--accent-soft);
 }
 

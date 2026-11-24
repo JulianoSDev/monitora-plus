@@ -4775,7 +4775,7 @@ body.theme-contrast .sso-btn-neutral {
 }
 
 .sso-modal-box {
-  max-width: 440px;
+  max-width: 420px;
   width: 100%;
   padding: 20px;
 }
@@ -4784,64 +4784,98 @@ body.theme-contrast .sso-btn-neutral {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
 }
 
 .sso-modal-title-row {
   display: flex;
-  align-items: flex-start;
-  gap: 11px;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
+  flex: 1;
 }
 
 .sso-modal-head-copy {
   min-width: 0;
+  flex: 1;
 }
 
 .sso-modal-head h2 {
-  font-size: 1.02rem;
+  font-size: 1rem;
+  font-weight: 600;
   line-height: 1.25;
   margin: 0;
+  color: var(--text);
 }
 
 .sso-modal-head .step-sub {
-  margin-top: 3px;
-  font-size: 0.82rem;
+  margin-top: 2px;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.sso-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: -2px;
+  transition: background-color var(--dur-micro) ease, color var(--dur-micro) ease,
+    border-color var(--dur-micro) ease;
+}
+
+.sso-close-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+body.theme-contrast .sso-close-btn {
+  border-color: var(--border);
+  color: #ffffff;
 }
 
 .sso-provider-badge {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   display: inline-grid;
   place-items: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .sso-provider-badge.is-sm {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
 }
 
-.sso-provider-badge.is-sm svg {
-  width: 16px;
-  height: 16px;
+.sso-provider-badge.is-sm svg,
+.sso-provider-badge.is-sm .sso-provider-img {
+  width: 100%;
+  height: 100%;
+}
+
+.sso-provider-badge.is-sm.is-google svg {
+  width: 15px;
+  height: 15px;
+}
+
+.sso-provider-img {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .sso-provider-badge.is-gennera {
-  background: #ffffff;
-  border: 1px solid var(--border);
-}
-
-body.theme-light .sso-provider-badge.is-gennera {
-  background: var(--surface-2);
-}
-
-body.theme-contrast .sso-provider-badge.is-gennera,
-body.theme-contrast .sso-provider-badge.is-google {
-  background: #ffffff;
-  border: 2px solid #ffffff;
+  background: #1b3a8a;
+  border: none;
 }
 
 .sso-provider-badge.is-google {
@@ -4849,19 +4883,34 @@ body.theme-contrast .sso-provider-badge.is-google {
   border: 1px solid var(--border);
 }
 
+body.theme-contrast .sso-provider-badge.is-gennera {
+  border: 2px solid #ffffff;
+}
+
+body.theme-contrast .sso-provider-badge.is-google {
+  background: #ffffff;
+  border: 2px solid #ffffff;
+}
+
+/* Lista única agrupada com divisor fino 1px (sem caixa dentro de caixa) */
 .sso-account-list {
   margin-top: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  overflow: hidden;
 }
 
 .sso-account-card {
   width: 100%;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--surface-2);
+  padding: 13px 14px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
   color: var(--text);
   font-family: inherit;
   text-align: left;
@@ -4869,47 +4918,49 @@ body.theme-contrast .sso-provider-badge.is-google {
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: border-color var(--dur-micro) ease, background-color var(--dur-micro) ease,
-    transform var(--dur-micro) var(--ease-out);
+  transition: background-color var(--dur-micro) ease;
+}
+
+.sso-account-card:last-child {
+  border-bottom: none;
 }
 
 .sso-account-card:hover {
-  border-color: var(--accent);
   background: var(--surface-hover);
 }
 
-.sso-account-card:active {
-  transform: scale(0.99);
+.sso-account-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
+/* Avatar circular neutro com iniciais AP / RS */
 .sso-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 9px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
   display: inline-grid;
   place-items: center;
   flex-shrink: 0;
-  font-family: var(--font-display);
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .sso-avatar.is-sm {
-  width: 32px;
-  height: 32px;
-  font-size: 0.74rem;
+  width: 30px;
+  height: 30px;
+  font-size: 0.72rem;
 }
 
-.sso-avatar.is-icon {
-  background: var(--accent-soft);
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
-  color: var(--accent-text);
-}
-
-.sso-avatar.is-initials {
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--accent-fg);
+body.theme-contrast .sso-avatar {
+  background: #000000;
+  border: 1.5px solid #ffffff;
+  color: #ffffff;
 }
 
 .sso-account-info {
@@ -4920,40 +4971,63 @@ body.theme-contrast .sso-provider-badge.is-google {
   gap: 2px;
 }
 
+.sso-account-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
 .sso-account-name {
-  font-size: 0.9rem;
+  font-size: 0.90625rem;
   font-weight: 600;
   color: var(--text);
   line-height: 1.25;
-}
-
-.sso-account-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px;
-  font-size: 0.77rem;
-  color: var(--text-secondary);
-  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sso-role-pill {
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: var(--accent-soft);
-  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
-  color: var(--accent-text);
-  font-size: 0.7rem;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+body.theme-contrast .sso-role-pill {
+  background: #000000;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.sso-account-meta {
+  font-size: 0.78125rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sso-account-email {
-  font-size: 0.76rem;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
   color: var(--text-muted);
-  font-family: var(--font-mono);
+  line-height: 1.3;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .sso-account-chevron {
@@ -4970,13 +5044,13 @@ body.theme-contrast .sso-provider-badge.is-google {
 
 .sso-modal-foot {
   margin-top: 14px;
-  padding-top: 12px;
+  padding-top: 11px;
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 0.73rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
   text-align: center;
 }
