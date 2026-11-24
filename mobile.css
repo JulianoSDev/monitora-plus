@@ -222,7 +222,11 @@ body.theme-contrast .student-chip-btn {
 }
 
 body.has-mobile-sticky-cta .main-shell {
-  padding-bottom: calc(150px + env(safe-area-inset-bottom));
+  padding-bottom: calc(82px + env(safe-area-inset-bottom));
+}
+
+body.has-mobile-sticky-cta.is-mobile-input-focused .main-shell {
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
 }
 
 /* Bottom Tab Bar nativa moderna (58px + safe-area, blur sutil e pílula no ícone ativo) */
@@ -250,8 +254,9 @@ body.theme-contrast .mobile-bottom-nav {
   border-top: 2px solid var(--border);
 }
 
-body.is-landing-mode .mobile-bottom-nav {
-  display: none;
+body.is-landing-mode .mobile-bottom-nav,
+body.has-mobile-sticky-cta .mobile-bottom-nav {
+  display: none !important;
 }
 
 .mobile-tab-btn {
@@ -1200,11 +1205,15 @@ body.theme-contrast .mobile-matrix-slot {
   color: var(--text-secondary);
 }
 
-/* ==================== 6. ETAPAS 2 & 3, MODAL CONFIRMAR E REAGENDAR ==================== */
+/* ==================== 6. ETAPAS 2 & 3 (CHECKOUT FOCADO), MODAL CONFIRMAR E COMPROVANTE ==================== */
+body.has-mobile-sticky-cta .mobile-step-progress {
+  margin-bottom: 10px;
+}
+
 .reschedule-banner {
   padding: 10px 12px;
   margin-bottom: 10px;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .reschedule-banner .btn {
@@ -1212,45 +1221,196 @@ body.theme-contrast .mobile-matrix-slot {
   min-height: 38px;
 }
 
-.cal-shell {
-  border-radius: 12px;
+/* Etapa 2 e Etapa 3: cards separados com contraste real de superfície */
+#step-2 .cal-shell,
+#step3-form-shell.cal-shell {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: visible;
 }
 
-.cal-left,
-.cal-center,
-.cal-right,
-.step3-form,
-.success-shell {
-  padding: 14px;
+#step-2 .cal-left,
+#step-2 .cal-center,
+#step-2 .cal-right,
+#step3-form-shell .cal-left,
+#step3-form-shell .step3-form {
+  background: var(--m-card-bg);
+  border: 1px solid var(--m-card-border);
+  border-bottom: 1px solid var(--m-card-border);
+  border-radius: 14px;
+  box-shadow: var(--m-card-shadow);
 }
 
-.cal-title {
-  font-size: 1.02rem;
-  line-height: 1.25;
-  margin-bottom: 10px;
+body.theme-contrast #step-2 .cal-left,
+body.theme-contrast #step-2 .cal-center,
+body.theme-contrast #step-2 .cal-right,
+body.theme-contrast #step3-form-shell .cal-left,
+body.theme-contrast #step3-form-shell .step3-form {
+  border: 2px solid var(--border);
 }
 
-.cal-details {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px 12px;
+/* Etapa 2: Resumo compacto no topo (1 linha de metadados sem redundância) */
+#step-2 .cal-left {
+  padding: 10px 14px 11px;
+}
+
+#step-2 #btn-back-step1 {
+  margin: 0 0 5px;
+  padding: 0;
+  min-height: 24px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+
+#step-2 #s2-subject,
+#step-2 #s2-title,
+#step-2 .cal-details {
+  display: none;
+}
+
+.s2-mobile-summary {
+  display: block;
+}
+
+.s2-mobile-title {
+  margin: 0 0 3px;
+  font-family: var(--font-display);
+  font-size: 0.96875rem;
+  font-weight: 600;
+  line-height: 1.24;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+
+.s2-mobile-meta {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Etapa 2: Calendário compacto para horários aparecerem acima da dobra sem rolar */
+#step-2 .cal-center {
+  padding: 11px 12px 10px;
+}
+
+.cal-month-head {
+  margin-bottom: 8px;
+}
+
+.cal-month-head h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.cal-nav-arrows .icon-btn {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  border-radius: 8px;
+}
+
+.cal-weekdays {
+  margin-bottom: 4px;
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
 }
 
 .cal-days-grid {
-  gap: 4px;
+  gap: 3px;
 }
 
 .cal-day-btn {
-  min-height: 40px;
-  border-radius: 8px;
-  font-size: 0.82rem;
+  position: relative;
+  aspect-ratio: auto;
+  min-height: 35px;
+  height: 35px;
+  padding: 0 0 3px;
+  border-radius: 9px;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Slots de horário em 2 colunas proporcionais respirando */
+.cal-day-btn:disabled {
+  opacity: 0.36;
+}
+
+body.theme-contrast .cal-day-btn:disabled {
+  opacity: 0.48;
+}
+
+.cal-day-btn.is-available {
+  background: var(--m-card-bg-elevated);
+  border-color: var(--m-card-border-strong);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.cal-day-btn.is-available::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.cal-day-btn.is-selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 700;
+}
+
+.cal-day-btn.is-selected::after {
+  background: var(--accent-fg);
+  opacity: 0.88;
+}
+
+/* Etapa 2: Horários do dia selecionado logo abaixo do calendário */
+#step-2 .cal-right {
+  padding: 12px 14px;
+}
+
+.cal-day-heading {
+  margin: 0 0 10px;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
 .timeslot-stack {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
+  margin-bottom: 0;
 }
 
 .timeslot-stack > .step-sub {
@@ -1258,38 +1418,273 @@ body.theme-contrast .mobile-matrix-slot {
 }
 
 .slot-pick-btn {
-  min-height: 46px;
-  padding: 10px 12px;
+  min-height: 44px;
+  padding: 8px 12px;
   gap: 4px;
-  border-radius: 12px;
+  border-radius: 11px;
+  background: var(--m-card-bg-elevated);
+  border: 1px solid var(--m-card-border);
 }
 
-/* Barra fixa de ação (Etapas 2 e 3) colada acima da Bottom Tab Bar (58px) */
+.slot-pick-btn.is-selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.slot-time-mono {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.slot-vac-label {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+}
+
+.cal-right-note {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--m-divider);
+  font-size: 0.72rem;
+}
+
+/* Etapa 3: Strip compacto no topo (sem monospace + link Alterar alinhado à direita) */
+#step3-form-shell .cal-left {
+  padding: 12px 14px;
+}
+
+#step3-form-shell #btn-back-step2,
+#step3-form-shell #s3-subject,
+#step3-form-shell #s3-title,
+#step3-form-shell .cal-details {
+  display: none;
+}
+
+#s3-datetime {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.s3-mobile-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.s3-mobile-strip-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.s3-mobile-subject {
+  margin: 0;
+  min-width: 0;
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.s3-mobile-change-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 2px 0;
+  min-height: 26px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+
+.s3-mobile-datetime {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  line-height: 1.25;
+}
+
+.s3-mobile-meta {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Etapa 3: Formulário limpo com Solicitante 1 linha e dúvida acima da dobra */
+#step3-form-shell .step3-form {
+  padding: 14px;
+}
+
+.step3-head-row {
+  margin-bottom: 10px;
+}
+
+.step3-head-row h2 {
+  font-size: 1.0625rem;
+  letter-spacing: -0.015em;
+}
+
+.s3-identity-line {
+  padding: 10px 0;
+  margin-bottom: 12px;
+  border-top: 1px solid var(--m-divider);
+  border-bottom: 1px solid var(--m-divider);
+  gap: 10px;
+}
+
+.s3-identity-desktop,
+.s3-switch-desktop {
+  display: none !important;
+}
+
+.s3-identity-mobile {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.s3-identity-mobile strong {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.s3-user-ra-mobile {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.s3-switch-mobile {
+  display: inline;
+}
+
+#btn-s3-switch-account {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  padding: 4px 2px;
+  min-height: 28px;
+}
+
+#step3-form-shell .field {
+  margin-bottom: 0;
+}
+
+#step3-form-shell .field label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.topic-chips {
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.topic-chip {
+  min-height: 31px;
+  height: 31px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--m-card-border);
+  background: var(--m-card-bg-elevated);
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.topic-chip.is-active {
+  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+body.theme-contrast .topic-chip {
+  border: 1.5px solid var(--border);
+  color: var(--text);
+}
+
+body.theme-contrast .topic-chip.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+#s3-topic {
+  min-height: 92px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  background: var(--m-input-bg);
+  border: 1px solid var(--m-card-border);
+  line-height: 1.45;
+  resize: none;
+}
+
+#s3-topic:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+
+body.theme-contrast #s3-topic {
+  border: 2px solid var(--border);
+}
+
+/* Barra única de CTA ancorada diretamente na base (bottom: 0 — sem Tab Bar duplicada) */
 .mobile-sticky-cta {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(58px + env(safe-area-inset-bottom));
+  bottom: 0;
   z-index: 60;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
-  padding: 10px 16px;
+  padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
 }
 
 #btn-go-step3 {
-  min-height: 44px;
+  min-height: 46px;
+  border-radius: 12px;
 }
 
 #step3-form-shell .step3-actions {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(58px + env(safe-area-inset-bottom));
+  bottom: 0;
   z-index: 60;
   margin: 0;
-  padding: 10px 16px;
+  padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -1304,16 +1699,28 @@ body.theme-contrast #step3-form-shell .step3-actions {
   background: var(--surface);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  border-top: 2px solid var(--border);
 }
 
 #step3-form-shell .step3-actions .btn {
-  min-height: 44px;
+  min-height: 46px;
+  border-radius: 12px;
   flex: 1 1 auto;
 }
 
+/* Proteção de teclado iOS: recolhe barra sticky quando textarea/input está focado na Etapa 3 */
+body.is-mobile-input-focused #step3-form-shell .step3-actions {
+  position: static;
+  margin-top: 12px;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-top: none;
+}
+
 .field-row,
-.field-row.field-row-monitor-code,
-.success-grid {
+.field-row.field-row-monitor-code {
   grid-template-columns: 1fr;
 }
 
@@ -1336,17 +1743,135 @@ body.theme-contrast #step3-form-shell .step3-actions {
   grid-template-columns: 1fr;
 }
 
+/* Tela de Comprovante (Monitoria confirmada): linhas horizontais compactas cabendo sem corte */
+.success-shell {
+  padding: 18px 16px 16px;
+  border-radius: 16px;
+  background: var(--m-card-bg);
+  border: 1px solid var(--m-card-border);
+  box-shadow: var(--m-card-shadow);
+}
+
+body.theme-contrast .success-shell {
+  border: 2px solid var(--border);
+}
+
+.success-check {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 10px;
+  font-size: 1.1rem;
+  background: var(--green-soft);
+}
+
+#success-title {
+  font-size: 1.1875rem;
+  line-height: 1.2;
+  margin: 0 0 3px;
+}
+
+#success-sub {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.protocol-pill {
+  margin: 12px 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--m-card-bg-elevated);
+  border: 1px solid var(--m-card-border);
+  gap: 8px;
+}
+
+.protocol-pill span {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.protocol-pill strong {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.success-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0 0 14px;
+  padding: 2px 14px;
+  border-radius: 12px;
+  background: var(--m-card-bg-elevated);
+  border: 1px solid var(--m-card-border);
+  text-align: left;
+}
+
+body.theme-contrast .success-grid {
+  border: 1.5px solid var(--border);
+}
+
+.success-grid > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--m-divider);
+}
+
+.success-grid > div:last-child {
+  border-bottom: none;
+}
+
+.success-grid dt {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.success-grid dd {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: right;
+  line-height: 1.32;
+  min-width: 0;
+}
+
 .success-actions {
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
 .success-actions .btn {
-  flex: 1 1 100%;
-  min-height: 42px;
+  min-height: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  justify-content: center;
+  white-space: nowrap;
 }
 
-/* Modal Confirmar e FAQ como Bottom Sheet / Card limpo no mobile */
+#btn-view-my-bookings {
+  grid-column: 1 / -1;
+  min-height: 44px;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+}
+
+/* Modal Confirmar e FAQ como Bottom Sheet nativo limpo */
 #confirm-modal,
 #faq-modal {
   align-items: flex-end;
@@ -1358,34 +1883,130 @@ body.theme-contrast #step3-form-shell .step3-actions {
   width: 100%;
   max-width: none;
   max-height: 86dvh;
-  border-radius: 16px 16px 0 0;
+  border-radius: 18px 18px 0 0;
   border-bottom: none;
-  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
   animation: sheetSlideUp var(--dur-modal) var(--ease-out);
+}
+
+.confirm-sheet-handle {
+  display: flex;
+  justify-content: center;
+  padding: 2px 0 10px;
+}
+
+.confirm-sheet-handle span {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border-strong);
+}
+
+.confirm-modal-head {
+  gap: 8px;
+}
+
+.confirm-modal-head h2 {
+  font-size: 1.0625rem;
+  line-height: 1.2;
+}
+
+.confirm-modal-head .step-sub {
+  font-size: 0.8rem;
+  margin-top: 3px;
+}
+
+#btn-confirm-close {
+  display: none;
 }
 
 .confirm-summary-card {
   margin-top: 12px;
   padding: 12px 14px;
-  border-radius: 10px;
+  border-radius: 14px;
+  background: var(--m-card-bg);
+  border: 1px solid var(--m-card-border);
+}
+
+body.theme-contrast .confirm-summary-card {
+  border: 1.5px solid var(--border);
+}
+
+.confirm-summary-title {
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--m-divider);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.confirm-summary-list {
+  margin: 2px 0 0;
+  gap: 0;
 }
 
 .confirm-summary-row {
-  flex-direction: column;
-  gap: 1px;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--m-divider);
+}
+
+.confirm-summary-row:last-child {
+  border-bottom: none;
+}
+
+.confirm-summary-row dt {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .confirm-summary-row dd {
+  text-align: right;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.32;
+}
+
+.confirm-summary-row.is-stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  padding: 10px 0 2px;
+  border-top: none;
+  border-bottom: none;
+}
+
+.confirm-summary-row.is-stacked dd {
   text-align: left;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: var(--m-card-bg-elevated);
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+body.theme-contrast .confirm-summary-row.is-stacked dd {
+  border: 1px solid var(--border);
 }
 
 .confirm-modal-actions {
-  margin-top: 16px;
+  margin-top: 14px;
+  gap: 10px;
 }
 
 .confirm-modal-actions .btn {
   flex: 1 1 0;
   min-height: 44px;
+  border-radius: 12px;
+  white-space: nowrap;
 }
 
 /* ==================== 7. MEUS AGENDAMENTOS E PAINEL DO MONITOR (CARDS VERTICAIS + BOTTOM SHEET) ==================== */
@@ -2521,7 +3142,7 @@ body.theme-contrast .settings-row {
   }
 }
 
-/* ==================== 9. LOGIN E CADASTRO COMPACTOS ==================== */
+/* ==================== 9. LOGIN E CADASTRO EQUILIBRADOS (EIXO ÚNICO CENTRALIZADO) ==================== */
 .split-landing {
   min-height: 100dvh;
   display: flex;
@@ -2533,24 +3154,47 @@ body.theme-contrast .settings-row {
   display: none;
 }
 
+.split-right {
+  flex: 1;
+  min-height: 100dvh;
+  background: var(--surface);
+  padding: max(22px, calc(env(safe-area-inset-top) + 16px)) 20px max(18px, calc(env(safe-area-inset-bottom) + 14px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* Eixo visual único: marca centralizada diretamente acima do título Entrar no Monitora+ */
 .mobile-landing-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   width: 100%;
-  max-width: 440px;
-  margin: 0 auto;
-  padding: 2px 0 14px;
+  max-width: 400px;
+  margin: auto auto 16px;
+  padding: 0;
+}
+
+body.is-auth-register .mobile-landing-bar {
+  margin: 4px auto 14px;
 }
 
 .mobile-brand-lockup {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  justify-content: center;
+  gap: 8px;
+}
+
+.mobile-brand-lockup .brand-svg {
+  width: 26px;
+  height: 26px;
 }
 
 .mobile-brand-lockup .brand-name {
-  font-size: 1rem;
+  font-size: 1.0625rem;
+  letter-spacing: -0.025em;
 }
 
 .mobile-gear-btn {
@@ -2569,20 +3213,11 @@ body.theme-contrast .settings-row {
   cursor: pointer;
 }
 
-.split-right {
-  flex: 1;
-  background: var(--surface);
-  padding: max(18px, calc(env(safe-area-inset-top) + 12px)) 16px max(24px, calc(env(safe-area-inset-bottom) + 18px));
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-}
-
+/* Centralização óptica (~45% superior) no Entrar; rolagem natural no Criar conta */
 .assaad-card {
-  max-width: 440px;
+  max-width: 400px;
   width: 100%;
-  margin: 2px auto 0;
+  margin: 0 auto 4vh;
   background: transparent;
   border: none;
   border-radius: 0;
@@ -2590,24 +3225,51 @@ body.theme-contrast .settings-row {
   box-shadow: none;
 }
 
-/* Remove logo quadrada duplicada no mobile — mantém apenas M Monitora+ no topo */
+body.is-auth-register .assaad-card {
+  margin: 0 auto 20px;
+}
+
+/* Assinatura institucional discreta ancorada no rodapé do Login */
+.mobile-landing-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 20px;
+  font-family: var(--font-sans);
+  font-size: 0.71875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  opacity: 0.62;
+  text-align: center;
+}
+
+body.theme-contrast .mobile-landing-footer {
+  opacity: 0.9;
+}
+
+/* Remove logo quadrada duplicada no mobile — mantém apenas M Monitora+ centralizado */
 .card-emblem-btn {
   display: none;
 }
 
 .assaad-head {
-  margin-bottom: 14px;
+  text-align: center;
+  margin-bottom: 18px;
 }
 
 .assaad-head h2 {
-  font-size: 1.25rem;
+  font-size: 1.3125rem;
   line-height: 1.2;
+  letter-spacing: -0.025em;
 }
 
 .assaad-head p {
   font-size: 0.8125rem;
-  margin-top: 4px;
-  line-height: 1.35;
+  margin-top: 5px;
+  line-height: 1.38;
 }
 
 .auth-sso-block {
@@ -2802,7 +3464,7 @@ body.is-landing-mode .toast {
 }
 
 body.has-mobile-sticky-cta .toast {
-  bottom: calc(136px + env(safe-area-inset-bottom));
+  bottom: calc(78px + env(safe-area-inset-bottom));
 }
 
 div[vw] [vw-access-button] {
@@ -2815,7 +3477,7 @@ div[vw] [vw-access-button] {
 }
 
 body.has-mobile-sticky-cta div[vw] [vw-access-button] {
-  bottom: calc(146px + env(safe-area-inset-bottom)) !important;
+  bottom: calc(78px + env(safe-area-inset-bottom)) !important;
 }
 
 body.is-scroll-locked div[vw] [vw-access-button] {

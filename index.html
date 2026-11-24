@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="styles.css?v=20261124e1" />
-  <link rel="stylesheet" href="mobile.css?v=20261124e1" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="styles.css?v=20261124f1" />
+  <link rel="stylesheet" href="mobile.css?v=20261124f1" media="(max-width: 768px)" />
 </head>
 <body class="theme-light is-landing-mode">
   <a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
@@ -514,6 +514,10 @@
               </div>
             </form>
           </div>
+
+          <div class="mobile-landing-footer" aria-hidden="true">
+            <span>UNIFSA · Engenharia de Software</span>
+          </div>
         </div>
       </div>
     </section>
@@ -637,6 +641,11 @@
             <span class="mono-kicker" id="s2-subject">DISCIPLINA</span>
             <h2 class="cal-title" id="s2-title">Tema da monitoria</h2>
 
+            <div class="s2-mobile-summary">
+              <p class="s2-mobile-title" id="s2-mobile-title"></p>
+              <p class="s2-mobile-meta" id="s2-mobile-meta"></p>
+            </div>
+
             <dl class="cal-details">
               <div class="cal-detail-row">
                 <dt>Monitor</dt>
@@ -694,6 +703,15 @@
             <span class="mono-kicker" id="s3-subject">DISCIPLINA</span>
             <h2 class="cal-title" id="s3-title">Tema da monitoria</h2>
 
+            <div class="s3-mobile-strip">
+              <div class="s3-mobile-strip-top">
+                <p class="s3-mobile-subject" id="s3-mobile-subject"></p>
+                <button type="button" class="ghost-link s3-mobile-change-btn" id="btn-back-step2-mobile">Alterar</button>
+              </div>
+              <p class="s3-mobile-datetime" id="s3-mobile-datetime"></p>
+              <p class="s3-mobile-meta" id="s3-mobile-meta"></p>
+            </div>
+
             <dl class="cal-details">
               <div class="cal-detail-row">
                 <dt>Data e horário</dt>
@@ -720,8 +738,15 @@
             </div>
 
             <div id="s3-logged-box" class="s3-identity-line">
-              <span>Solicitante: <strong id="s3-user-display">—</strong></span>
-              <button type="button" class="ghost-link" id="btn-s3-switch-account">Trocar conta</button>
+              <span class="s3-identity-desktop">Solicitante: <strong id="s3-user-display">—</strong></span>
+              <span class="s3-identity-mobile">
+                <strong id="s3-user-name-mobile">—</strong>
+                <span class="s3-user-ra-mobile" id="s3-user-ra-mobile"></span>
+              </span>
+              <button type="button" class="ghost-link" id="btn-s3-switch-account">
+                <span class="s3-switch-desktop">Trocar conta</span>
+                <span class="s3-switch-mobile">Trocar</span>
+              </button>
             </div>
 
             <div class="field">
@@ -903,6 +928,7 @@
     aria-labelledby="confirm-modal-title"
   >
     <div class="modal-box confirm-modal-box">
+      <div class="confirm-sheet-handle" aria-hidden="true"><span></span></div>
       <div class="confirm-modal-head">
         <div>
           <h2 id="confirm-modal-title">Confirmar ação?</h2>
@@ -1734,6 +1760,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261124e1"></script>
+  <script src="app.js?v=20261124f1"></script>
 </body>
 </html>

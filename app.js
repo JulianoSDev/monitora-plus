@@ -1369,7 +1369,7 @@ function positionVlibrasShadowAccess() {
     accessEl.style.top = "auto";
     accessEl.style.right = "10px";
     accessEl.style.bottom = hasSticky
-      ? "calc(146px + env(safe-area-inset-bottom))"
+      ? "calc(78px + env(safe-area-inset-bottom))"
       : "calc(76px + env(safe-area-inset-bottom))";
     accessEl.style.pointerEvents = blockingOpen ? "none" : "auto";
     accessEl.style.opacity = blockingOpen ? "0" : "1";
@@ -1815,6 +1815,7 @@ function syncMobileChrome() {
 // ==================== NAVEGAÇÃO ====================
 function switchView(viewName) {
   closeMonitorSlotSheet(false);
+  document.body.classList.remove("is-mobile-input-focused");
   const user = getCurrentUser();
   if (viewName !== "landing" && !user) {
     viewName = "landing";
@@ -1863,6 +1864,7 @@ function switchView(viewName) {
 // ==================== AUTH & OTP ASSAAD ====================
 function setAuthTab(tabName) {
   ui.authTab = tabName;
+  document.body.classList.toggle("is-auth-register", tabName === "register");
   document.querySelectorAll("[data-auth-tab]").forEach((t) => {
     const active = t.dataset.authTab === tabName;
     t.classList.toggle("is-active", active);
@@ -2525,6 +2527,15 @@ function formatCleanMonitorName(monitorStr) {
     .trim();
 }
 
+function formatCompactLocation(off) {
+  if (!off) return "";
+  const raw = String(off.location || off.shortLocation || "");
+  if (raw.includes("Virtual") && raw.includes("Sala 104")) return "Sala 104 / Virtual";
+  return String(off.shortLocation || raw)
+    .replace(/\s*·\s*Presencial\s*\/\s*Online/i, " / Virtual")
+    .trim();
+}
+
 let lastMonitorSheetTriggerEl = null;
 
 function openMonitorSlotSheet() {
@@ -2815,6 +2826,13 @@ function renderStep2() {
   document.getElementById("s2-monitor").textContent = off.monitor;
   document.getElementById("s2-location").textContent = off.location;
 
+  const s2MobTitle = document.getElementById("s2-mobile-title");
+  const s2MobMeta = document.getElementById("s2-mobile-meta");
+  if (s2MobTitle) s2MobTitle.textContent = off.subject;
+  if (s2MobMeta) {
+    s2MobMeta.textContent = `${formatCleanMonitorName(off.monitor)} · 40 min · ${formatCompactLocation(off)}`;
+  }
+
   const offeringSlots = state.slots.filter((s) => s.offeringId === off.id);
   const availableDateSet = new Set(offeringSlots.filter((s) => getSlotRemaining(s) > 0).map((s) => s.dateIso));
   const anySlotDateSet = new Set(offeringSlots.map((s) => s.dateIso));
@@ -2948,6 +2966,18 @@ function renderStep3() {
     remCount === 1 ? "livre" : "livres"
   }`;
 
+  const s3MobSubj = document.getElementById("s3-mobile-subject");
+  const s3MobDt = document.getElementById("s3-mobile-datetime");
+  const s3MobMeta = document.getElementById("s3-mobile-meta");
+  if (s3MobSubj) s3MobSubj.textContent = off.subject;
+  if (s3MobDt) s3MobDt.textContent = formatMonitorMobileDatetime(slot.dateIso, slot.dayName, slot.time);
+  if (s3MobMeta) {
+    s3MobMeta.textContent = `${formatCleanMonitorName(off.monitor)} · ${formatCompactLocation(off)} · ${formatVagas(
+      remCount,
+      false
+    )}`;
+  }
+
   const user = getCurrentUser();
   if (!user) {
     switchView("landing");
@@ -2955,6 +2985,10 @@ function renderStep3() {
   }
 
   document.getElementById("s3-user-display").textContent = `${user.name} (${user.ra})`;
+  const s3MobName = document.getElementById("s3-user-name-mobile");
+  const s3MobRa = document.getElementById("s3-user-ra-mobile");
+  if (s3MobName) s3MobName.textContent = user.name;
+  if (s3MobRa) s3MobRa.textContent = user.ra;
   syncTopicChips();
 
   const errBox = document.getElementById("s3-error-box");
@@ -2966,6 +3000,7 @@ function renderStep3() {
 }
 
 function renderAgendar() {
+  document.body.classList.remove("is-mobile-input-focused");
   renderStepper();
   syncRescheduleBanner();
   if (ui.step === 1) renderStep1();
@@ -3085,13 +3120,20 @@ function handleConfirmBooking(e) {
         : "Seu atendimento está reservado. Guarde o código de protocolo abaixo.";
     }
 
+    const isMobileNow = window.innerWidth <= 768;
+    const summaryDateVal = isMobileNow
+      ? formatMonitorMobileDatetime(slot.dateIso, slot.dayName, slot.time)
+      : `${slot.dayName}, ${formatDateBr(slot.dateIso)} · ${slot.time}`;
+    const summaryMonitorVal = isMobileNow ? formatCleanMonitorName(off.monitor) : off.monitor;
+    const summaryLocVal = isMobileNow ? formatCompactLocation(off) : off.location;
+
     document.getElementById("success-protocol").textContent = protocol;
     document.getElementById("success-summary").innerHTML = `
       <div><dt>Estudante</dt><dd>${escapeHtml(user.name)}</dd></div>
       <div><dt>Disciplina</dt><dd>${escapeHtml(off.subject)}</dd></div>
-      <div><dt>Data e horário</dt><dd>${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}</dd></div>
-      <div><dt>Monitor</dt><dd>${escapeHtml(off.monitor)}</dd></div>
-      <div class="success-grid-wide"><dt>Local</dt><dd>${escapeHtml(off.location)}</dd></div>
+      <div><dt>Data e horário</dt><dd>${escapeHtml(summaryDateVal)}</dd></div>
+      <div><dt>Monitor</dt><dd>${escapeHtml(summaryMonitorVal)}</dd></div>
+      <div class="success-grid-wide"><dt>Local</dt><dd>${escapeHtml(summaryLocVal)}</dd></div>
     `;
 
     document.getElementById("btn-download-ics")?.classList.toggle("is-emphasized", Boolean(getPrefs().autoIcsHint));
@@ -3117,6 +3159,7 @@ function handleConfirmBooking(e) {
     return;
   }
 
+  const isMobileConfirm = window.innerWidth <= 768;
   openConfirmDialog({
     title: reschedBk ? "Confirmar troca de horário?" : "Confirmar agendamento?",
     desc: reschedBk
@@ -3125,18 +3168,31 @@ function handleConfirmBooking(e) {
     summaryHtml: buildConfirmSummaryCard({
       title: off.subject,
       rows: [
-        { label: "Data e horário", value: `${slot.dayName}, ${formatDateBr(slot.dateIso)} às ${slot.time}` },
-        { label: "Monitor", value: off.monitor },
         {
-          label: "Local / Modalidade",
-          value: off.location.toLowerCase().includes(off.mode.toLowerCase())
+          label: "Data e horário",
+          value: isMobileConfirm
+            ? formatMonitorMobileDatetime(slot.dateIso, slot.dayName, slot.time)
+            : `${slot.dayName}, ${formatDateBr(slot.dateIso)} às ${slot.time}`,
+        },
+        { label: "Monitor", value: isMobileConfirm ? formatCleanMonitorName(off.monitor) : off.monitor },
+        {
+          label: isMobileConfirm ? "Local" : "Local / Modalidade",
+          value: isMobileConfirm
+            ? formatCompactLocation(off)
+            : off.location.toLowerCase().includes(off.mode.toLowerCase())
             ? off.location
             : `${off.location} · ${off.mode}`,
         },
         { label: "Dúvida", value: topic, stacked: true },
       ],
     }),
-    confirmText: reschedBk ? "Sim, trocar horário" : "Sim, confirmar vaga",
+    confirmText: isMobileConfirm
+      ? reschedBk
+        ? "Trocar horário"
+        : "Confirmar vaga"
+      : reschedBk
+      ? "Sim, trocar horário"
+      : "Sim, confirmar vaga",
     danger: false,
     onConfirm: executeBooking,
   });
@@ -4596,6 +4652,30 @@ function bindEvents() {
   });
 
   document.getElementById("btn-back-step2").addEventListener("click", () => setStep(2));
+  document.getElementById("btn-back-step2-mobile")?.addEventListener("click", () => setStep(2));
+
+  // Proteção de teclado iOS na Etapa 3: recolhe barra sticky quando textarea/input está em foco
+  const step3ShellEl = document.getElementById("step3-form-shell");
+  let step3FocusTimer = null;
+  step3ShellEl?.addEventListener("focusin", (e) => {
+    if (window.innerWidth > 768) return;
+    if (!e.target?.matches?.("input, textarea, select")) return;
+    if (step3FocusTimer) clearTimeout(step3FocusTimer);
+    document.body.classList.add("is-mobile-input-focused");
+  });
+  step3ShellEl?.addEventListener("focusout", () => {
+    if (window.innerWidth > 768) return;
+    if (step3FocusTimer) clearTimeout(step3FocusTimer);
+    step3FocusTimer = setTimeout(() => {
+      const active = document.activeElement;
+      const stillFocused = Boolean(
+        active && step3ShellEl.contains(active) && active.matches?.("input, textarea, select")
+      );
+      if (!stillFocused) {
+        document.body.classList.remove("is-mobile-input-focused");
+      }
+    }, 120);
+  });
   document.getElementById("btn-s3-switch-account").addEventListener("click", () => {
     state.currentUserId = null;
     saveState();
