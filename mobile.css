@@ -1646,6 +1646,11 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
   border-radius: 12px;
 }
 
+.toast.is-width-morphing {
+  transition: none;
+  width: auto !important;
+}
+
 body.is-landing-mode .toast {
   bottom: max(14px, env(safe-area-inset-bottom));
 }

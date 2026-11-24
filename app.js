@@ -883,24 +883,46 @@ function syncWcagGuardUI(bgHex, fgHex) {
   if (fgDot) fgDot.style.backgroundColor = fgHex;
 
   if (!strip || !badge) return;
+  const prevLevel = strip.dataset.level || "";
   const ratio = getContrastRatio(bgHex, fgHex);
   const ratioTxt = `${ratio.toFixed(1)}:1`;
+  let nextLevel = "fail";
 
   if (ratio >= 7.0) {
-    strip.dataset.level = "aaa";
+    nextLevel = "aaa";
+    strip.dataset.level = nextLevel;
     badge.textContent = `${ratioTxt} · WCAG AAA`;
     if (hint) hint.textContent = "Contraste excelente para leitura prolongada.";
     fixBtn?.classList.add("is-hidden");
+    fixBtn?.classList.remove("is-wcag-btn-enter");
   } else if (ratio >= 4.5) {
-    strip.dataset.level = "aa";
+    nextLevel = "aa";
+    strip.dataset.level = nextLevel;
     badge.textContent = `${ratioTxt} · WCAG AA`;
     if (hint) hint.textContent = "Legível conforme padrão mínimo WCAG 2.1 AA.";
     fixBtn?.classList.add("is-hidden");
+    fixBtn?.classList.remove("is-wcag-btn-enter");
   } else {
-    strip.dataset.level = "fail";
+    nextLevel = "fail";
+    strip.dataset.level = nextLevel;
     badge.textContent = `${ratioTxt} · Contraste baixo (abaixo de WCAG AA)`;
     if (hint) hint.textContent = "Texto difícil de ler sobre este fundo. Use a correção automática abaixo.";
     fixBtn?.classList.remove("is-hidden");
+  }
+
+  // Ponto 5 (Técnica A): dispara morph apenas na virada de faixa (AAA <-> AA <-> fail), nunca durante arraste no mesmo nível
+  if (prevLevel && prevLevel !== nextLevel && !prefersReducedMotion()) {
+    badge.classList.remove("is-wcag-morph");
+    hint?.classList.remove("is-wcag-morph");
+    void badge.offsetWidth;
+    badge.classList.add("is-wcag-morph");
+    hint?.classList.add("is-wcag-morph");
+
+    if (nextLevel === "fail" && fixBtn) {
+      fixBtn.classList.remove("is-wcag-btn-enter");
+      void fixBtn.offsetWidth;
+      fixBtn.classList.add("is-wcag-btn-enter");
+    }
   }
 }
 
@@ -2009,8 +2031,24 @@ const ssoState = {
   selectedUserId: "usr-stu-1",
   loading: false,
   timer: null,
+  heightTimer: null,
+  heightEndHandler: null,
   triggerEl: null,
 };
+
+function resetSsoBoxHeightTransition() {
+  clearTimeout(ssoState.heightTimer);
+  ssoState.heightTimer = null;
+  const box = document.querySelector("#sso-modal .sso-modal-box");
+  if (!box) return;
+  if (ssoState.heightEndHandler) {
+    box.removeEventListener("transitionend", ssoState.heightEndHandler);
+    ssoState.heightEndHandler = null;
+  }
+  box.classList.remove("is-morphing-height");
+  box.style.height = "";
+  box.style.overflow = "";
+}
 
 function ensureDemoUser(demoId) {
   let user = state.users.find((u) => u.id === demoId);
@@ -2070,6 +2108,7 @@ function openSsoModal(providerKey, triggerEl = null) {
   clearTimeout(ssoState.timer);
   ssoState.timer = null;
   ssoState.loading = false;
+  resetSsoBoxHeightTransition();
   ssoState.provider = providerKey === "google" ? "google" : "gennera";
   ssoState.selectedUserId = SSO_ACCOUNTS[0].userId;
   ssoState.triggerEl =
@@ -2089,7 +2128,9 @@ function openSsoModal(providerKey, triggerEl = null) {
   document.getElementById("sso-modal-foot-text").textContent = cfg.footer;
 
   document.getElementById("sso-stage-select")?.classList.remove("is-hidden");
-  document.getElementById("sso-stage-loading")?.classList.add("is-hidden");
+  const loadingStage = document.getElementById("sso-stage-loading");
+  loadingStage?.classList.add("is-hidden");
+  loadingStage?.classList.remove("is-morph-enter");
   renderSsoAccountList();
 
   const modal = document.getElementById("sso-modal");
@@ -2104,6 +2145,8 @@ function closeSsoModal(restoreFocus = true) {
   clearTimeout(ssoState.timer);
   ssoState.timer = null;
   ssoState.loading = false;
+  resetSsoBoxHeightTransition();
+  document.getElementById("sso-stage-loading")?.classList.remove("is-morph-enter");
   const modal = document.getElementById("sso-modal");
   const wasOpen = modal && !modal.classList.contains("is-hidden");
   modal?.classList.add("is-hidden");
@@ -2116,7 +2159,7 @@ function closeSsoModal(restoreFocus = true) {
 
 function startSsoSync(userId) {
   if (ssoState.loading) return;
-  hideToast();
+  hideToast(true);
   const acc = SSO_ACCOUNTS.find((a) => a.userId === userId) || SSO_ACCOUNTS[0];
   const cfg = SSO_PROVIDERS[ssoState.provider] || SSO_PROVIDERS.gennera;
   ssoState.loading = true;
@@ -2140,8 +2183,41 @@ function startSsoSync(userId) {
     </span>
   `;
 
-  document.getElementById("sso-stage-select")?.classList.add("is-hidden");
-  document.getElementById("sso-stage-loading")?.classList.remove("is-hidden");
+  const box = document.querySelector("#sso-modal .sso-modal-box");
+  const selectStage = document.getElementById("sso-stage-select");
+  const loadingStage = document.getElementById("sso-stage-loading");
+  resetSsoBoxHeightTransition();
+
+  if (box && !prefersReducedMotion()) {
+    const fromHeight = box.getBoundingClientRect().height;
+    selectStage?.classList.add("is-hidden");
+    loadingStage?.classList.remove("is-hidden");
+    loadingStage?.classList.remove("is-morph-enter");
+    void loadingStage?.offsetWidth;
+    loadingStage?.classList.add("is-morph-enter");
+
+    const toHeight = box.getBoundingClientRect().height;
+    if (Math.abs(toHeight - fromHeight) > 2) {
+      box.style.height = `${fromHeight}px`;
+      box.style.overflow = "hidden";
+      void box.offsetHeight;
+      box.classList.add("is-morphing-height");
+      box.style.height = `${toHeight}px`;
+
+      const onEnd = (ev) => {
+        if (ev.target === box && ev.propertyName === "height") {
+          resetSsoBoxHeightTransition();
+        }
+      };
+      ssoState.heightEndHandler = onEnd;
+      box.addEventListener("transitionend", onEnd);
+      ssoState.heightTimer = setTimeout(resetSsoBoxHeightTransition, 290);
+    }
+  } else {
+    selectStage?.classList.add("is-hidden");
+    loadingStage?.classList.remove("is-hidden");
+    loadingStage?.classList.remove("is-morph-enter");
+  }
   announceA11y(cfg.loadingTitle);
 
   const delayMs = prefersReducedMotion() ? 60 : 600;
@@ -2733,6 +2809,8 @@ function renderStep3() {
   const reschedBk = getActiveReschedulingBooking();
   ui.step3Completed = false;
   clearFormErrors(document.getElementById("form-confirm-booking"));
+  resetLiquidButtonState(document.getElementById("btn-download-ics"));
+  resetLiquidButtonState(document.getElementById("btn-copy-proof"));
   document.getElementById("step3-form-shell").classList.remove("is-hidden");
   document.getElementById("step3-success-shell").classList.add("is-hidden");
 
@@ -3382,7 +3460,62 @@ function triggerIcsFileDownload(icsContent, filename) {
   URL.revokeObjectURL(url);
 }
 
-function downloadIcs(bookingId) {
+const LIQUID_CHECK_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+function resetLiquidButtonState(btn) {
+  if (!btn) return;
+  clearTimeout(btn._liquidTimer);
+  clearTimeout(btn._liquidCleanupTimer);
+  btn._liquidTimer = null;
+  btn._liquidCleanupTimer = null;
+  if (btn.dataset.origLabel) {
+    btn.textContent = btn.dataset.origLabel;
+  }
+  btn.classList.remove("is-liquid-confirmed");
+  btn.style.minWidth = "";
+}
+
+function flashLiquidButtonState(btn, confirmedText, durationMs = 1800) {
+  if (!btn) return;
+  if (!btn.dataset.origLabel) {
+    btn.dataset.origLabel = btn.textContent.trim();
+  }
+  const origLabel = btn.dataset.origLabel;
+  clearTimeout(btn._liquidTimer);
+  clearTimeout(btn._liquidCleanupTimer);
+  btn._liquidTimer = null;
+  btn._liquidCleanupTimer = null;
+
+  // Ajuste fino 4: preserva largura original (>= min-width) para evitar saltos laterais nos botões vizinhos
+  if (!btn.style.minWidth) {
+    const rect = btn.getBoundingClientRect();
+    if (rect.width > 0) {
+      btn.style.minWidth = `${Math.ceil(rect.width)}px`;
+    }
+  }
+
+  const animate = !prefersReducedMotion();
+  btn.classList.add("is-liquid-confirmed");
+  btn.innerHTML = `<span class="btn-liquid-content${animate ? " is-liquid-swap" : ""}">${LIQUID_CHECK_SVG}<span>${escapeHtml(confirmedText)}</span></span>`;
+
+  btn._liquidTimer = setTimeout(() => {
+    btn._liquidTimer = null;
+    btn.classList.remove("is-liquid-confirmed");
+    if (!prefersReducedMotion()) {
+      btn.innerHTML = `<span class="btn-liquid-content is-liquid-swap">${escapeHtml(origLabel)}</span>`;
+      btn._liquidCleanupTimer = setTimeout(() => {
+        btn._liquidCleanupTimer = null;
+        btn.textContent = origLabel;
+        btn.style.minWidth = "";
+      }, 220);
+    } else {
+      btn.textContent = origLabel;
+      btn.style.minWidth = "";
+    }
+  }, durationMs);
+}
+
+function downloadIcs(bookingId, triggerBtn = null) {
   const bk = state.bookings.find((b) => b.id === bookingId);
   const slot = bk ? state.slots.find((s) => s.id === bk.slotId) : null;
   const off = slot ? getOffering(slot.offeringId) : null;
@@ -3391,6 +3524,7 @@ function downloadIcs(bookingId) {
   const reminderMinutes = Number(getPrefs().icsReminderMinutes ?? 30);
   const ics = buildIcsCalendar([buildIcsEventLines(bk, slot, off, reminderMinutes)]);
   triggerIcsFileDownload(ics, `monitoria-${bk.protocol.replace("#", "")}.ics`);
+  if (triggerBtn) flashLiquidButtonState(triggerBtn, "Salvo", 1800);
   showToast("Lembrete .ics baixado.");
 }
 
@@ -3422,7 +3556,7 @@ function downloadAllConfirmedIcs() {
   showToast(`Agenda .ics baixada (${label}).`, null, "success");
 }
 
-async function copyProof(bookingId) {
+async function copyProof(bookingId, triggerBtn = null) {
   const bk = state.bookings.find((b) => b.id === bookingId);
   const slot = bk ? state.slots.find((s) => s.id === bk.slotId) : null;
   const off = slot ? getOffering(slot.offeringId) : null;
@@ -3432,8 +3566,10 @@ async function copyProof(bookingId) {
   const text = `Comprovante Monitora+ (${bk.protocol})\nEstudante: ${usr.name}\nDisciplina: ${off.subject}\nData: ${slot.dayName}, ${formatDateBr(slot.dateIso)} às ${slot.time}\nLocal: ${off.location}`;
   try {
     await navigator.clipboard.writeText(text);
+    if (triggerBtn) flashLiquidButtonState(triggerBtn, "Copiado", 1800);
     showToast("Comprovante copiado.");
   } catch {
+    if (triggerBtn) flashLiquidButtonState(triggerBtn, "Copiado", 1800);
     showToast(`Protocolo: ${bk.protocol}`);
   }
 }
@@ -3471,20 +3607,46 @@ function detectToastCategory(msg, onUndo) {
 }
 
 let toastTimer = null;
+let toastHideTimer = null;
+let toastMorphTimer = null;
 let toastRemainingMs = 0;
 let toastStartedAt = 0;
 let currentToastUndo = null;
 
-function hideToast() {
+function clearToastWidthMorph(el) {
+  clearTimeout(toastMorphTimer);
+  toastMorphTimer = null;
+  if (!el) return;
+  el.classList.remove("is-width-morphing");
+  el.style.width = "";
+}
+
+function hideToast(immediate = false) {
   const el = document.getElementById("toast");
   clearTimeout(toastTimer);
+  clearTimeout(toastHideTimer);
   toastTimer = null;
+  toastHideTimer = null;
   currentToastUndo = null;
   toastRemainingMs = 0;
-  if (el) {
-    el.dataset.paused = "false";
+  if (!el) return;
+
+  clearToastWidthMorph(el);
+  el.dataset.paused = "false";
+
+  if (immediate || prefersReducedMotion() || el.classList.contains("is-hidden")) {
+    el.classList.remove("is-exiting", "is-toast-swap");
     el.classList.add("is-hidden");
+    return;
   }
+
+  el.classList.remove("is-toast-swap");
+  el.classList.add("is-exiting");
+  toastHideTimer = setTimeout(() => {
+    toastHideTimer = null;
+    el.classList.remove("is-exiting");
+    el.classList.add("is-hidden");
+  }, 180);
 }
 
 function pauseToastTimer() {
@@ -3501,7 +3663,7 @@ function resumeToastTimer() {
   if (!el || el.classList.contains("is-hidden") || toastTimer || toastRemainingMs <= 0) return;
   el.dataset.paused = "false";
   toastStartedAt = Date.now();
-  toastTimer = setTimeout(hideToast, toastRemainingMs);
+  toastTimer = setTimeout(() => hideToast(false), toastRemainingMs);
 }
 
 function showToast(msg, onUndo = null, explicitCategory = null) {
@@ -3512,6 +3674,19 @@ function showToast(msg, onUndo = null, explicitCategory = null) {
   const undoBtn = document.getElementById("toast-undo-btn");
   const progressEl = document.getElementById("toast-progress");
   if (!el || !msgEl) return;
+
+  // Ajuste fino 3: cancela imediatamente qualquer saída em andamento (180ms) para nunca ocultar o novo toast
+  const wasExiting = el.classList.contains("is-exiting");
+  clearTimeout(toastHideTimer);
+  toastHideTimer = null;
+  el.classList.remove("is-exiting");
+
+  const wasVisible = !el.classList.contains("is-hidden");
+  const reduceMotion = prefersReducedMotion();
+  const isDesktopMorph = wasVisible && !wasExiting && !reduceMotion && window.innerWidth > 768;
+  const prevWidth = isDesktopMorph ? el.getBoundingClientRect().width : 0;
+
+  clearToastWidthMorph(el);
 
   const hasUndo = typeof onUndo === "function";
   const category = explicitCategory || detectToastCategory(msg, hasUndo);
@@ -3544,10 +3719,29 @@ function showToast(msg, onUndo = null, explicitCategory = null) {
   }
 
   el.classList.remove("is-hidden");
+
+  if (wasVisible && !reduceMotion) {
+    if (isDesktopMorph && prevWidth > 0) {
+      const nextWidth = el.getBoundingClientRect().width;
+      if (Math.abs(nextWidth - prevWidth) > 2) {
+        el.style.width = `${prevWidth}px`;
+        void el.offsetWidth;
+        el.classList.add("is-width-morphing");
+        el.style.width = `${nextWidth}px`;
+        toastMorphTimer = setTimeout(() => clearToastWidthMorph(el), 230);
+      }
+    }
+    el.classList.remove("is-toast-swap");
+    void el.offsetWidth;
+    el.classList.add("is-toast-swap");
+  } else {
+    el.classList.remove("is-toast-swap");
+  }
+
   clearTimeout(toastTimer);
   toastRemainingMs = duration;
   toastStartedAt = Date.now();
-  toastTimer = setTimeout(hideToast, duration);
+  toastTimer = setTimeout(() => hideToast(false), duration);
 }
 
 // ==================== EVENTOS ====================
@@ -4063,7 +4257,7 @@ function bindEvents() {
   });
   document.getElementById("btn-sso-close")?.addEventListener("click", () => closeSsoModal(true));
   document.getElementById("sso-modal")?.addEventListener("click", (e) => {
-    if (e.target.id === "sso-modal" && !ssoState.loading) closeSsoModal(true);
+    if (e.target.id === "sso-modal") closeSsoModal(true);
   });
   document.getElementById("sso-account-list")?.addEventListener("click", (e) => {
     const card = e.target.closest("[data-sso-account]");
@@ -4270,11 +4464,11 @@ function bindEvents() {
   document.getElementById("otp-grid")?.addEventListener("input", clearOtpErrors);
 
   document.getElementById("form-confirm-booking").addEventListener("submit", handleConfirmBooking);
-  document.getElementById("btn-download-ics").addEventListener("click", () => {
-    if (ui.lastCreatedBookingId) downloadIcs(ui.lastCreatedBookingId);
+  document.getElementById("btn-download-ics").addEventListener("click", (e) => {
+    if (ui.lastCreatedBookingId) downloadIcs(ui.lastCreatedBookingId, e.currentTarget);
   });
-  document.getElementById("btn-copy-proof").addEventListener("click", () => {
-    if (ui.lastCreatedBookingId) copyProof(ui.lastCreatedBookingId);
+  document.getElementById("btn-copy-proof").addEventListener("click", (e) => {
+    if (ui.lastCreatedBookingId) copyProof(ui.lastCreatedBookingId, e.currentTarget);
   });
   document.getElementById("btn-view-my-bookings").addEventListener("click", () => switchView("agendamentos"));
 
@@ -4365,11 +4559,11 @@ function bindEvents() {
   toastEl?.addEventListener("focusin", pauseToastTimer);
   toastEl?.addEventListener("focusout", resumeToastTimer);
 
-  document.getElementById("toast-close-btn")?.addEventListener("click", hideToast);
+  document.getElementById("toast-close-btn")?.addEventListener("click", () => hideToast(false));
 
   document.getElementById("toast-undo-btn")?.addEventListener("click", () => {
     const fn = currentToastUndo;
-    hideToast();
+    hideToast(false);
     if (typeof fn === "function") fn();
   });
 
@@ -4510,7 +4704,7 @@ function bindEvents() {
       }
       const ssoModal = document.getElementById("sso-modal");
       if (ssoModal && !ssoModal.classList.contains("is-hidden")) {
-        if (!ssoState.loading) closeSsoModal(true);
+        closeSsoModal(true);
         return;
       }
       const confirmModal = document.getElementById("confirm-modal");
@@ -4844,6 +5038,8 @@ function initCustomSelects() {
   );
 
   window.addEventListener("resize", () => {
+    resetSsoBoxHeightTransition();
+    clearToastWidthMorph(document.getElementById("toast"));
     if (getPrefs().vlibras) positionVlibrasShadowAccess();
     syncSearchPlaceholder();
     if (ui.activeView === "agendar") renderStepper();

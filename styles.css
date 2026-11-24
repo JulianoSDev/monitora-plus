@@ -266,7 +266,6 @@ textarea {
 .m-left {
   fill: var(--mark-left);
   transform-origin: center;
-  animation: mSlideLeft 0.7s var(--ease-out) both;
   transition: transform 0.28s var(--ease-out), fill 0.2s ease;
 }
 
@@ -277,30 +276,7 @@ textarea {
 .m-right {
   fill: var(--mark-right);
   transform-origin: center;
-  animation: mSlideRight 0.7s var(--ease-out) both;
   transition: transform 0.28s var(--ease-out), fill 0.2s ease;
-}
-
-@keyframes mSlideLeft {
-  from {
-    opacity: 0;
-    transform: translate(-6px, 4px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(0, 0);
-  }
-}
-
-@keyframes mSlideRight {
-  from {
-    opacity: 0;
-    transform: translate(6px, -4px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(0, 0);
-  }
 }
 
 .interactive-brand-trigger:hover .m-left,
@@ -5159,6 +5135,206 @@ body.a11y-pause-distractions .sso-spinner {
   margin: 14px 0 0;
   font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+/* ==================== MOTION CIRÚRGICO (TÉCNICA A: MORPH+BLUR | TÉCNICA B: CLIP-PATH) ==================== */
+:root {
+  --morph-blur: 4px;
+  --morph-y: 6px;
+}
+
+@keyframes morphBlurIn {
+  from {
+    opacity: 0;
+    transform: translateY(var(--morph-y, 6px));
+    filter: blur(var(--morph-blur, 4px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes brandIconSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes brandTextReveal {
+  from {
+    opacity: 0.2;
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Ponto 1 — Técnica B: Marca M Monitora+ na entrada do Login (340ms + 80ms delay) */
+body.is-landing-mode .split-left-top .brand-on-navy .brand-svg,
+body.is-landing-mode .mobile-brand-lockup .brand-svg {
+  animation: brandIconSlideIn 340ms var(--ease-out) 80ms both;
+}
+
+body.is-landing-mode .split-left-top .brand-on-navy .brand-name,
+body.is-landing-mode .mobile-brand-lockup .brand-name {
+  display: inline-block;
+  animation: brandTextReveal 340ms var(--ease-out) 80ms both;
+}
+
+/* Ponto 2 — Técnica A: Morph de altura + micro-blur no Modal / Bottom Sheet SSO */
+.sso-modal-box.is-morphing-height {
+  transition: height 240ms var(--ease-out);
+  will-change: height;
+}
+
+.sso-loading-stage.is-morph-enter {
+  --morph-y: 6px;
+  animation: morphBlurIn 220ms var(--ease-out) both;
+}
+
+/* Ponto 3 — Técnica A: Toast dinâmico (swap líquido + largura fluida desktop + saída 180ms) */
+.toast.is-width-morphing {
+  transition: width 220ms var(--ease-out);
+}
+
+.toast.is-toast-swap .toast-icon,
+.toast.is-toast-swap .toast-body {
+  --morph-y: 5px;
+  animation: morphBlurIn 220ms var(--ease-out) both;
+}
+
+.toast.is-exiting {
+  animation: toastSlideOut 180ms var(--ease-out) forwards !important;
+  pointer-events: none;
+}
+
+/* Ponto 4 — Técnica A: Botões pós-agendamento in-place (#btn-copy-proof / #btn-download-ics) */
+.btn-liquid-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn-liquid-content.is-liquid-swap {
+  --morph-y: 5px;
+  animation: morphBlurIn 200ms var(--ease-out) both;
+}
+
+.btn.is-liquid-confirmed {
+  border-color: var(--green-border);
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+/* Ponto 5 — Técnica A: Validador WCAG 2.1 somente na virada de faixa (AAA <-> AA <-> fail) */
+.wcag-status-badge.is-wcag-morph,
+.wcag-guard-hint.is-wcag-morph,
+.wcag-escape-btn.is-wcag-btn-enter {
+  --morph-y: 4px;
+  animation: morphBlurIn 220ms var(--ease-out) both;
+}
+
+/* ==================== REGRA DEDICADA: ALTO CONTRASTE AAA (SEM BLUR) & REDUCED MOTION ==================== */
+body.theme-contrast {
+  --morph-blur: 0px;
+}
+
+body.theme-contrast .sso-loading-stage.is-morph-enter,
+body.theme-contrast .toast.is-toast-swap .toast-icon,
+body.theme-contrast .toast.is-toast-swap .toast-body,
+body.theme-contrast .btn-liquid-content.is-liquid-swap,
+body.theme-contrast .wcag-status-badge.is-wcag-morph,
+body.theme-contrast .wcag-guard-hint.is-wcag-morph,
+body.theme-contrast .wcag-escape-btn.is-wcag-btn-enter {
+  filter: none !important;
+}
+
+body.theme-contrast .btn.is-liquid-confirmed {
+  border-color: var(--accent);
+  background: #18181b;
+  color: var(--accent);
+}
+
+body.a11y-reduced-motion,
+body.a11y-pause-distractions {
+  --morph-blur: 0px;
+  --morph-y: 0px;
+}
+
+body.a11y-reduced-motion .split-left-top .brand-on-navy .brand-svg,
+body.a11y-reduced-motion .split-left-top .brand-on-navy .brand-name,
+body.a11y-reduced-motion .mobile-brand-lockup .brand-svg,
+body.a11y-reduced-motion .mobile-brand-lockup .brand-name,
+body.a11y-pause-distractions .split-left-top .brand-on-navy .brand-svg,
+body.a11y-pause-distractions .split-left-top .brand-on-navy .brand-name,
+body.a11y-pause-distractions .mobile-brand-lockup .brand-svg,
+body.a11y-pause-distractions .mobile-brand-lockup .brand-name,
+body.a11y-reduced-motion .sso-loading-stage.is-morph-enter,
+body.a11y-pause-distractions .sso-loading-stage.is-morph-enter,
+body.a11y-reduced-motion .toast.is-toast-swap .toast-icon,
+body.a11y-reduced-motion .toast.is-toast-swap .toast-body,
+body.a11y-pause-distractions .toast.is-toast-swap .toast-icon,
+body.a11y-pause-distractions .toast.is-toast-swap .toast-body,
+body.a11y-reduced-motion .btn-liquid-content.is-liquid-swap,
+body.a11y-pause-distractions .btn-liquid-content.is-liquid-swap,
+body.a11y-reduced-motion .wcag-status-badge.is-wcag-morph,
+body.a11y-reduced-motion .wcag-guard-hint.is-wcag-morph,
+body.a11y-reduced-motion .wcag-escape-btn.is-wcag-btn-enter,
+body.a11y-pause-distractions .wcag-status-badge.is-wcag-morph,
+body.a11y-pause-distractions .wcag-guard-hint.is-wcag-morph,
+body.a11y-pause-distractions .wcag-escape-btn.is-wcag-btn-enter {
+  animation: none !important;
+  clip-path: none !important;
+  transform: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --morph-blur: 0px;
+    --morph-y: 0px;
+  }
+
+  body.is-landing-mode .split-left-top .brand-on-navy .brand-svg,
+  body.is-landing-mode .split-left-top .brand-on-navy .brand-name,
+  body.is-landing-mode .mobile-brand-lockup .brand-svg,
+  body.is-landing-mode .mobile-brand-lockup .brand-name,
+  .sso-loading-stage.is-morph-enter,
+  .toast.is-toast-swap .toast-icon,
+  .toast.is-toast-swap .toast-body,
+  .btn-liquid-content.is-liquid-swap,
+  .wcag-status-badge.is-wcag-morph,
+  .wcag-guard-hint.is-wcag-morph,
+  .wcag-escape-btn.is-wcag-btn-enter {
+    animation: none !important;
+    clip-path: none !important;
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+  }
 }
 
 
