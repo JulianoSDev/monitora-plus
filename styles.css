@@ -5337,4 +5337,17 @@ body.a11y-pause-distractions .wcag-escape-btn.is-wcag-btn-enter {
   }
 }
 
+/* Elementos exclusivos do shell mobile (ocultos no desktop > 768px — zero impacto desktop) */
+.topbar-user-initials,
+.mobile-step-progress,
+.heading-mobile,
+.mobile-step-counter,
+.row-meta-sep,
+.row-next-slot,
+.vac-mobile-short,
+.mobile-card-datetime,
+.mobile-card-meta-line {
+  display: none;
+}
+
 

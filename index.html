@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="styles.css?v=20261124c1" />
-  <link rel="stylesheet" href="mobile.css?v=20261124c1" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="styles.css?v=20261124d1" />
+  <link rel="stylesheet" href="mobile.css?v=20261124d1" media="(max-width: 768px)" />
 </head>
 <body class="theme-light is-landing-mode">
   <a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
@@ -70,6 +70,7 @@
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
+              <span class="topbar-user-initials" id="topbar-user-initials">M+</span>
             </span>
             <span id="topbar-user-label">Entrar</span>
             <svg class="profile-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -519,6 +520,12 @@
 
     <!-- ==================== VIEW 1: AGENDAR (FLUXO EM 3 ETAPAS) ==================== -->
     <section id="view-agendar" class="view-section" aria-labelledby="agendar-heading">
+      <div class="mobile-step-progress" id="mobile-step-progress" aria-hidden="true">
+        <span class="msp-seg is-active" data-msp="1"></span>
+        <span class="msp-seg" data-msp="2"></span>
+        <span class="msp-seg" data-msp="3"></span>
+      </div>
+
       <div class="stepper-bar" aria-label="Etapas do agendamento">
         <button type="button" class="step-crumb is-active" data-step-jump="1" id="crumb-1">
           <span>1. Escolher monitoria</span>
@@ -547,7 +554,11 @@
       <div id="step-1" class="step-panel">
         <div class="step-header-centered">
           <div class="step1-head-row">
-            <h1 id="agendar-heading">Escolha uma monitoria</h1>
+            <h1 id="agendar-heading">
+              <span class="heading-desktop">Escolha uma monitoria</span>
+              <span class="heading-mobile">Agendar</span>
+              <span class="mobile-step-counter" id="mobile-step-counter">1 de 3</span>
+            </h1>
             <div class="layout-toggle step1-layout-mobile" role="group" aria-label="Formato de exibição">
               <button type="button" class="layout-btn is-active" data-step1-layout="list" aria-pressed="true" title="Exibir em lista">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -1702,6 +1713,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261124c1"></script>
+  <script src="app.js?v=20261124d1"></script>
 </body>
 </html>

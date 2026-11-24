@@ -1163,7 +1163,11 @@ let bodyScrollLocked = false;
 let lockedScrollY = 0;
 
 function hasAnyBlockingOverlayOpen() {
-  const modalIds = ["settings-modal", "confirm-modal", "faq-modal", "sso-modal"];
+  const isMobileInAppSettings =
+    window.innerWidth <= 768 && !document.body.classList.contains("is-landing-mode");
+  const modalIds = isMobileInAppSettings
+    ? ["confirm-modal", "faq-modal", "sso-modal"]
+    : ["settings-modal", "confirm-modal", "faq-modal", "sso-modal"];
   const anyModalOpen = modalIds.some((id) => {
     const el = document.getElementById(id);
     return Boolean(el && !el.classList.contains("is-hidden"));
@@ -1211,7 +1215,10 @@ function syncBodyScrollLock() {
 
 function setSettingsTab(tabKey, shouldFocus = false) {
   closeAllCustomSelects();
-  const key = SETTINGS_TAB_META[tabKey] ? tabKey : "geral";
+  let key = SETTINGS_TAB_META[tabKey] ? tabKey : "geral";
+  if (window.innerWidth <= 768 && key === "atalhos") {
+    key = "geral";
+  }
   ui.activeSettingsTab = key;
   const meta = SETTINGS_TAB_META[key];
 
@@ -1361,8 +1368,8 @@ function positionVlibrasShadowAccess() {
     accessEl.style.top = "auto";
     accessEl.style.right = "12px";
     accessEl.style.bottom = hasSticky
-      ? "calc(138px + env(safe-area-inset-bottom))"
-      : "calc(70px + env(safe-area-inset-bottom))";
+      ? "calc(144px + env(safe-area-inset-bottom))"
+      : "calc(74px + env(safe-area-inset-bottom))";
   } else {
     accessEl.style.top = "auto";
     accessEl.style.right = "20px";
@@ -1721,13 +1728,18 @@ function renderTopbar() {
     const initials = parts.length >= 2 ? `${parts[0][0]}${parts[parts.length - 1][0]}` : parts[0].slice(0, 2);
     const isMonitor = user.role === "monitor";
     const roleTag = isMonitor ? "Monitor(a)" : `Mat. ${user.ra}`;
+    const initialsUpper = initials.toUpperCase();
     label.textContent = firstName;
-    if (ddAvatar) ddAvatar.textContent = initials.toUpperCase();
+    const topbarInitials = document.getElementById("topbar-user-initials");
+    if (topbarInitials) topbarInitials.textContent = initialsUpper;
+    if (ddAvatar) ddAvatar.textContent = initialsUpper;
     if (ddName) ddName.textContent = user.name;
     if (ddRoleBadge) ddRoleBadge.textContent = isMonitor ? "Monitor(a)" : "Estudante";
     if (ddSub) ddSub.textContent = `${roleTag} · ${user.email}`;
   } else {
     label.textContent = "Entrar";
+    const topbarInitials = document.getElementById("topbar-user-initials");
+    if (topbarInitials) topbarInitials.textContent = "M+";
     if (ddAvatar) ddAvatar.textContent = "M+";
     if (ddName) ddName.textContent = "Visitante";
     if (ddRoleBadge) ddRoleBadge.textContent = "Visitante";
@@ -1763,6 +1775,7 @@ function syncMobileChrome() {
 
   const settingsModal = document.getElementById("settings-modal");
   const settingsOpen = Boolean(settingsModal && !settingsModal.classList.contains("is-hidden"));
+  document.body.classList.toggle("is-mobile-settings-open", settingsOpen && window.innerWidth <= 768);
 
   document.querySelectorAll("[data-mobile-nav]").forEach((btn) => {
     const active = !settingsOpen && btn.dataset.mobileNav === ui.activeView;
@@ -1778,12 +1791,17 @@ function syncMobileChrome() {
   if (settingsTabBtn) {
     settingsTabBtn.classList.toggle("is-active", settingsOpen);
     settingsTabBtn.setAttribute("aria-expanded", String(settingsOpen));
+    if (settingsOpen) {
+      settingsTabBtn.setAttribute("aria-current", "page");
+    } else {
+      settingsTabBtn.removeAttribute("aria-current");
+    }
   }
 
   const step3Form = document.getElementById("step3-form-shell");
   const step3FormVisible = Boolean(step3Form && !step3Form.classList.contains("is-hidden"));
   const hasStickyCta =
-    ui.activeView === "agendar" && (ui.step === 2 || (ui.step === 3 && step3FormVisible));
+    !settingsOpen && ui.activeView === "agendar" && (ui.step === 2 || (ui.step === 3 && step3FormVisible));
   document.body.classList.toggle("has-mobile-sticky-cta", hasStickyCta);
   if (getPrefs().vlibras) positionVlibrasShadowAccess();
 }
@@ -2451,6 +2469,33 @@ function renderStepper() {
   document.getElementById("step-1").classList.toggle("is-hidden", ui.step !== 1);
   document.getElementById("step-2").classList.toggle("is-hidden", ui.step !== 2);
   document.getElementById("step-3").classList.toggle("is-hidden", ui.step !== 3);
+
+  const counterEl = document.getElementById("mobile-step-counter");
+  if (counterEl) counterEl.textContent = `${ui.step} de 3`;
+  document.querySelectorAll("#mobile-step-progress [data-msp]").forEach((seg) => {
+    const idx = Number(seg.dataset.msp);
+    seg.classList.toggle("is-done", idx < ui.step || (idx === 3 && ui.step === 3 && ui.step3Completed));
+    seg.classList.toggle("is-active", idx === ui.step && !(idx === 3 && ui.step3Completed));
+  });
+}
+
+function getOfferingNextSlotLabel(offeringId) {
+  const next = state.slots
+    .filter((s) => s.offeringId === offeringId && getSlotRemaining(s) > 0)
+    .slice()
+    .sort((a, b) => `${a.dateIso} ${a.time}`.localeCompare(`${b.dateIso} ${b.time}`))[0];
+  if (!next) return "Sem horários livres";
+  const shortDay = next.dayName.slice(0, 3);
+  const startTime = next.time.split(" - ")[0] || next.time;
+  return `Próx.: ${shortDay}, ${startTime}`;
+}
+
+function formatMobileCardDatetime(dateIso, dayName, timeStr) {
+  const parts = getDateBadgeParts(dateIso, dayName);
+  const monthCap = parts.month ? parts.month[0] + parts.month.slice(1).toLowerCase() : "";
+  const wkCap = parts.weekday ? parts.weekday[0] + parts.weekday.slice(1).toLowerCase() : "";
+  const startTime = (timeStr || "").split(" - ")[0] || timeStr || "";
+  return `${parts.day} ${monthCap} · ${wkCap}, ${startTime}`;
 }
 
 function renderStep1() {
@@ -2529,8 +2574,10 @@ function renderStep1() {
         const free = getOfferingRemainingTotal(off.id);
         const dotClass = free === 0 ? "dot-muted" : free <= 3 ? "dot-amber" : "dot-green";
         const vacText = formatVagas(free, true);
+        const vacShort = free === 0 ? "Lotado" : formatVagas(free, false);
         const initials = getMonitorInitials(off.monitor);
         const placeTag = off.shortLocation || off.location;
+        const nextSlotLabel = getOfferingNextSlotLabel(off.id);
 
         return `
           <button type="button" class="list-row-btn" data-select-offering="${escapeHtml(off.id)}">
@@ -2540,14 +2587,20 @@ function renderStep1() {
                 <p class="row-title">${escapeHtml(off.subject)} — ${escapeHtml(off.title)}</p>
                 <div class="row-meta-line">
                   <span class="row-meta">${escapeHtml(off.monitor)}</span>
+                  <span class="row-meta-sep" aria-hidden="true">·</span>
                   <span class="row-loc-tag">${escapeHtml(placeTag)}</span>
                 </div>
               </div>
             </div>
             <div class="row-right">
               <span class="status-dot-inline ${dotClass}" aria-hidden="true"></span>
-              <span>${escapeHtml(vacText)}</span>
-              <span aria-hidden="true">→</span>
+              <span class="vac-desktop-full">${escapeHtml(vacText)}</span>
+              <span class="vac-mobile-short">${escapeHtml(vacShort)}</span>
+              <span class="row-arrow-desktop" aria-hidden="true">→</span>
+            </div>
+            <div class="row-next-slot">
+              <span>${escapeHtml(nextSlotLabel)}</span>
+              <span class="row-next-chevron" aria-hidden="true">›</span>
             </div>
           </button>
         `;
@@ -3069,6 +3122,7 @@ function renderBookings() {
       if (!slot || !off) return "";
 
       const dateParts = getDateBadgeParts(slot.dateIso, slot.dayName);
+      const mobileDt = formatMobileCardDatetime(slot.dateIso, slot.dayName, slot.time);
       const isInactive = bk.status !== "Confirmado";
       const isHighlight = bk.id === ui.highlightedBookingId;
 
@@ -3084,27 +3138,31 @@ function renderBookings() {
             </div>
             <div class="booking-info">
               <div class="booking-meta-top">
+                <span class="mobile-card-datetime">${escapeHtml(mobileDt)}</span>
                 <span class="mono-badge">${escapeHtml(bk.protocol)}</span>
                 <span class="status-tag is-${escapeHtml(bk.status)}">${escapeHtml(bk.status)}</span>
               </div>
               <p class="row-title">${escapeHtml(off.subject)} — ${escapeHtml(off.title)}</p>
-              <p class="row-meta">
+              <p class="row-meta booking-meta-desktop">
                 ${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)} · ${escapeHtml(
         off.shortLocation || off.location
       )}
               </p>
-              <p class="row-meta" style="margin-top:4px">Dúvida: ${escapeHtml(bk.topic)}</p>
+              <p class="mobile-card-meta-line">${escapeHtml(off.monitor)} · ${escapeHtml(
+        off.shortLocation || off.location
+      )}</p>
+              <p class="row-meta booking-topic-quote" style="margin-top:4px">Dúvida: ${escapeHtml(bk.topic)}</p>
             </div>
           </div>
-          <div class="booking-actions">
-            ${
-              bk.status === "Confirmado"
-                ? `<button type="button" class="btn btn-secondary" data-reschedule-bk="${escapeHtml(bk.id)}">Reagendar</button>
+          ${
+            bk.status === "Confirmado"
+              ? `<div class="booking-actions">
+                   <button type="button" class="btn btn-secondary" data-reschedule-bk="${escapeHtml(bk.id)}">Reagendar</button>
                    <button type="button" class="btn btn-secondary" data-ics="${escapeHtml(bk.id)}">.ics</button>
-                   <button type="button" class="btn btn-danger" data-cancel-bk="${escapeHtml(bk.id)}">Cancelar</button>`
-                : ""
-            }
-          </div>
+                   <button type="button" class="btn btn-danger" data-cancel-bk="${escapeHtml(bk.id)}">Cancelar</button>
+                 </div>`
+              : ""
+          }
         </div>
       `;
     })
@@ -3180,6 +3238,7 @@ function renderMonitorPanel() {
         if (!slot) return "";
 
         const dateParts = getDateBadgeParts(slot.dateIso, slot.dayName);
+        const mobileDt = formatMobileCardDatetime(slot.dateIso, slot.dayName, slot.time);
         const isInactive = bk.status !== "Confirmado";
         const isHighlight = bk.id === ui.highlightedBookingId;
 
@@ -3195,23 +3254,25 @@ function renderMonitorPanel() {
               </div>
               <div class="booking-info">
                 <div class="booking-meta-top">
+                  <span class="mobile-card-datetime">${escapeHtml(mobileDt)}</span>
                   <span class="mono-badge">${escapeHtml(bk.protocol)}</span>
                   <span class="status-tag is-${escapeHtml(bk.status)}">${escapeHtml(bk.status)}</span>
                 </div>
                 <p class="row-title">${escapeHtml(stu ? stu.name : "Estudante")} (${escapeHtml(stu ? stu.ra : "—")})</p>
-                <p class="row-meta">${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}</p>
-                <p class="row-meta" style="margin-top:4px">Dúvida: ${escapeHtml(bk.topic)}</p>
+                <p class="row-meta booking-meta-desktop">${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}</p>
+                <p class="mobile-card-meta-line">${escapeHtml(bk.protocol)} · ${escapeHtml(slot.time)}</p>
+                <p class="row-meta booking-topic-quote" style="margin-top:4px">Dúvida: ${escapeHtml(bk.topic)}</p>
               </div>
             </div>
-            <div class="booking-actions">
-              ${
-                bk.status === "Confirmado"
-                  ? `<button type="button" class="btn btn-secondary" data-complete-bk="${escapeHtml(
-                      bk.id
-                    )}">Concluir</button>`
-                  : ""
-              }
-            </div>
+            ${
+              bk.status === "Confirmado"
+                ? `<div class="booking-actions">
+                     <button type="button" class="btn btn-secondary" data-complete-bk="${escapeHtml(
+                       bk.id
+                     )}">Concluir</button>
+                   </div>`
+                : ""
+            }
           </div>
         `;
       })
@@ -3225,6 +3286,7 @@ function renderMonitorPanel() {
       slotsListEl.innerHTML = disciplineSlots
         .map((slot) => {
           const dateParts = getDateBadgeParts(slot.dateIso, slot.dayName);
+          const mobileDt = formatMobileCardDatetime(slot.dateIso, slot.dayName, slot.time);
           const confirmedDynamic = state.bookings.filter(
             (b) => b.slotId === slot.id && b.status === "Confirmado"
           ).length;
@@ -3241,6 +3303,7 @@ function renderMonitorPanel() {
                   <span class="booking-date-wk">${escapeHtml(dateParts.weekday)}</span>
                 </div>
                 <div class="monitor-slot-meta">
+                  <span class="mobile-card-datetime">${escapeHtml(mobileDt)}</span>
                   <p class="monitor-slot-time">${escapeHtml(slot.time)}</p>
                   <p class="monitor-slot-sub">${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(
             formatVagas(rem, false)
@@ -3861,7 +3924,8 @@ function bindEvents() {
 
   document.getElementById("mobile-nav-settings-btn")?.addEventListener("click", () => {
     closeProfileMenu();
-    openSettingsModal("geral", false);
+    const targetTab = ui.activeSettingsTab && ui.activeSettingsTab !== "atalhos" ? ui.activeSettingsTab : "geral";
+    openSettingsModal(targetTab, false);
   });
 
   document.querySelectorAll("[data-mode-opt]").forEach((btn) => {
@@ -4298,7 +4362,12 @@ function bindEvents() {
   document.getElementById("mode-filter-group")?.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-mode-filter]");
     if (!btn) return;
-    ui.modeFilter = btn.dataset.modeFilter;
+    const picked = btn.dataset.modeFilter;
+    if (window.innerWidth <= 768 && picked !== "Todas" && ui.modeFilter === picked) {
+      ui.modeFilter = "Todas";
+    } else {
+      ui.modeFilter = picked;
+    }
     renderStep1();
   });
 
@@ -5043,6 +5112,9 @@ function initCustomSelects() {
     if (getPrefs().vlibras) positionVlibrasShadowAccess();
     syncSearchPlaceholder();
     if (ui.activeView === "agendar") renderStepper();
+    if (window.innerWidth <= 768 && ui.activeSettingsTab === "atalhos") {
+      setSettingsTab("geral");
+    }
     syncAllSlidingIndicators(true);
     const dd = document.getElementById("profile-dropdown");
     if (dd && !dd.classList.contains("is-hidden")) {
@@ -5051,6 +5123,7 @@ function initCustomSelects() {
         openProfileMenu();
       }
     }
+    syncMobileChrome();
     syncBodyScrollLock();
     const openWrap = document.querySelector(".bc-select-wrap.is-open");
     if (!openWrap) return;
