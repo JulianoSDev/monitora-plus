@@ -74,8 +74,8 @@ const INITIAL_USERS = [
     id: "usr-mon-1",
     role: "monitor",
     name: "Rafael Silva",
-    ra: "2026901",
-    email: "rafael.monitor@academico.edu.br",
+    ra: "2025042",
+    email: "rafael@academico.edu.br",
     offeringId: "off-alg",
     password: "1234",
   },
@@ -836,8 +836,25 @@ function findNearestReadableFg(bgHex, fgHex, targetRatio = 7.0) {
   return toWhite.ratio >= toBlack.ratio ? toWhite.hex : toBlack.hex;
 }
 
+const ACCENT_COLOR_VARS = [
+  "--accent",
+  "--accent-hover",
+  "--accent-soft",
+  "--accent-fg",
+  "--on-accent",
+  "--accent-text",
+];
+
 function clearCustomColorsFromDom() {
   CUSTOM_COLOR_VARS.forEach((v) => document.body.style.removeProperty(v));
+}
+
+function clearAccentOverridesFromDom() {
+  ACCENT_COLOR_VARS.forEach((v) => document.body.style.removeProperty(v));
+}
+
+function isAuthScreenIsolated() {
+  return !getCurrentUser() || ui.activeView === "landing";
 }
 
 function syncWcagGuardUI(bgHex, fgHex) {
@@ -883,22 +900,42 @@ function syncWcagGuardUI(bgHex, fgHex) {
 
 function applyAccentAndFont(resolvedTheme, activeBg) {
   const prefs = getPrefs();
+  const isolated = isAuthScreenIsolated();
   const presetKey = THEME_PRESETS[prefs.themePreset] ? prefs.themePreset : "monitora";
   const preset = THEME_PRESETS[presetKey];
-  const accentHex = normalizeHexColor(prefs.customAccent) || preset[resolvedTheme] || preset.light;
-  const accentFg = getBestOnColor(accentHex);
-  const accentText =
-    getContrastRatio(activeBg, accentHex) >= 4.5
-      ? accentHex
-      : findNearestReadableFg(activeBg, accentHex, 4.5);
-
+  const savedAccentHex = normalizeHexColor(prefs.customAccent) || preset[resolvedTheme] || preset.light;
   const s = document.body.style;
-  s.setProperty("--accent", accentHex);
-  s.setProperty("--accent-hover", `color-mix(in srgb, ${accentHex} 88%, ${accentFg} 12%)`);
-  s.setProperty("--accent-soft", `color-mix(in srgb, ${accentHex} 14%, transparent)`);
-  s.setProperty("--accent-fg", accentFg);
-  s.setProperty("--on-accent", accentFg);
-  s.setProperty("--accent-text", accentText);
+
+  if (isolated) {
+    if (resolvedTheme === "contrast") {
+      clearAccentOverridesFromDom();
+    } else {
+      const brandHex = THEME_PRESETS.monitora[resolvedTheme] || THEME_PRESETS.monitora.light;
+      const brandFg = getBestOnColor(brandHex);
+      const brandText =
+        getContrastRatio(activeBg, brandHex) >= 4.5
+          ? brandHex
+          : findNearestReadableFg(activeBg, brandHex, 4.5);
+      s.setProperty("--accent", brandHex);
+      s.setProperty("--accent-hover", `color-mix(in srgb, ${brandHex} 88%, ${brandFg} 12%)`);
+      s.setProperty("--accent-soft", `color-mix(in srgb, ${brandHex} 14%, transparent)`);
+      s.setProperty("--accent-fg", brandFg);
+      s.setProperty("--on-accent", brandFg);
+      s.setProperty("--accent-text", brandText);
+    }
+  } else {
+    const accentFg = getBestOnColor(savedAccentHex);
+    const accentText =
+      getContrastRatio(activeBg, savedAccentHex) >= 4.5
+        ? savedAccentHex
+        : findNearestReadableFg(activeBg, savedAccentHex, 4.5);
+    s.setProperty("--accent", savedAccentHex);
+    s.setProperty("--accent-hover", `color-mix(in srgb, ${savedAccentHex} 88%, ${accentFg} 12%)`);
+    s.setProperty("--accent-soft", `color-mix(in srgb, ${savedAccentHex} 14%, transparent)`);
+    s.setProperty("--accent-fg", accentFg);
+    s.setProperty("--on-accent", accentFg);
+    s.setProperty("--accent-text", accentText);
+  }
 
   const fontKey = UI_FONTS[prefs.uiFont] ? prefs.uiFont : "dm-sans";
   document.documentElement.style.setProperty("--font-sans", UI_FONTS[fontKey]);
@@ -916,24 +953,25 @@ function applyAccentAndFont(resolvedTheme, activeBg) {
 
   let matchedSwatch = false;
   document.querySelectorAll("[data-accent-hex]").forEach((btn) => {
-    const active = normalizeHexColor(btn.dataset.accentHex) === accentHex;
+    const active = normalizeHexColor(btn.dataset.accentHex) === savedAccentHex;
     if (active) matchedSwatch = true;
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-checked", String(active));
   });
 
   const accentPicker = document.getElementById("pref-accent-picker");
-  if (accentPicker && accentPicker.value.toLowerCase() !== accentHex) {
-    accentPicker.value = accentHex;
+  if (accentPicker && accentPicker.value.toLowerCase() !== savedAccentHex) {
+    accentPicker.value = savedAccentHex;
   }
   const customWrap = accentPicker?.closest(".accent-swatch-custom");
   if (customWrap) {
     const isCustom = Boolean(normalizeHexColor(prefs.customAccent) && !matchedSwatch);
-    customWrap.style.background = isCustom ? accentHex : "";
-    customWrap.style.color = isCustom ? accentFg : "";
+    const savedFg = getBestOnColor(savedAccentHex);
+    customWrap.style.background = isCustom ? savedAccentHex : "";
+    customWrap.style.color = isCustom ? savedFg : "";
     customWrap.style.borderStyle = isCustom ? "solid" : "";
-    customWrap.style.borderColor = isCustom ? accentHex : "";
-    customWrap.style.boxShadow = isCustom ? `0 0 0 2px var(--surface), 0 0 0 4px ${accentHex}` : "";
+    customWrap.style.borderColor = isCustom ? savedAccentHex : "";
+    customWrap.style.boxShadow = isCustom ? `0 0 0 2px var(--surface), 0 0 0 4px ${savedAccentHex}` : "";
   }
 }
 
@@ -945,6 +983,14 @@ function applyCustomColors() {
   const customFg = normalizeHexColor(prefs.customFg);
   const activeBg = customBg || base.bg;
   const activeFg = customFg || base.fg;
+
+  if (isAuthScreenIsolated()) {
+    clearCustomColorsFromDom();
+    document.documentElement.style.colorScheme = theme === "light" ? "light" : "dark";
+    applyAccentAndFont(theme, base.bg);
+    syncWcagGuardUI(activeBg, activeFg);
+    return;
+  }
 
   if (!customBg && !customFg) {
     clearCustomColorsFromDom();
@@ -1089,7 +1135,7 @@ let bodyScrollLocked = false;
 let lockedScrollY = 0;
 
 function hasAnyBlockingOverlayOpen() {
-  const modalIds = ["settings-modal", "confirm-modal", "faq-modal"];
+  const modalIds = ["settings-modal", "confirm-modal", "faq-modal", "sso-modal"];
   const anyModalOpen = modalIds.some((id) => {
     const el = document.getElementById(id);
     return Boolean(el && !el.classList.contains("is-hidden"));
@@ -1730,6 +1776,7 @@ function switchView(viewName) {
     ui.reschedulingBookingId = null;
   }
   document.body.classList.toggle("is-landing-mode", viewName === "landing");
+  applyCustomColors();
 
   document.querySelectorAll(".view-section").forEach((sec) => {
     sec.classList.toggle("is-active", sec.id === `view-${viewName}`);
@@ -1768,10 +1815,23 @@ function setAuthTab(tabName) {
     t.classList.toggle("is-active", active);
     t.setAttribute("aria-selected", String(active));
   });
+  document.getElementById("auth-sso-block")?.classList.toggle("is-hidden", tabName !== "login");
   document.getElementById("form-login").classList.toggle("is-hidden", tabName !== "login");
   document.getElementById("form-register").classList.toggle("is-hidden", tabName !== "register");
   clearFormErrors(document.getElementById("form-login"));
   clearFormErrors(document.getElementById("form-register"));
+
+  const headTitle = document.getElementById("auth-head-title");
+  const headSub = document.getElementById("auth-head-sub");
+  if (headTitle && headSub) {
+    if (tabName === "login") {
+      headTitle.textContent = "Entrar no Monitora+";
+      headSub.textContent = "Acesse com sua matrícula ou e-mail institucional.";
+    } else {
+      headTitle.textContent = "Criar conta no Monitora+";
+      headSub.textContent = "Cadastre-se com seus dados institucionais.";
+    }
+  }
 
   const switchLine = document.getElementById("assaad-switch-line");
   if (tabName === "login") {
@@ -1881,10 +1941,232 @@ function validateNewAccountFields({ name, ra, email, password }) {
   } else if (state.users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
     errors.push({ el: emailEl, message: "Já existe uma conta cadastrada com este e-mail." });
   }
-  if (password.length < 4) {
-    errors.push({ el: passEl, message: "A senha deve ter no mínimo 4 caracteres." });
+  if (password.length < 6) {
+    errors.push({ el: passEl, message: "A senha deve ter no mínimo 6 caracteres." });
   }
   return errors;
+}
+
+// ==================== SSO INSTITUCIONAL (GENNERA UNIFSA / GOOGLE) ====================
+const SSO_GENNERA_ICON_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2.5 20.2 7.25 20.2 16.75 12 21.5 3.8 16.75 3.8 7.25"/><path d="M15.4 9.6A4.2 4.2 0 1 0 16 12.2h-4"/></svg>`;
+const SSO_GOOGLE_ICON_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`;
+const SSO_USER_ICON_SVG = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+
+const SSO_PROVIDERS = {
+  gennera: {
+    name: "Gennera",
+    loadingHeader: "Gennera SSO",
+    title: "Acesso Institucional · Gennera (UNIFSA)",
+    desc: "Selecione a conta vinculada ao portal acadêmico.",
+    loadingTitle: "Sincronizando matrícula e disciplinas do Gennera...",
+    footer: "Fluxo simulado · Pronto para integração via SAML / API da UNIFSA",
+    iconSvg: SSO_GENNERA_ICON_SVG,
+    badgeClass: "is-gennera",
+  },
+  google: {
+    name: "Google",
+    loadingHeader: "Google Institucional",
+    title: "Continuar com Google Institucional",
+    desc: "Escolha uma conta @academico.edu.br.",
+    loadingTitle: "Validando conta institucional...",
+    footer: "Fluxo simulado · Pronto para OAuth 2.0 institucional",
+    iconSvg: SSO_GOOGLE_ICON_SVG,
+    badgeClass: "is-google",
+  },
+};
+
+const SSO_ACCOUNTS = [
+  {
+    userId: "usr-stu-1",
+    name: "Ana Paula Ribeiro",
+    shortToastName: "Ana Paula",
+    initials: "AP",
+    roleLabel: "Estudante",
+    detail: "Engenharia de Software",
+    ra: "2026101",
+    email: "ana@academico.edu.br",
+  },
+  {
+    userId: "usr-mon-1",
+    name: "Rafael Silva",
+    shortToastName: "Rafael",
+    initials: "RS",
+    roleLabel: "Monitor",
+    detail: "Algoritmo e Programação",
+    ra: "2025042",
+    email: "rafael@academico.edu.br",
+  },
+];
+
+const ssoState = {
+  provider: "gennera",
+  selectedUserId: "usr-stu-1",
+  loading: false,
+  timer: null,
+  triggerEl: null,
+};
+
+function ensureDemoUser(demoId) {
+  let user = state.users.find((u) => u.id === demoId);
+  let restored = false;
+  const seed = INITIAL_USERS.find((u) => u.id === demoId);
+  if (!user && seed) {
+    user = structuredClone(seed);
+    state.users.push(user);
+    INITIAL_BOOKINGS.filter((b) => b.studentId === demoId).forEach((seedBk) => {
+      if (!state.bookings.some((b) => b.id === seedBk.id)) {
+        state.bookings.push(structuredClone(seedBk));
+      }
+    });
+    restored = true;
+  } else if (user && seed && demoId === "usr-mon-1" && user.email === "rafael.monitor@academico.edu.br") {
+    user.ra = seed.ra;
+    user.email = seed.email;
+  }
+  return { user, restored };
+}
+
+function renderSsoAccountList() {
+  const listEl = document.getElementById("sso-account-list");
+  if (!listEl) return;
+  const isGoogle = ssoState.provider === "google";
+
+  listEl.innerHTML = SSO_ACCOUNTS.map((acc) => {
+    const selected = acc.userId === ssoState.selectedUserId;
+    const avatarMarkup = isGoogle
+      ? `<span class="sso-avatar is-initials" aria-hidden="true">${escapeHtml(acc.initials)}</span>`
+      : `<span class="sso-avatar is-icon" aria-hidden="true">${SSO_USER_ICON_SVG}</span>`;
+    const metaLine = isGoogle
+      ? `${escapeHtml(acc.roleLabel)} · ${escapeHtml(acc.detail)} · Mat. ${escapeHtml(acc.ra)}`
+      : `<span class="sso-role-pill">${escapeHtml(acc.roleLabel)}</span><span>${escapeHtml(acc.detail)} · Mat. ${escapeHtml(acc.ra)}</span>`;
+
+    return `
+      <button
+        type="button"
+        class="sso-account-card ${selected ? "is-selected" : ""}"
+        role="radio"
+        aria-checked="${selected}"
+        data-sso-account="${escapeHtml(acc.userId)}"
+      >
+        ${avatarMarkup}
+        <span class="sso-account-info">
+          <strong class="sso-account-name">${escapeHtml(acc.name)}</strong>
+          <span class="sso-account-meta">${metaLine}</span>
+          <span class="sso-account-email">${escapeHtml(acc.email)}</span>
+        </span>
+        <span class="sso-account-chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </span>
+        <span class="sso-account-radio" aria-hidden="true"></span>
+      </button>
+    `;
+  }).join("");
+}
+
+function openSsoModal(providerKey, triggerEl = null) {
+  const cfg = SSO_PROVIDERS[providerKey] || SSO_PROVIDERS.gennera;
+  clearTimeout(ssoState.timer);
+  ssoState.timer = null;
+  ssoState.loading = false;
+  ssoState.provider = providerKey === "google" ? "google" : "gennera";
+  ssoState.selectedUserId = SSO_ACCOUNTS[0].userId;
+  ssoState.triggerEl =
+    triggerEl instanceof HTMLElement
+      ? triggerEl
+      : document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+  const badgeEl = document.getElementById("sso-provider-icon");
+  if (badgeEl) {
+    badgeEl.className = `sso-provider-badge ${cfg.badgeClass}`;
+    badgeEl.innerHTML = cfg.iconSvg;
+  }
+  document.getElementById("sso-modal-title").textContent = cfg.title;
+  document.getElementById("sso-modal-desc").textContent = cfg.desc;
+  document.getElementById("sso-modal-foot-text").textContent = cfg.footer;
+
+  document.getElementById("sso-stage-select")?.classList.remove("is-hidden");
+  document.getElementById("sso-stage-loading")?.classList.add("is-hidden");
+  renderSsoAccountList();
+
+  const modal = document.getElementById("sso-modal");
+  modal?.classList.remove("is-hidden");
+  syncBodyScrollLock();
+  const firstCard = modal?.querySelector(".sso-account-card");
+  firstCard?.focus();
+  announceA11y(`${cfg.title}. ${cfg.desc}`);
+}
+
+function closeSsoModal(restoreFocus = true) {
+  clearTimeout(ssoState.timer);
+  ssoState.timer = null;
+  ssoState.loading = false;
+  const modal = document.getElementById("sso-modal");
+  const wasOpen = modal && !modal.classList.contains("is-hidden");
+  modal?.classList.add("is-hidden");
+  syncBodyScrollLock();
+  if (wasOpen && restoreFocus && ssoState.triggerEl && document.contains(ssoState.triggerEl)) {
+    ssoState.triggerEl.focus();
+  }
+  ssoState.triggerEl = null;
+}
+
+function startSsoSync(userId) {
+  if (ssoState.loading) return;
+  hideToast();
+  const acc = SSO_ACCOUNTS.find((a) => a.userId === userId) || SSO_ACCOUNTS[0];
+  const cfg = SSO_PROVIDERS[ssoState.provider] || SSO_PROVIDERS.gennera;
+  ssoState.loading = true;
+  ssoState.selectedUserId = acc.userId;
+
+  const loadIcon = document.getElementById("sso-loading-provider-icon");
+  if (loadIcon) {
+    loadIcon.className = `sso-provider-badge is-sm ${cfg.badgeClass}`;
+    loadIcon.innerHTML = cfg.iconSvg;
+  }
+  document.getElementById("sso-loading-provider-name").textContent = cfg.loadingHeader;
+  document.getElementById("sso-loading-title").textContent = cfg.loadingTitle;
+
+  const isGoogle = ssoState.provider === "google";
+  const avatarMarkup = isGoogle
+    ? `<span class="sso-avatar is-initials is-sm" aria-hidden="true">${escapeHtml(acc.initials)}</span>`
+    : `<span class="sso-avatar is-icon is-sm" aria-hidden="true">${SSO_USER_ICON_SVG}</span>`;
+  document.getElementById("sso-loading-profile").innerHTML = `
+    <span class="sso-loading-profile-main">
+      ${avatarMarkup}
+      <strong>${escapeHtml(acc.name)}</strong>
+    </span>
+    <span class="sso-loading-check" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </span>
+  `;
+
+  document.getElementById("sso-stage-select")?.classList.add("is-hidden");
+  document.getElementById("sso-stage-loading")?.classList.remove("is-hidden");
+  announceA11y(cfg.loadingTitle);
+
+  const delayMs = prefersReducedMotion() ? 60 : 600;
+  ssoState.timer = setTimeout(() => {
+    ssoState.timer = null;
+    ssoState.loading = false;
+    const { user } = ensureDemoUser(acc.userId);
+    if (!user) {
+      closeSsoModal(true);
+      return;
+    }
+    state.currentUserId = user.id;
+    saveState();
+    closeSsoModal(false);
+    renderTopbar();
+    if (user.role === "monitor") {
+      switchView("monitor");
+    } else {
+      ui.step = 1;
+      switchView("agendar");
+    }
+    showToast(`Conectado via ${cfg.name} · ${acc.shortToastName}`, null, "success");
+  }, delayMs);
 }
 
 function finalizeCreateUser({ role, name, ra, email, password, course, offeringId }) {
@@ -3758,52 +4040,45 @@ function bindEvents() {
     });
   });
 
-  const ensureDemoUser = (demoId) => {
-    let user = state.users.find((u) => u.id === demoId);
-    let restored = false;
-    if (!user) {
-      const seed = INITIAL_USERS.find((u) => u.id === demoId);
-      if (seed) {
-        user = structuredClone(seed);
-        state.users.push(user);
-        INITIAL_BOOKINGS.filter((b) => b.studentId === demoId).forEach((seedBk) => {
-          if (!state.bookings.some((b) => b.id === seedBk.id)) {
-            state.bookings.push(structuredClone(seedBk));
-          }
-        });
-        restored = true;
-      }
-    }
-    return { user, restored };
-  };
-
-  document.getElementById("btn-demo-student").addEventListener("click", () => {
-    const { user, restored } = ensureDemoUser("usr-stu-1");
-    if (!user) return;
-    state.currentUserId = user.id;
-    saveState();
-    renderTopbar();
-    ui.step = 1;
-    switchView("agendar");
-    showToast(
-      restored
-        ? `Conta demo restaurada (${user.name}).`
-        : `Conectado como Estudante (${user.name}).`
-    );
+  // Toggle mostrar/ocultar senha (Entrar e Criar conta)
+  document.querySelectorAll("[data-toggle-password]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const input = document.getElementById(btn.dataset.togglePassword);
+      if (!input) return;
+      const showing = input.type === "text";
+      input.type = showing ? "password" : "text";
+      const nowShowing = !showing;
+      btn.setAttribute("aria-pressed", String(nowShowing));
+      btn.setAttribute("aria-label", nowShowing ? "Ocultar senha" : "Mostrar senha");
+      btn.querySelector(".icon-eye-open")?.classList.toggle("is-hidden", nowShowing);
+      btn.querySelector(".icon-eye-closed")?.classList.toggle("is-hidden", !nowShowing);
+    });
   });
 
-  document.getElementById("btn-demo-monitor").addEventListener("click", () => {
-    const { user, restored } = ensureDemoUser("usr-mon-1");
-    if (!user) return;
-    state.currentUserId = user.id;
-    saveState();
-    renderTopbar();
-    switchView("monitor");
-    showToast(
-      restored
-        ? `Conta demo restaurada (${user.name}).`
-        : `Conectado como Monitor (${user.name}).`
-    );
+  // SSO Institucional (Gennera UNIFSA & Google)
+  document.getElementById("btn-sso-gennera")?.addEventListener("click", (e) => {
+    openSsoModal("gennera", e.currentTarget);
+  });
+  document.getElementById("btn-sso-google")?.addEventListener("click", (e) => {
+    openSsoModal("google", e.currentTarget);
+  });
+  document.getElementById("btn-sso-close")?.addEventListener("click", () => closeSsoModal(true));
+  document.getElementById("sso-modal")?.addEventListener("click", (e) => {
+    if (e.target.id === "sso-modal" && !ssoState.loading) closeSsoModal(true);
+  });
+  document.getElementById("sso-account-list")?.addEventListener("click", (e) => {
+    const card = e.target.closest("[data-sso-account]");
+    if (!card || ssoState.loading) return;
+    const chosenId = card.dataset.ssoAccount;
+    ssoState.selectedUserId = chosenId;
+    if (window.innerWidth <= 768) {
+      renderSsoAccountList();
+    } else {
+      startSsoSync(chosenId);
+    }
+  });
+  document.getElementById("btn-sso-continue")?.addEventListener("click", () => {
+    if (!ssoState.loading) startSsoSync(ssoState.selectedUserId);
   });
 
   // Stepper & Passo 1
@@ -4203,6 +4478,11 @@ function bindEvents() {
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Tab") {
+      const ssoModal = document.getElementById("sso-modal");
+      if (ssoModal && !ssoModal.classList.contains("is-hidden")) {
+        trapFocusInModal(e, ssoModal);
+        return;
+      }
       const confirmModal = document.getElementById("confirm-modal");
       if (confirmModal && !confirmModal.classList.contains("is-hidden")) {
         trapFocusInModal(e, confirmModal);
@@ -4227,6 +4507,11 @@ function bindEvents() {
     if (e.key === "Escape") {
       if (document.querySelector(".bc-select-wrap.is-open")) {
         closeAllCustomSelects();
+        return;
+      }
+      const ssoModal = document.getElementById("sso-modal");
+      if (ssoModal && !ssoModal.classList.contains("is-hidden")) {
+        if (!ssoState.loading) closeSsoModal(true);
         return;
       }
       const confirmModal = document.getElementById("confirm-modal");
