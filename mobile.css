@@ -222,6 +222,10 @@ body.theme-contrast .student-chip-btn {
 }
 
 body.has-mobile-sticky-cta .main-shell {
+  padding-bottom: calc(28px + env(safe-area-inset-bottom));
+}
+
+body.has-mobile-bottom-cta .main-shell {
   padding-bottom: calc(82px + env(safe-area-inset-bottom));
 }
 
@@ -318,26 +322,28 @@ body.theme-contrast .mobile-tab-btn.is-active .mobile-tab-icon-wrap {
 
 .mobile-tab-badge {
   position: absolute;
-  top: 1px;
-  right: 7px;
-  min-width: 16px;
-  height: 16px;
+  top: -3px;
+  right: 4px;
+  min-width: 17px;
+  height: 17px;
   padding: 0 4px;
   border-radius: 999px;
   background: var(--accent);
   color: var(--on-accent);
+  box-shadow: 0 0 0 2px var(--surface);
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
   font-size: 0.625rem;
   font-weight: 700;
-  line-height: 16px;
+  line-height: 17px;
   text-align: center;
 }
 
 body.theme-contrast .mobile-tab-btn.is-active .mobile-tab-badge {
   background: #000000;
   color: #facc15;
-  border: 1px solid #000000;
+  border: 1.5px solid #facc15;
+  box-shadow: none;
 }
 
 .mobile-tab-label {
@@ -373,6 +379,10 @@ body.theme-contrast .mobile-tab-btn.is-active .mobile-tab-badge {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.row-title-suffix-desktop {
+  display: none !important;
 }
 
 .row-meta,
@@ -541,16 +551,17 @@ body.theme-contrast .profile-dropdown.is-mobile-sheet {
 }
 
 .mobile-step-progress {
-  display: grid;
+  display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
-  margin-bottom: 14px;
+  width: 100%;
+  margin-bottom: 12px;
 }
 
 .msp-seg {
-  height: 3px;
+  height: 3.5px;
   border-radius: 999px;
-  background: var(--m-divider);
+  background: var(--border);
   transition: background-color 0.18s ease;
 }
 
@@ -1677,25 +1688,21 @@ body.theme-contrast #s3-topic {
   border-radius: 12px;
 }
 
+/* Etapa 3: Botão fluindo naturalmente logo abaixo do card (sem barra fixa nem espaço morto) */
 #step3-form-shell .step3-actions {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 60;
-  margin: 0;
-  padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid var(--border);
+  position: static;
+  margin: 14px 0 0;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-top: none;
   display: flex;
   gap: 8px;
   flex-wrap: nowrap;
 }
 
-body.theme-contrast .mobile-sticky-cta,
-body.theme-contrast #step3-form-shell .step3-actions {
+body.theme-contrast .mobile-sticky-cta {
   background: var(--surface);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -1708,15 +1715,13 @@ body.theme-contrast #step3-form-shell .step3-actions {
   flex: 1 1 auto;
 }
 
-/* Proteção de teclado iOS: recolhe barra sticky quando textarea/input está focado na Etapa 3 */
-body.is-mobile-input-focused #step3-form-shell .step3-actions {
-  position: static;
-  margin-top: 12px;
-  padding: 0;
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border-top: none;
+.step3-mobile-note {
+  display: block;
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
 }
 
 .field-row,
@@ -2013,6 +2018,35 @@ body.theme-contrast .confirm-summary-row.is-stacked dd {
 .view-head-row {
   margin-bottom: 14px;
   gap: 10px;
+}
+
+/* Meus Agendamentos: 4 filtros 100% visíveis sem corte à esquerda ("Todos") */
+#view-agendamentos .view-head-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+#view-agendamentos .underline-tabs {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-start;
+  padding: 2px 0;
+  gap: 5px;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+#view-agendamentos .u-tab {
+  flex: 1 1 auto;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 0.74rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .monitor-view-head {
@@ -3165,19 +3199,27 @@ body.theme-contrast .settings-row {
   justify-content: flex-start;
 }
 
-/* Eixo visual único: marca centralizada diretamente acima do título Entrar no Monitora+ */
+/* Eixo visual único: marca centralizada diretamente acima do título do formulário com respiro */
 .mobile-landing-bar {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   max-width: 400px;
-  margin: auto auto 16px;
+  margin: auto auto 22px;
   padding: 0;
 }
 
 body.is-auth-register .mobile-landing-bar {
-  margin: 4px auto 14px;
+  margin: 4px auto 18px;
+}
+
+.auth-title-desktop {
+  display: none;
+}
+
+.auth-title-mobile {
+  display: inline;
 }
 
 .mobile-brand-lockup {

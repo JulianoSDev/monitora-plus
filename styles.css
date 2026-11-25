@@ -5361,7 +5361,9 @@ body.a11y-pause-distractions .wcag-escape-btn.is-wcag-btn-enter {
 .s3-mobile-strip,
 .s3-identity-mobile,
 .s3-switch-mobile,
-.confirm-sheet-handle {
+.confirm-sheet-handle,
+.auth-title-mobile,
+.step3-mobile-note {
   display: none;
 }
 

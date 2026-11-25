@@ -1806,9 +1806,11 @@ function syncMobileChrome() {
 
   const step3Form = document.getElementById("step3-form-shell");
   const step3FormVisible = Boolean(step3Form && !step3Form.classList.contains("is-hidden"));
-  const hasStickyCta =
+  const isCheckoutFocus =
     !settingsOpen && ui.activeView === "agendar" && (ui.step === 2 || (ui.step === 3 && step3FormVisible));
-  document.body.classList.toggle("has-mobile-sticky-cta", hasStickyCta);
+  const hasStickyBottomCta = !settingsOpen && ui.activeView === "agendar" && ui.step === 2;
+  document.body.classList.toggle("has-mobile-sticky-cta", isCheckoutFocus);
+  document.body.classList.toggle("has-mobile-bottom-cta", hasStickyBottomCta);
   if (getPrefs().vlibras) positionVlibrasShadowAccess();
 }
 
@@ -1880,10 +1882,12 @@ function setAuthTab(tabName) {
   const headSub = document.getElementById("auth-head-sub");
   if (headTitle && headSub) {
     if (tabName === "login") {
-      headTitle.textContent = "Entrar no Monitora+";
+      headTitle.innerHTML =
+        '<span class="auth-title-desktop">Entrar no Monitora+</span><span class="auth-title-mobile">Acesse sua conta</span>';
       headSub.textContent = "Acesse com sua matrícula ou e-mail institucional.";
     } else {
-      headTitle.textContent = "Criar conta no Monitora+";
+      headTitle.innerHTML =
+        '<span class="auth-title-desktop">Criar conta no Monitora+</span><span class="auth-title-mobile">Crie sua conta</span>';
       headSub.textContent = "Cadastre-se com seus dados institucionais.";
     }
   }
@@ -2422,7 +2426,11 @@ function setStep(stepNumber) {
   if (stepNumber === 1) ui.reschedulingBookingId = null;
   if (stepNumber < 3) ui.step3Completed = false;
   renderAgendar();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  if (window.innerWidth <= 768) {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  } else {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 }
 
 function syncSearchPlaceholder() {
@@ -2659,7 +2667,7 @@ function renderStep1() {
             <div class="row-left">
               <span class="monitor-monogram" aria-hidden="true">${escapeHtml(initials)}</span>
               <div class="row-body">
-                <p class="row-title">${escapeHtml(off.subject)} — ${escapeHtml(off.title)}</p>
+                <p class="row-title">${escapeHtml(off.subject)}<span class="row-title-suffix-desktop"> — ${escapeHtml(off.title)}</span></p>
                 <div class="row-meta-line">
                   <span class="row-meta">${escapeHtml(off.monitor)}</span>
                   <span class="row-meta-sep" aria-hidden="true">·</span>
@@ -3147,11 +3155,14 @@ function handleConfirmBooking(e) {
         ? `Monitoria reagendada com sucesso. Protocolo ${protocol}.`
         : `Agendamento confirmado. Protocolo ${protocol}.`
     );
-    showToast(
-      isReschedule ? `Horário reagendado (${protocol})` : `Agendamento confirmado (${protocol})`,
-      undoRescheduleFn,
-      "success"
-    );
+    const toastMsg = isMobileNow
+      ? isReschedule
+        ? "Horário reagendado!"
+        : "Agendamento confirmado!"
+      : isReschedule
+      ? `Horário reagendado (${protocol})`
+      : `Agendamento confirmado (${protocol})`;
+    showToast(toastMsg, undoRescheduleFn, "success");
   };
 
   if (!getPrefs().confirmBeforeBook) {
@@ -3216,6 +3227,10 @@ function renderBookings() {
   }
 
   subEl.textContent = `Atendimentos de ${user.name} (Mat. ${user.ra})`;
+  if (window.innerWidth <= 768) {
+    const bookingsTabs = document.querySelector("#view-agendamentos .underline-tabs");
+    if (bookingsTabs) bookingsTabs.scrollLeft = 0;
+  }
 
   const mine = state.bookings.filter((b) => b.studentId === user.id);
   const filtered = mine.filter((b) => (ui.bookingFilter === "todos" ? true : b.status === ui.bookingFilter));
@@ -3262,7 +3277,7 @@ function renderBookings() {
                 <span class="mono-badge">${escapeHtml(bk.protocol)}</span>
                 <span class="status-tag is-${escapeHtml(bk.status)}">${escapeHtml(bk.status)}</span>
               </div>
-              <p class="row-title">${escapeHtml(off.subject)} — ${escapeHtml(off.title)}</p>
+              <p class="row-title">${escapeHtml(off.subject)}<span class="row-title-suffix-desktop"> — ${escapeHtml(off.title)}</span></p>
               <p class="row-meta booking-meta-desktop">
                 ${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)} · ${escapeHtml(
         off.shortLocation || off.location
