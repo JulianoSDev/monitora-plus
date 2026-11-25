@@ -3535,3 +3535,23 @@ body.is-scroll-locked div[vw] [vw-access-button] {
 .inicio-time-end {
   font-size: 1.25rem;
 }
+
+.inicio-open-slots {
+  margin-top: 22px;
+  padding-top: 18px;
+}
+
+.inicio-open-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.inicio-open-item {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.inicio-open-arrow {
+  opacity: 0.7;
+  transform: none;
+}

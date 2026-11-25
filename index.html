@@ -20,8 +20,8 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="styles.css?v=20261125b1" />
-  <link rel="stylesheet" href="mobile.css?v=20261125b1" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="styles.css?v=20261125c1" />
+  <link rel="stylesheet" href="mobile.css?v=20261125c1" media="(max-width: 768px)" />
 </head>
 <body class="theme-light is-landing-mode">
   <a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
@@ -525,8 +525,6 @@
             <kbd class="inicio-search-kbd" aria-hidden="true">/</kbd>
             <div id="inicio-search-popover" class="inicio-search-popover is-hidden" role="listbox" aria-label="Resultados de monitorias"></div>
           </div>
-
-          <div class="inicio-quick-row" id="inicio-quick-chips" aria-label="Atalhos de disciplinas com vagas"></div>
         </div>
 
         <div class="inicio-grid">
@@ -538,6 +536,16 @@
             <div class="inicio-context-foot" id="inicio-context-foot"></div>
           </aside>
         </div>
+
+        <section class="inicio-open-slots" id="inicio-open-slots" aria-labelledby="inicio-open-heading">
+          <div class="inicio-open-head">
+            <h2 class="inicio-open-title" id="inicio-open-heading">Próximos horários livres</h2>
+            <button type="button" class="inicio-open-all" data-inicio-open-catalog="true">
+              Ver catálogo completo →
+            </button>
+          </div>
+          <div class="inicio-open-grid" id="inicio-open-grid" aria-live="polite"></div>
+        </section>
       </div>
     </section>
 
@@ -1783,6 +1791,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261125b1"></script>
+  <script src="app.js?v=20261125c1"></script>
 </body>
 </html>

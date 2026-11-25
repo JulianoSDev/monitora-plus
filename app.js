@@ -149,29 +149,84 @@ const OFFERINGS = [
   },
 ];
 
-const INITIAL_SLOTS = [
-  { id: "sl-1", offeringId: "off-alg", dateIso: "2026-11-23", dayName: "Segunda", time: "14:00 - 14:40", capacity: 4, baseOccupied: 1 },
-  { id: "sl-2", offeringId: "off-alg", dateIso: "2026-11-23", dayName: "Segunda", time: "15:00 - 15:40", capacity: 4, baseOccupied: 2 },
-  { id: "sl-3", offeringId: "off-alg", dateIso: "2026-11-23", dayName: "Segunda", time: "16:30 - 17:10", capacity: 3, baseOccupied: 3 },
-  { id: "sl-4", offeringId: "off-alg", dateIso: "2026-11-26", dayName: "Quinta", time: "14:00 - 14:40", capacity: 4, baseOccupied: 2 },
+function buildUpcomingBusinessSlotDate(businessOffset, timeStr) {
+  const now = new Date();
+  const [startH, startM] = String(timeStr || "14:00")
+    .split(" - ")[0]
+    .split(":")
+    .map(Number);
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
 
-  { id: "sl-7", offeringId: "off-ihc", dateIso: "2026-11-24", dayName: "Terça", time: "15:00 - 15:40", capacity: 4, baseOccupied: 2 },
-  { id: "sl-8", offeringId: "off-ihc", dateIso: "2026-11-25", dayName: "Quarta", time: "14:00 - 14:40", capacity: 4, baseOccupied: 0 },
-  { id: "sl-9", offeringId: "off-ihc", dateIso: "2026-11-26", dayName: "Quinta", time: "16:30 - 17:10", capacity: 3, baseOccupied: 1 },
+  const advanceToWeekday = (dateObj) => {
+    while (dateObj.getDay() === 0 || dateObj.getDay() === 6) {
+      dateObj.setDate(dateObj.getDate() + 1);
+    }
+  };
 
-  { id: "sl-10", offeringId: "off-es", dateIso: "2026-11-24", dayName: "Terça", time: "15:00 - 15:40", capacity: 4, baseOccupied: 2 },
-  { id: "sl-11", offeringId: "off-es", dateIso: "2026-11-25", dayName: "Quarta", time: "18:30 - 19:10", capacity: 4, baseOccupied: 3 },
-  { id: "sl-12", offeringId: "off-es", dateIso: "2026-11-27", dayName: "Sexta", time: "14:00 - 14:40", capacity: 3, baseOccupied: 2 },
+  if (businessOffset === 0) {
+    advanceToWeekday(d);
+    const candidateStart = new Date(
+      d.getFullYear(),
+      d.getMonth(),
+      d.getDate(),
+      Number.isFinite(startH) ? startH : 14,
+      Number.isFinite(startM) ? startM : 0,
+      0,
+      0
+    );
+    if (candidateStart.getTime() <= now.getTime() + 15 * 60000) {
+      d.setDate(d.getDate() + 1);
+      advanceToWeekday(d);
+    }
+  } else {
+    let remaining = businessOffset;
+    while (remaining > 0) {
+      d.setDate(d.getDate() + 1);
+      if (d.getDay() !== 0 && d.getDay() !== 6) remaining -= 1;
+    }
+  }
 
-  { id: "sl-13", offeringId: "off-aoc", dateIso: "2026-11-23", dayName: "Segunda", time: "18:30 - 19:10", capacity: 4, baseOccupied: 1 },
-  { id: "sl-14", offeringId: "off-aoc", dateIso: "2026-11-27", dayName: "Sexta", time: "15:00 - 15:40", capacity: 4, baseOccupied: 2 },
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return {
+    dateIso: `${y}-${m}-${day}`,
+    dayName: FULL_WEEKDAYS[d.getDay()] || "Segunda",
+  };
+}
 
-  { id: "sl-15", offeringId: "off-md", dateIso: "2026-11-24", dayName: "Terça", time: "18:30 - 19:10", capacity: 5, baseOccupied: 2 },
-  { id: "sl-16", offeringId: "off-md", dateIso: "2026-11-26", dayName: "Quinta", time: "16:30 - 17:10", capacity: 3, baseOccupied: 3 },
+function buildInitialSlots() {
+  const templates = [
+    { id: "sl-1", offeringId: "off-alg", offset: 1, time: "14:00 - 14:40", capacity: 4, baseOccupied: 1 },
+    { id: "sl-2", offeringId: "off-alg", offset: 2, time: "15:00 - 15:40", capacity: 4, baseOccupied: 2 },
+    { id: "sl-3", offeringId: "off-alg", offset: 3, time: "16:30 - 17:10", capacity: 3, baseOccupied: 3 },
+    { id: "sl-4", offeringId: "off-alg", offset: 4, time: "14:00 - 14:40", capacity: 4, baseOccupied: 2 },
 
-  { id: "sl-17", offeringId: "off-ing", dateIso: "2026-11-25", dayName: "Quarta", time: "16:30 - 17:10", capacity: 5, baseOccupied: 1 },
-  { id: "sl-18", offeringId: "off-ing", dateIso: "2026-11-30", dayName: "Segunda", time: "18:30 - 19:10", capacity: 4, baseOccupied: 1 },
-];
+    { id: "sl-7", offeringId: "off-ihc", offset: 1, time: "15:00 - 15:40", capacity: 4, baseOccupied: 2 },
+    { id: "sl-8", offeringId: "off-ihc", offset: 0, time: "16:30 - 17:10", capacity: 4, baseOccupied: 0 },
+    { id: "sl-9", offeringId: "off-ihc", offset: 2, time: "16:30 - 17:10", capacity: 3, baseOccupied: 1 },
+
+    { id: "sl-10", offeringId: "off-es", offset: 1, time: "15:00 - 15:40", capacity: 4, baseOccupied: 2 },
+    { id: "sl-11", offeringId: "off-es", offset: 0, time: "18:30 - 19:10", capacity: 4, baseOccupied: 3 },
+    { id: "sl-12", offeringId: "off-es", offset: 2, time: "14:00 - 14:40", capacity: 3, baseOccupied: 2 },
+
+    { id: "sl-13", offeringId: "off-aoc", offset: 1, time: "18:30 - 19:10", capacity: 4, baseOccupied: 1 },
+    { id: "sl-14", offeringId: "off-aoc", offset: 2, time: "15:00 - 15:40", capacity: 4, baseOccupied: 2 },
+
+    { id: "sl-15", offeringId: "off-md", offset: 1, time: "18:30 - 19:10", capacity: 5, baseOccupied: 2 },
+    { id: "sl-16", offeringId: "off-md", offset: 2, time: "16:30 - 17:10", capacity: 3, baseOccupied: 3 },
+
+    { id: "sl-17", offeringId: "off-ing", offset: 0, time: "16:30 - 17:10", capacity: 5, baseOccupied: 1 },
+    { id: "sl-18", offeringId: "off-ing", offset: 3, time: "18:30 - 19:10", capacity: 4, baseOccupied: 1 },
+  ];
+
+  return templates.map(({ offset, ...tpl }) => {
+    const { dateIso, dayName } = buildUpcomingBusinessSlotDate(offset, tpl.time);
+    return { ...tpl, dateIso, dayName };
+  });
+}
+
+const INITIAL_SLOTS = buildInitialSlots();
 
 const INITIAL_BOOKINGS = [
   {
@@ -268,8 +323,8 @@ const ui = {
   mobileMatrixDay: null,
   activeSettingsTab: "geral",
   selectedOfferingId: null,
-  calYear: 2026,
-  calMonth: 10,
+  calYear: new Date().getFullYear(),
+  calMonth: new Date().getMonth(),
   selectedDateIso: null,
   selectedSlotId: null,
   step3Completed: false,
@@ -1888,6 +1943,55 @@ function getSlotStartDate(dateIso, timeStr) {
   return new Date(p.year, p.month, p.day, Number.isFinite(hh) ? hh : 14, Number.isFinite(mm) ? mm : 0, 0, 0);
 }
 
+function isSlotUpcoming(slot, nowMs = Date.now()) {
+  if (!slot) return false;
+  const start = getSlotStartDate(slot.dateIso, slot.time);
+  if (!start) return false;
+  return start.getTime() >= nowMs - 40 * 60000;
+}
+
+function getOfferingNextUpcomingSlot(offeringId, nowMs = Date.now()) {
+  return (
+    state.slots
+      .filter((s) => s.offeringId === offeringId && isSlotUpcoming(s, nowMs) && getSlotRemaining(s) > 0)
+      .slice()
+      .sort((a, b) => {
+        const ta = getSlotStartDate(a.dateIso, a.time)?.getTime() || 0;
+        const tb = getSlotStartDate(b.dateIso, b.time)?.getTime() || 0;
+        return ta - tb;
+      })[0] || null
+  );
+}
+
+function getOfferingUpcomingRemainingTotal(offeringId, nowMs = Date.now()) {
+  return state.slots
+    .filter((s) => s.offeringId === offeringId && isSlotUpcoming(s, nowMs))
+    .reduce((acc, s) => acc + getSlotRemaining(s), 0);
+}
+
+function getMonitorDisciplineStats(offeringId, nowMs = Date.now()) {
+  const allSlots = state.slots
+    .filter((s) => s.offeringId === offeringId)
+    .map((slot) => {
+      const startDate = getSlotStartDate(slot.dateIso, slot.time);
+      const startMs = startDate ? startDate.getTime() : 0;
+      const occupied = Math.min(slot.capacity, getSlotOccupied(slot));
+      return { slot, occupied, startMs, isUpcoming: startMs >= nowMs - 40 * 60000 };
+    })
+    .sort((a, b) => a.startMs - b.startMs);
+
+  const upcomingSlots = allSlots.filter((item) => item.isUpcoming);
+  const totalOccupied = upcomingSlots.reduce((sum, item) => sum + item.occupied, 0);
+  const totalCapacity = upcomingSlots.reduce((sum, item) => sum + item.slot.capacity, 0);
+  return {
+    allSlots,
+    upcomingSlots,
+    publishedCount: upcomingSlots.length,
+    totalOccupied,
+    totalCapacity,
+  };
+}
+
 function formatRelativeCountdown(slot) {
   const start = getSlotStartDate(slot.dateIso, slot.time);
   const startTime = (slot.time || "").split(" - ")[0] || slot.time;
@@ -1987,10 +2091,12 @@ function renderInicioSearchPopover(rawQuery) {
       </div>
     `;
   } else {
+    const nowMs = Date.now();
     pop.innerHTML = matches
       .map((off, idx) => {
-        const free = getOfferingRemainingTotal(off.id);
-        const nextLbl = getOfferingNextSlotLabel(off.id);
+        const free = getOfferingUpcomingRemainingTotal(off.id, nowMs);
+        const nextSlot = getOfferingNextUpcomingSlot(off.id, nowMs);
+        const nextLbl = nextSlot ? `Próx.: ${formatTimelineWhen(nextSlot)}` : "Sem horários futuros";
         const vacTxt = free > 0 ? formatVagas(free, false) : "Lotado";
         return `
           <button
@@ -2021,38 +2127,15 @@ function renderInicio() {
 
   const dateEl = document.getElementById("inicio-date");
   const greetEl = document.getElementById("inicio-greeting");
-  const chipsEl = document.getElementById("inicio-quick-chips");
   const passEl = document.getElementById("inicio-pass-card");
   const timelineEl = document.getElementById("inicio-timeline");
   const ctxFootEl = document.getElementById("inicio-context-foot");
+  const openGridEl = document.getElementById("inicio-open-grid");
+  const openSectionEl = document.getElementById("inicio-open-slots");
   if (!passEl || !timelineEl || !ctxFootEl) return;
 
   if (dateEl) dateEl.textContent = formatInicioTodayLabel();
   if (greetEl) greetEl.textContent = formatInicioGreeting(user);
-
-  // Atalhos rápidos dinâmicos: até 3 disciplinas com vagas + Ver catálogo ->
-  if (chipsEl) {
-    const withVacancies = OFFERINGS.map((off) => ({
-      off,
-      free: getOfferingRemainingTotal(off.id),
-    }))
-      .filter((x) => x.free > 0)
-      .sort((a, b) => b.free - a.free)
-      .slice(0, 3);
-
-    chipsEl.innerHTML =
-      withVacancies
-        .map(
-          ({ off, free }) => `
-          <button type="button" class="inicio-quick-chip" data-inicio-pick-offering="${escapeHtml(off.id)}">
-            <span>${escapeHtml(off.shortSubject)}</span>
-            <span class="inicio-quick-chip-meta">· ${escapeHtml(formatVagas(free, false))}</span>
-          </button>
-        `
-        )
-        .join("") +
-      `<button type="button" class="inicio-quick-catalog" data-inicio-open-catalog="true">Ver catálogo →</button>`;
-  }
 
   const nowMs = Date.now();
   const activeStudentBookings = state.bookings
@@ -2066,32 +2149,20 @@ function renderInicio() {
     .filter((item) => item.slot && item.off)
     .sort((a, b) => a.startMs - b.startMs);
 
-  const upcomingStudentBookings = activeStudentBookings.filter((item) => item.startMs >= nowMs - 40 * 60000);
-  const nextStudentItem = upcomingStudentBookings[0] || activeStudentBookings[0] || null;
+  // Filtro rigoroso de datas futuras: nunca exibe uma data passada como "Próxima sessão"
+  const upcomingStudentBookings = activeStudentBookings.filter((item) => isSlotUpcoming(item.slot, nowMs));
+  const nextStudentItem = upcomingStudentBookings[0] || null;
 
   const isMonitor = user.role === "monitor";
   const monitorOff = isMonitor ? getOffering(user.offeringId) : null;
-  const monitorSlots = isMonitor
-    ? state.slots
-        .filter((s) => s.offeringId === user.offeringId)
-        .map((slot) => {
-          const startDate = getSlotStartDate(slot.dateIso, slot.time);
-          const occupied = Math.min(slot.capacity, getSlotOccupied(slot));
-          return { slot, occupied, startMs: startDate ? startDate.getTime() : 0 };
-        })
-        .sort((a, b) => a.startMs - b.startMs)
-    : [];
-  const upcomingMonitorSlots = monitorSlots.filter((item) => item.startMs >= nowMs - 40 * 60000);
-  const nextMonitorSlotItem = upcomingMonitorSlots[0] || monitorSlots[0] || null;
-  const monitorActiveBookings = isMonitor
-    ? state.bookings.filter((b) => {
-        const sl = state.slots.find((s) => s.id === b.slotId);
-        return Boolean(sl && sl.offeringId === user.offeringId && b.status === "Confirmado");
-      })
-    : [];
+  const monitorStats = isMonitor ? getMonitorDisciplineStats(user.offeringId, nowMs) : null;
+  const upcomingMonitorSlots = monitorStats ? monitorStats.upcomingSlots : [];
+  const nextMonitorSlotItem = upcomingMonitorSlots[0] || null;
 
   // Cartão Passe (Coluna Esquerda)
+  let passMode = "empty"; // 'student' | 'monitor' | 'empty'
   if (nextStudentItem) {
+    passMode = "student";
     const { bk, slot, off } = nextStudentItem;
     const [startTime, endTime] = String(slot.time || "").split(" - ");
     const relText = formatRelativeCountdown(slot);
@@ -2119,6 +2190,7 @@ function renderInicio() {
       </div>
     `;
   } else if (isMonitor && monitorOff && nextMonitorSlotItem) {
+    passMode = "monitor";
     const { slot, occupied } = nextMonitorSlotItem;
     const [startTime, endTime] = String(slot.time || "").split(" - ");
     const relText = formatRelativeCountdown(slot);
@@ -2160,29 +2232,37 @@ function renderInicio() {
     `;
   }
 
-  // Timeline "Sua semana" (Coluna Direita — sem caixa externa)
+  // Timeline "Sua semana" (Coluna Direita — sem caixa externa e sem repetir o que já está no Passe)
   let weekItems = [];
-  if (activeStudentBookings.length > 0) {
-    weekItems = activeStudentBookings.slice(0, 4).map((item, idx) => ({
-      isNext: item === nextStudentItem || (idx === 0 && !nextStudentItem),
-      when: formatTimelineWhen(item.slot),
-      desc:
-        activeStudentBookings.length === 1
-          ? `${item.off.shortSubject} · ${getShortMonitorName(item.off.monitor)}`
-          : `${item.off.subject} · ${getShortMonitorName(item.off.monitor)}`,
-    }));
-  } else if (isMonitor && monitorSlots.length > 0) {
-    const monList = (upcomingMonitorSlots.length > 0 ? upcomingMonitorSlots : monitorSlots).slice(0, 4);
-    weekItems = monList.map((item, idx) => ({
-      isNext: idx === 0,
-      when: formatTimelineWhen(item.slot),
-      desc: `${monitorOff ? monitorOff.shortSubject : "Monitoria"} · ${item.occupied}/${item.slot.capacity} alunos`,
-    }));
+  let weekEmptyMsg = "Nenhum compromisso futuro nesta semana.";
+
+  if (passMode === "student") {
+    const restStudent = upcomingStudentBookings.slice(1, 4);
+    if (restStudent.length > 0) {
+      weekItems = restStudent.map((item, idx) => ({
+        isNext: idx === 0,
+        when: formatTimelineWhen(item.slot),
+        desc: `${item.off.shortSubject} · ${getShortMonitorName(item.off.monitor)}`,
+      }));
+    } else {
+      weekEmptyMsg = "Nenhuma outra sessão marcada além da próxima ao lado.";
+    }
+  } else if (passMode === "monitor") {
+    const restMonitor = upcomingMonitorSlots.slice(1, 4);
+    if (restMonitor.length > 0) {
+      weekItems = restMonitor.map((item, idx) => ({
+        isNext: idx === 0,
+        when: formatTimelineWhen(item.slot),
+        desc: `${monitorOff ? monitorOff.shortSubject : "Monitoria"} · ${item.occupied}/${item.slot.capacity} alunos`,
+      }));
+    } else {
+      weekEmptyMsg = "Nenhum outro horário publicado além da próxima sessão.";
+    }
   }
 
   if (weekItems.length === 0) {
     timelineEl.classList.remove("has-items");
-    timelineEl.innerHTML = `<p class="inicio-week-empty">Nenhum compromisso futuro nesta semana.</p>`;
+    timelineEl.innerHTML = `<p class="inicio-week-empty">${escapeHtml(weekEmptyMsg)}</p>`;
   } else {
     timelineEl.classList.add("has-items");
     timelineEl.innerHTML = weekItems
@@ -2198,20 +2278,20 @@ function renderInicio() {
       .join("");
   }
 
-  // Bloco contextual inferior (Monitor vs. Estudante)
-  if (isMonitor) {
+  // Bloco contextual inferior (Monitor vs. Estudante — mesma fonte de contagem e sem botão duplicado)
+  if (isMonitor && monitorStats) {
     const subjName = monitorOff ? monitorOff.subject : "Disciplina vinculada";
-    const pubCount = monitorSlots.length;
-    const stuCount = monitorActiveBookings.length;
+    const pubCount = monitorStats.publishedCount;
+    const occCount = monitorStats.totalOccupied;
     const pubTxt = `${pubCount} ${pubCount === 1 ? "horário publicado" : "horários publicados"}`;
-    const stuTxt = `${stuCount} ${stuCount === 1 ? "aluno agendado" : "alunos agendados"}`;
+    const occTxt = `${occCount} ${occCount === 1 ? "vaga ocupada" : "vagas ocupadas"}`;
     ctxFootEl.innerHTML = `
-      <span class="inicio-ctx-title">Sua monitoria · ${escapeHtml(subjName)}</span>
-      <p class="inicio-ctx-sub">${escapeHtml(pubTxt)} · ${escapeHtml(stuTxt)}</p>
-      <button type="button" class="inicio-ctx-link" data-inicio-go="monitor">Abrir painel →</button>
+      <span class="inicio-ctx-title">${escapeHtml(subjName)}</span>
+      <p class="inicio-ctx-sub">${escapeHtml(pubTxt)} · ${escapeHtml(occTxt)}</p>
+      <button type="button" class="inicio-ctx-link" data-inicio-go-monitor-form="true">Publicar novo horário →</button>
     `;
   } else {
-    const activeCount = activeStudentBookings.length;
+    const activeCount = upcomingStudentBookings.length;
     const quotaMax = 4;
     const pct = Math.min(100, Math.round((activeCount / quotaMax) * 100));
     ctxFootEl.innerHTML = `
@@ -2224,6 +2304,39 @@ function renderInicio() {
       </div>
       <button type="button" class="inicio-ctx-link" data-inicio-go="agendamentos">Ver histórico →</button>
     `;
+  }
+
+  // Faixa aberta inferior: Próximos horários livres (até 4 disciplinas com vagas futuras reais)
+  if (openGridEl && openSectionEl) {
+    const openOfferings = OFFERINGS.map((off) => {
+      const nextSlot = getOfferingNextUpcomingSlot(off.id, nowMs);
+      const free = getOfferingUpcomingRemainingTotal(off.id, nowMs);
+      const startMs = nextSlot ? getSlotStartDate(nextSlot.dateIso, nextSlot.time)?.getTime() || Infinity : Infinity;
+      return { off, nextSlot, free, startMs };
+    })
+      .filter((item) => item.nextSlot && item.free > 0)
+      .sort((a, b) => a.startMs - b.startMs)
+      .slice(0, 4);
+
+    if (openOfferings.length === 0) {
+      openSectionEl.classList.add("is-hidden");
+    } else {
+      openSectionEl.classList.remove("is-hidden");
+      openGridEl.innerHTML = openOfferings
+        .map(
+          ({ off, nextSlot, free }) => `
+          <button type="button" class="inicio-open-item" data-inicio-pick-offering="${escapeHtml(off.id)}">
+            <span class="inicio-open-subj-row">
+              <span class="inicio-open-subj">${escapeHtml(off.shortSubject)}</span>
+              <span class="inicio-open-arrow" aria-hidden="true">→</span>
+            </span>
+            <span class="inicio-open-when">${escapeHtml(formatTimelineWhen(nextSlot))}</span>
+            <span class="inicio-open-meta">${escapeHtml(getShortMonitorName(off.monitor))} · ${escapeHtml(formatVagas(free, false))}</span>
+          </button>
+        `
+        )
+        .join("");
+    }
   }
 }
 
@@ -2925,10 +3038,7 @@ function renderStepper() {
 }
 
 function getOfferingNextSlotLabel(offeringId) {
-  const next = state.slots
-    .filter((s) => s.offeringId === offeringId && getSlotRemaining(s) > 0)
-    .slice()
-    .sort((a, b) => `${a.dateIso} ${a.time}`.localeCompare(`${b.dateIso} ${b.time}`))[0];
+  const next = getOfferingNextUpcomingSlot(offeringId);
   if (!next) return "Sem horários livres";
   const shortDay = next.dayName.slice(0, 3);
   const startTime = next.time.split(" - ")[0] || next.time;
@@ -4545,6 +4655,20 @@ function bindEvents() {
       closeInicioSearchPopover();
       ui.step = 1;
       switchView("agendar", true);
+      return;
+    }
+    const goMonitorFormBtn = e.target.closest("[data-inicio-go-monitor-form]");
+    if (goMonitorFormBtn) {
+      switchView("monitor", true);
+      requestAnimationFrame(() => {
+        if (window.innerWidth <= 768) {
+          openMonitorSlotSheet();
+        } else {
+          const target = document.getElementById("ms-date-trigger") || document.getElementById("ms-time");
+          target?.scrollIntoView({ behavior: "smooth", block: "center" });
+          target?.focus();
+        }
+      });
       return;
     }
     const goBtn = e.target.closest("[data-inicio-go]");

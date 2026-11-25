@@ -2356,7 +2356,7 @@ body.theme-contrast .booking-actions .btn-danger {
 /* ==================== TOAST ==================== */
 .toast {
   position: fixed;
-  bottom: 22px;
+  bottom: 56px;
   right: 22px;
   z-index: 140;
   min-width: 296px;
@@ -5678,49 +5678,6 @@ body.theme-contrast .inicio-search-popover {
   color: var(--text-secondary);
 }
 
-.inicio-quick-row {
-  margin-top: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.inicio-quick-chip {
-  min-height: 30px;
-  padding: 0 11px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-secondary);
-  font-family: var(--font-sans);
-  font-size: 0.78rem;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  transition: border-color var(--dur-micro) ease, background-color var(--dur-micro) ease,
-    color var(--dur-micro) ease, transform var(--dur-micro) var(--ease-out);
-}
-
-.inicio-quick-chip:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-hover);
-  color: var(--text);
-}
-
-.inicio-quick-chip:active {
-  transform: scale(0.985);
-}
-
-.inicio-quick-chip-meta {
-  color: var(--text-muted);
-  font-weight: 400;
-}
-
 .inicio-quick-catalog {
   min-height: 30px;
   padding: 0 8px;
@@ -5740,6 +5697,145 @@ body.theme-contrast .inicio-search-popover {
 
 .inicio-quick-catalog:hover {
   opacity: 0.82;
+}
+
+/* Faixa aberta inferior: Próximos horários livres (4 colunas editoriais leves) */
+.inicio-open-slots {
+  position: relative;
+  z-index: 1;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+#view-inicio.is-active .inicio-open-slots {
+  animation: inicioBlockEnter 220ms var(--ease-out) 120ms both;
+}
+
+.inicio-open-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.inicio-open-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.inicio-open-all {
+  border: none;
+  background: transparent;
+  padding: 2px 0;
+  color: var(--accent-text);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--dur-micro) ease;
+}
+
+.inicio-open-all:hover {
+  opacity: 0.82;
+}
+
+.inicio-open-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.inicio-open-item {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background-color var(--dur-micro) ease, border-color var(--dur-micro) ease;
+}
+
+.inicio-open-item:hover {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.inicio-open-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  background: var(--surface);
+  border-color: var(--border-strong);
+}
+
+body.theme-contrast .inicio-open-item {
+  border-color: var(--border);
+}
+
+body.theme-contrast .inicio-open-item:hover {
+  border-color: var(--accent);
+}
+
+.inicio-open-subj-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.inicio-open-subj {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inicio-open-arrow {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  opacity: 0;
+  transform: translateX(-3px);
+  transition: opacity var(--dur-micro) ease, transform var(--dur-micro) var(--ease-out), color var(--dur-micro) ease;
+}
+
+.inicio-open-item:hover .inicio-open-arrow,
+.inicio-open-item:focus-visible .inicio-open-arrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--accent-text);
+}
+
+.inicio-open-when {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.inicio-open-meta {
+  font-size: 0.78125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Bloco 2: Grade Assimétrica Inferior (1.35fr / 1fr) */
@@ -6071,7 +6167,8 @@ body.a11y-pause-distractions .inicio-pass-card::before {
 @media (prefers-reduced-motion: reduce) {
   #view-inicio.is-active .inicio-command,
   #view-inicio.is-active .inicio-pass-card,
-  #view-inicio.is-active .inicio-week {
+  #view-inicio.is-active .inicio-week,
+  #view-inicio.is-active .inicio-open-slots {
     animation: none !important;
   }
   .inicio-pass-card::before {
@@ -6086,9 +6183,11 @@ body.a11y-pause-distractions .inicio-pass-card::before {
 body.a11y-reduced-motion #view-inicio.is-active .inicio-command,
 body.a11y-reduced-motion #view-inicio.is-active .inicio-pass-card,
 body.a11y-reduced-motion #view-inicio.is-active .inicio-week,
+body.a11y-reduced-motion #view-inicio.is-active .inicio-open-slots,
 body.a11y-pause-distractions #view-inicio.is-active .inicio-command,
 body.a11y-pause-distractions #view-inicio.is-active .inicio-pass-card,
-body.a11y-pause-distractions #view-inicio.is-active .inicio-week {
+body.a11y-pause-distractions #view-inicio.is-active .inicio-week,
+body.a11y-pause-distractions #view-inicio.is-active .inicio-open-slots {
   animation: none !important;
 }
 
