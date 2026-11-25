@@ -20,8 +20,8 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="styles.css?v=20261125h1" />
-  <link rel="stylesheet" href="mobile.css?v=20261125h1" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="styles.css?v=20261125i1" />
+  <link rel="stylesheet" href="mobile.css?v=20261125i1" media="(max-width: 768px)" />
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="theme-light is-landing-mode">
@@ -288,7 +288,7 @@
                   <span class="auth-title-desktop">Entrar no <span translate="no">Monitora+</span></span>
                   <span class="auth-title-mobile">Acesse sua conta</span>
                 </h2>
-                <p id="auth-head-sub">Acesse com sua matrícula ou e-mail institucional.</p>
+                <p id="auth-head-sub">Acesse com sua matrícula ou e-mail.</p>
               </div>
 
               <!-- SSO Institucional em 2 colunas simétricas (visível apenas em Entrar) -->
@@ -323,7 +323,7 @@
                     type="text"
                     id="login-identifier"
                     name="identifier"
-                    placeholder="2026101 ou nome@academico.edu.br"
+                    placeholder="2026101 ou seu@email.com"
                     autocomplete="username"
                     spellcheck="false"
                     required
@@ -426,8 +426,8 @@
 
                 <div class="field-row">
                   <div class="field">
-                    <label for="reg-email">E-mail institucional</label>
-                    <input type="email" id="reg-email" name="email" placeholder="voce@edu.br" autocomplete="email" spellcheck="false" required />
+                    <label for="reg-email">E-mail</label>
+                    <input type="email" id="reg-email" name="email" placeholder="seu@email.com" autocomplete="email" spellcheck="false" required />
                   </div>
                   <div class="field">
                     <label for="reg-password">Senha</label>
@@ -663,6 +663,17 @@
               <span class="heading-mobile">Agendar</span>
               <span class="mobile-step-counter" id="mobile-step-counter">1 de 3</span>
             </h1>
+            <button
+              type="button"
+              class="step1-mobile-view-btn"
+              id="btn-step1-mobile-view"
+              aria-pressed="false"
+              title="Alternar para grade semanal"
+            >
+              <svg class="icon-view-grid" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+              <svg class="icon-view-list is-hidden" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              <span id="step1-mobile-view-label">Grade</span>
+            </button>
             <div class="layout-toggle step1-layout-mobile" role="group" aria-label="Formato de exibição">
               <button type="button" class="layout-btn is-active" data-step1-layout="list" aria-pressed="true" title="Exibir em lista">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -679,22 +690,42 @@
             <span class="sub-mobile">Sessões de 40 min · Escolha disciplina ou monitor.</span>
           </p>
 
-          <div class="search-wrap">
-            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" />
-              <path d="M20 20l-3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-            </svg>
-            <input
-              type="search"
-              id="input-search"
-              name="search"
-              class="search-input"
-              placeholder="Buscar disciplina ou monitor (/)"
-              aria-label="Buscar disciplina, assunto ou monitor"
-              autocomplete="off"
-              spellcheck="false"
-            />
+          <div class="step1-search-bar">
+            <div class="search-wrap">
+              <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" />
+                <path d="M20 20l-3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              <input
+                type="search"
+                id="input-search"
+                name="search"
+                class="search-input"
+                placeholder="Buscar disciplina ou monitor (/)"
+                aria-label="Buscar disciplina, assunto ou monitor"
+                autocomplete="off"
+                spellcheck="false"
+              />
+            </div>
+            <button
+              type="button"
+              class="step1-mobile-filters-btn"
+              id="btn-step1-open-filters"
+              aria-haspopup="dialog"
+              aria-expanded="false"
+              aria-controls="step1-filters-sheet"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="7" y1="12" x2="17" y2="12" />
+                <line x1="10" y1="18" x2="14" y2="18" />
+              </svg>
+              <span>Filtros</span>
+              <span class="step1-filter-count is-hidden" id="step1-filter-count" aria-live="polite">0</span>
+            </button>
           </div>
+
+          <div id="step1-active-filters-row" class="step1-active-filters is-hidden" aria-label="Filtros aplicados"></div>
 
           <div class="step1-tools-row">
             <div class="mode-filter-group" id="mode-filter-group" role="group" aria-label="Filtrar por modalidade">
@@ -809,7 +840,7 @@
             <div class="s3-mobile-strip">
               <div class="s3-mobile-strip-top">
                 <p class="s3-mobile-subject" id="s3-mobile-subject"></p>
-                <button type="button" class="ghost-link s3-mobile-change-btn" id="btn-back-step2-mobile">Alterar</button>
+                <button type="button" class="ghost-link s3-mobile-change-btn" id="btn-back-step2-mobile">Alterar horário</button>
               </div>
               <p class="s3-mobile-datetime" id="s3-mobile-datetime"></p>
               <p class="s3-mobile-meta" id="s3-mobile-meta"></p>
@@ -848,7 +879,7 @@
               </span>
               <button type="button" class="ghost-link" id="btn-s3-switch-account">
                 <span class="s3-switch-desktop">Trocar conta</span>
-                <span class="s3-switch-mobile">Trocar</span>
+                <span class="s3-switch-mobile">Trocar conta</span>
               </button>
             </div>
 
@@ -1829,6 +1860,45 @@
     </div>
   </div>
 
+  <!-- Bottom Sheet de Filtros (Etapa 1 Mobile) -->
+  <div id="step1-filters-backdrop" class="filters-sheet-backdrop is-hidden" aria-hidden="true"></div>
+  <div
+    id="step1-filters-sheet"
+    class="filters-sheet is-hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="step1-filters-title"
+  >
+    <div class="filters-sheet-handle" aria-hidden="true"><span></span></div>
+    <div class="filters-sheet-head">
+      <h2 id="step1-filters-title">Filtros</h2>
+      <button type="button" class="icon-btn filters-sheet-close" id="btn-close-step1-filters" aria-label="Fechar filtros">
+        ✕
+      </button>
+    </div>
+
+    <div class="filters-sheet-body">
+      <div class="filters-sheet-group">
+        <span class="filters-sheet-label">Modalidade</span>
+        <div class="filters-sheet-options" id="filters-sheet-mode-options" role="group" aria-label="Modalidade">
+          <button type="button" class="filter-opt-chip" data-draft-mode="Todas" aria-pressed="true">Todas</button>
+          <button type="button" class="filter-opt-chip" data-draft-mode="Presencial" aria-pressed="false">Presencial</button>
+          <button type="button" class="filter-opt-chip" data-draft-mode="Online" aria-pressed="false">Online</button>
+        </div>
+      </div>
+
+      <div class="filters-sheet-group">
+        <span class="filters-sheet-label">Disciplina</span>
+        <div class="filters-sheet-options" id="filters-sheet-subject-options" role="group" aria-label="Disciplina"></div>
+      </div>
+    </div>
+
+    <div class="filters-sheet-foot">
+      <button type="button" class="btn btn-secondary" id="btn-filters-clear">Limpar</button>
+      <button type="button" class="btn btn-primary" id="btn-filters-apply">Aplicar</button>
+    </div>
+  </div>
+
   <div id="monitor-slot-sheet-backdrop" class="monitor-sheet-backdrop is-hidden" aria-hidden="true"></div>
   <div id="profile-sheet-backdrop" class="profile-sheet-backdrop is-hidden" aria-hidden="true"></div>
 
@@ -1839,8 +1909,8 @@
     </div>
   </footer>
 
-  <script src="api-config.js?v=20261125h1"></script>
-  <script src="api.js?v=20261125h1"></script>
-  <script src="app.js?v=20261125h1"></script>
+  <script src="api-config.js?v=20261125i1"></script>
+  <script src="api.js?v=20261125i1"></script>
+  <script src="app.js?v=20261125i1"></script>
 </body>
 </html>

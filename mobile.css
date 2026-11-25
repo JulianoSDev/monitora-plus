@@ -58,7 +58,8 @@ body.is-scroll-locked {
 
 .modal-backdrop,
 .profile-sheet-backdrop,
-.monitor-sheet-backdrop {
+.monitor-sheet-backdrop,
+.filters-sheet-backdrop {
   touch-action: none;
   overscroll-behavior: none;
 }
@@ -69,6 +70,7 @@ body.is-scroll-locked {
 .confirm-modal-box,
 .sso-modal-box,
 .profile-dropdown.is-mobile-sheet,
+.filters-sheet,
 #form-new-slot.is-mobile-sheet-open {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
@@ -169,12 +171,12 @@ body.theme-contrast .topbar {
   display: none;
 }
 
-/* Avatar circular discreto (34px) à direita sem texto + seta */
+/* Avatar circular discreto (40px — alvo de toque confortável) à direita sem texto + seta */
 .student-chip-btn {
-  min-height: 34px;
-  height: 34px;
-  width: 34px;
-  min-width: 34px;
+  min-height: 40px;
+  height: 40px;
+  width: 40px;
+  min-width: 40px;
   padding: 0;
   border-radius: 50%;
   border: 1px solid var(--border-strong);
@@ -217,20 +219,20 @@ body.theme-contrast .student-chip-btn {
 }
 
 .main-shell {
-  padding: 12px 16px calc(86px + env(safe-area-inset-bottom));
+  padding: 22px 16px calc(86px + env(safe-area-inset-bottom, 0px));
   max-width: 100%;
 }
 
 body.has-mobile-sticky-cta .main-shell {
-  padding-bottom: calc(28px + env(safe-area-inset-bottom));
+  padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
 }
 
 body.has-mobile-bottom-cta .main-shell {
-  padding-bottom: calc(82px + env(safe-area-inset-bottom));
+  padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
 }
 
 body.has-mobile-sticky-cta.is-mobile-input-focused .main-shell {
-  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  padding-bottom: calc(180px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Bottom Tab Bar nativa moderna (58px + safe-area, blur sutil e pílula no ícone ativo) */
@@ -619,30 +621,53 @@ body.theme-contrast .msp-seg:not(.is-active):not(.is-done) {
   line-height: 1.1;
 }
 
-.step1-layout-mobile {
-  display: inline-flex;
-  flex-shrink: 0;
-  padding: 3px;
-  border-radius: 10px;
-  background: var(--m-seg-track);
-  border: 1px solid var(--m-card-border);
-}
-
-.step1-layout-mobile .layout-btn {
-  min-height: 32px;
-  height: 32px;
-  padding: 0 10px;
-  border-radius: 7px;
-  font-size: 0.76rem;
-  font-weight: 500;
-}
-
-.step1-layout-mobile .layout-btn.is-active {
-  font-weight: 600;
-}
-
-.step1-layout-desktop {
+.step1-layout-mobile,
+.step1-layout-desktop,
+.filter-bar-row,
+.step1-tools-row {
   display: none !important;
+}
+
+/* Botão secundário discreto para alternar Grade / Lista no cabeçalho */
+.step1-mobile-view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-height: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--m-card-border-strong);
+  background: var(--m-card-bg);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, transform var(--dur-micro) var(--ease-out);
+}
+
+.step1-mobile-view-btn:active {
+  transform: scale(0.97);
+}
+
+.step1-mobile-view-btn.is-active {
+  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+body.theme-contrast .step1-mobile-view-btn {
+  border: 2px solid var(--border);
+  color: var(--text);
+}
+
+body.theme-contrast .step1-mobile-view-btn.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
 }
 
 /* Subtítulo oculto na Etapa 1 mobile (40 min contextual na Etapa 2) */
@@ -650,14 +675,25 @@ body.theme-contrast .msp-seg:not(.is-active):not(.is-done) {
   display: none;
 }
 
-.search-wrap {
+/* Barra compacta: Busca + Botão Filtros (abre Bottom Sheet com Modalidade e Disciplina) */
+.step1-search-bar {
   order: 2;
   margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.search-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-top: 0;
 }
 
 .search-input {
-  min-height: 42px;
-  height: 42px;
+  min-height: 44px;
+  height: 44px;
   padding: 8px 14px 8px 38px;
   border-radius: 12px;
   background: var(--m-input-bg);
@@ -682,116 +718,292 @@ body.theme-contrast .search-input {
   opacity: 0.72;
 }
 
-/* Faixa horizontal de disciplinas com fade suave à direita (nunca corta seco) */
-.filter-bar-row {
-  order: 3;
-  margin-top: 10px;
-  border-bottom: none !important;
-}
-
-.underline-tabs {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+.step1-mobile-filters-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: 6px;
-  border-bottom: none;
-  padding: 2px 24px 2px 0;
-  -webkit-mask-image: linear-gradient(to right, black 88%, transparent);
-  mask-image: linear-gradient(to right, black 88%, transparent);
-}
-
-.underline-tabs .sliding-underline {
-  display: none !important;
-}
-
-.u-tab {
   flex: 0 0 auto;
-  white-space: nowrap;
-  min-height: 32px;
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--m-card-border);
+  min-height: 44px;
+  height: 44px;
+  padding: 0 13px;
+  border-radius: 12px;
+  border: 1px solid var(--m-card-border-strong);
   background: var(--m-card-bg);
-  color: var(--text-secondary);
-  font-size: 0.78rem;
-  font-weight: 500;
-  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, transform var(--dur-micro) var(--ease-out);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform var(--dur-micro) var(--ease-out);
 }
 
-.u-tab:active {
+.step1-mobile-filters-btn:active {
   transform: scale(0.97);
 }
 
-.u-tab::after {
-  display: none !important;
+.step1-mobile-filters-btn.has-active-filters {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
-.u-tab.is-active {
+body.theme-contrast .step1-mobile-filters-btn {
+  border: 2px solid var(--border);
+}
+
+body.theme-contrast .step1-mobile-filters-btn.has-active-filters {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.step1-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+body.theme-contrast .step1-mobile-filters-btn.has-active-filters .step1-filter-count {
+  background: #000000;
+  color: #facc15;
+}
+
+/* Chips removíveis dos filtros aplicados (ocultos quando não há filtros ativos) */
+.step1-active-filters {
+  order: 3;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.step1-active-filters.is-hidden {
+  display: none;
+}
+
+.active-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 10px 0 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.active-filter-chip:active {
+  transform: scale(0.97);
+}
+
+.active-filter-chip-x {
+  font-size: 0.88rem;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.active-filter-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+body.theme-contrast .active-filter-chip {
+  border: 1.5px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+/* Bottom Sheet de Filtros (Modalidade + Disciplina com estado rascunho) */
+.filters-sheet-backdrop {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 185;
+  background: rgba(0, 0, 0, 0.62);
+}
+
+.filters-sheet-backdrop:not(.is-hidden) {
+  animation: backdropFadeIn 180ms ease-out;
+}
+
+.filters-sheet-backdrop.is-hidden {
+  display: none;
+}
+
+.filters-sheet {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 195;
+  width: 100%;
+  max-height: 82dvh;
+  border-radius: 18px 18px 0 0;
+  border: 1px solid var(--border-strong);
+  border-bottom: none;
+  background: var(--surface);
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.36);
+  padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  animation: sheetSlideUp var(--dur-modal) var(--ease-out);
+}
+
+.filters-sheet.is-hidden {
+  display: none;
+}
+
+body.theme-contrast .filters-sheet {
+  border-width: 2px;
+  border-bottom: none;
+  box-shadow: none;
+}
+
+.filters-sheet-handle {
+  display: flex;
+  justify-content: center;
+  padding: 2px 0 6px;
+}
+
+.filters-sheet-handle span {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border-strong);
+}
+
+.filters-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--m-divider);
+}
+
+.filters-sheet-head h2 {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.filters-sheet-close {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 10px;
+}
+
+.filters-sheet-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 14px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.filters-sheet-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filters-sheet-label {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.filters-sheet-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-opt-chip {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--m-card-border-strong);
+  background: var(--m-card-bg);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform var(--dur-micro) var(--ease-out);
+}
+
+.filter-opt-chip:active {
+  transform: scale(0.97);
+}
+
+.filter-opt-chip.is-active {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--accent-fg);
   font-weight: 600;
 }
 
-/* Filtros secundários Presencial / Online: leves e compactos sem concorrer com disciplinas */
-.step1-tools-row {
-  order: 4;
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.mode-filter-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  border: none;
-  padding: 0;
-  flex: 0 0 auto;
-}
-
-.mode-filter-group .sliding-pill,
-.mode-filter-group [data-mode-filter="Todas"] {
-  display: none !important;
-}
-
-.mode-filter-group .layout-btn {
-  flex: 0 0 auto;
-  min-height: 28px;
-  height: 28px;
-  padding: 0 10px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: var(--m-chip-bg);
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  font-weight: 500;
-  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, transform var(--dur-micro) var(--ease-out);
-}
-
-.mode-filter-group .layout-btn:active {
-  transform: scale(0.97);
-}
-
-.mode-filter-group .layout-btn.is-active {
-  border-color: color-mix(in srgb, var(--accent) 28%, transparent) !important;
-  background: var(--accent-soft) !important;
-  color: var(--accent-text) !important;
-  font-weight: 600;
-}
-
-body.theme-contrast .mode-filter-group .layout-btn {
+body.theme-contrast .filter-opt-chip {
   border: 1.5px solid var(--border);
   color: var(--text);
 }
 
-body.theme-contrast .mode-filter-group .layout-btn.is-active {
-  border-color: var(--accent) !important;
-  background: var(--accent) !important;
-  color: var(--accent-fg) !important;
+body.theme-contrast .filter-opt-chip.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.filters-sheet-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--m-divider);
+}
+
+.filters-sheet-foot .btn {
+  flex: 1 1 0;
+  min-height: 44px;
+  height: 44px;
+  border-radius: 12px;
+  justify-content: center;
 }
 
 /* Cards da Etapa 1 (Modo Lista): contraste real de superfície, tipografia tabular-nums e respiro */
@@ -1273,10 +1485,12 @@ body.theme-contrast #step3-form-shell .step3-form {
 }
 
 #step-2 #btn-back-step1 {
-  margin: 0 0 5px;
-  padding: 0;
-  min-height: 24px;
-  font-size: 0.78rem;
+  margin: -6px 0 4px -6px;
+  padding: 0 6px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--accent-text);
 }
@@ -1512,9 +1726,12 @@ body.theme-contrast .cal-day-btn:disabled {
 .s3-mobile-change-btn {
   flex-shrink: 0;
   white-space: nowrap;
-  padding: 2px 0;
-  min-height: 26px;
-  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 8px;
+  margin: -6px -8px -6px 0;
+  min-height: 40px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--accent-text);
 }
@@ -1598,11 +1815,14 @@ body.theme-contrast .cal-day-btn:disabled {
 #btn-s3-switch-account {
   flex-shrink: 0;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--accent-text);
-  padding: 4px 2px;
-  min-height: 28px;
+  padding: 6px 8px;
+  margin: -6px -8px -6px 0;
+  min-height: 40px;
 }
 
 #step3-form-shell .field {
@@ -1659,6 +1879,8 @@ body.theme-contrast .topic-chip.is-active {
   border: 1px solid var(--m-card-border);
   line-height: 1.45;
   resize: none;
+  scroll-margin-top: 72px;
+  scroll-margin-bottom: 120px;
 }
 
 #s3-topic:focus {
@@ -1671,48 +1893,37 @@ body.theme-contrast #s3-topic {
   border: 2px solid var(--border);
 }
 
-/* Barra única de CTA ancorada diretamente na base (bottom: 0 — sem Tab Bar duplicada) */
-.mobile-sticky-cta {
+/* Barra única de CTA ancorada diretamente na base nos Passos 2 e 3 (mesma posição + safe-area) */
+.mobile-sticky-cta,
+#step3-form-shell .step3-actions {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 60;
+  margin: 0;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
-  padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
-}
-
-#btn-go-step3 {
-  min-height: 46px;
-  border-radius: 12px;
-}
-
-/* Etapa 3: Botão fluindo naturalmente logo abaixo do card (sem barra fixa nem espaço morto) */
-#step3-form-shell .step3-actions {
-  position: static;
-  margin: 14px 0 0;
-  padding: 0;
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border-top: none;
+  padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px));
   display: flex;
   gap: 8px;
   flex-wrap: nowrap;
 }
 
-body.theme-contrast .mobile-sticky-cta {
+body.theme-contrast .mobile-sticky-cta,
+body.theme-contrast #step3-form-shell .step3-actions {
   background: var(--surface);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   border-top: 2px solid var(--border);
 }
 
+#btn-go-step3,
 #step3-form-shell .step3-actions .btn {
-  min-height: 46px;
+  min-height: 44px;
+  height: 44px;
   border-radius: 12px;
   flex: 1 1 auto;
 }
@@ -2023,6 +2234,48 @@ body.theme-contrast .confirm-summary-row.is-stacked dd {
 }
 
 /* Meus Agendamentos: 4 filtros 100% visíveis sem corte à esquerda ("Todos") */
+.underline-tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  gap: 6px;
+  border-bottom: none;
+}
+
+.underline-tabs .sliding-underline {
+  display: none !important;
+}
+
+.u-tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  min-height: 36px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--m-card-border);
+  background: var(--m-card-bg);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 500;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, transform var(--dur-micro) var(--ease-out);
+}
+
+.u-tab:active {
+  transform: scale(0.97);
+}
+
+.u-tab::after {
+  display: none !important;
+}
+
+.u-tab.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
 #view-agendamentos .view-head-row {
   flex-direction: column;
   align-items: stretch;
@@ -2041,8 +2294,8 @@ body.theme-contrast .confirm-summary-row.is-stacked dd {
 
 #view-agendamentos .u-tab {
   flex: 1 1 auto;
-  min-height: 32px;
-  height: 32px;
+  min-height: 36px;
+  height: 36px;
   padding: 0 7px;
   font-size: 0.75rem;
   display: inline-flex;
@@ -2703,7 +2956,7 @@ body.is-landing-mode #settings-modal {
   border-right: none;
   border-bottom: none;
   background: var(--bg);
-  padding: 14px 16px 28px;
+  padding: 22px 16px 28px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -2921,7 +3174,7 @@ body.theme-contrast .settings-user-foot {
 
 .settings-main-head {
   flex: 0 0 auto;
-  padding: 10px 16px 12px;
+  padding: 18px 16px 12px;
   background: var(--bg);
   border-bottom: 1px solid var(--m-divider);
   align-items: flex-start;
@@ -3191,26 +3444,26 @@ body.theme-contrast .settings-row {
   flex: 1;
   min-height: 100dvh;
   background: var(--surface);
-  padding: max(22px, calc(env(safe-area-inset-top) + 16px)) 20px max(18px, calc(env(safe-area-inset-bottom) + 14px));
+  padding: calc(44px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
 }
 
-/* Eixo visual único: marca centralizada diretamente acima do título do formulário com respiro */
+/* Eixo visual único: Login e Cadastro ancorados no mesmo ponto equilibrado do topo */
 .mobile-landing-bar {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   max-width: 400px;
-  margin: auto auto 22px;
+  margin: 0 auto 20px;
   padding: 0;
 }
 
 body.is-auth-register .mobile-landing-bar {
-  margin: 4px auto 18px;
+  margin: 0 auto 20px;
 }
 
 .auth-title-desktop {
@@ -3238,11 +3491,11 @@ body.is-auth-register .mobile-landing-bar {
   letter-spacing: -0.025em;
 }
 
-/* Centralização óptica (~45% superior) no Entrar; rolagem natural no Criar conta */
+/* Alinhamento consistente entre Login e Criar conta */
 .assaad-card {
   max-width: 400px;
   width: 100%;
-  margin: 0 auto 4vh;
+  margin: 0 auto 20px;
   background: transparent;
   border: none;
   border-radius: 0;
@@ -3503,7 +3756,7 @@ body.is-scroll-locked div[vw] [vw-access-button] {
 
 /* ==================== 11. TELA INÍCIO NATIVA MOBILE (<= 768px) ==================== */
 .inicio-shell {
-  padding-top: 2px;
+  padding-top: 0;
 }
 
 .inicio-command {
@@ -3582,10 +3835,23 @@ body.is-scroll-locked div[vw] [vw-access-button] {
   gap: 10px;
 }
 
+.inicio-pass-cta-desktop,
+.inicio-pass-link-desktop {
+  display: none !important;
+}
+
+.inicio-pass-cta-mobile {
+  display: inline-flex;
+  width: 100%;
+  justify-content: center;
+}
+
 .inicio-pass-cta {
   height: 44px;
   min-height: 44px;
+  width: 100%;
   padding: 0 16px;
+  justify-content: center;
 }
 
 .inicio-pass-link {
@@ -3597,6 +3863,18 @@ body.is-scroll-locked div[vw] [vw-access-button] {
 
 .inicio-week {
   padding-top: 0;
+}
+
+/* Recolhe "Sua semana" no mobile quando não houver outras sessões além do Passe */
+.inicio-week.is-week-empty .inicio-week-title,
+.inicio-week.is-week-empty .inicio-timeline {
+  display: none;
+}
+
+.inicio-week.is-week-empty .inicio-context-foot {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 .inicio-context-foot {

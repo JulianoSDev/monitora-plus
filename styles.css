@@ -4375,8 +4375,18 @@ body.theme-contrast .wcag-guard-strip[data-level="aa"] .wcag-status-badge {
 /* 2. Etapa 1 compacta no mobile (<= 768px) sem alterar o desktop */
 .step1-layout-mobile,
 .step1-sub .sub-mobile,
-.matrix-mobile-view {
+.matrix-mobile-view,
+.step1-mobile-view-btn,
+.step1-mobile-filters-btn,
+.step1-active-filters,
+.filters-sheet-backdrop,
+.filters-sheet,
+.inicio-pass-cta-mobile {
   display: none;
+}
+
+.step1-search-bar {
+  display: contents;
 }
 
 .step1-head-row {

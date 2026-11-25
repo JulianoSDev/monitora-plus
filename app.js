@@ -465,10 +465,36 @@ function renderAvatarContent(el, avatarUrl, initials) {
   }
 }
 
+const MONITOR_FALLBACK_LABEL = "Monitor ainda não informado";
+
+function isMissingMonitorName(raw) {
+  const clean = String(raw || "").trim();
+  if (!clean) return true;
+  const norm = clean
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return (
+    norm === "monitor a definir" ||
+    norm === "a definir" ||
+    norm === "monitor ainda nao informado" ||
+    norm === "nao informado"
+  );
+}
+
+function formatCleanMonitorName(monitorStr) {
+  if (isMissingMonitorName(monitorStr)) return MONITOR_FALLBACK_LABEL;
+  const cleaned = String(monitorStr || "")
+    .replace(/^Monitora?\s+/i, "")
+    .trim();
+  return cleaned || MONITOR_FALLBACK_LABEL;
+}
+
 function mapOffering(offering) {
   return { id: offering.id, subject: offering.subject, shortSubject: offering.short_subject,
     title: offering.title, mode: offering.mode, location: offering.location,
-    shortLocation: offering.short_location, monitor: offering.monitors?.join(", ") || "Monitor a definir",
+    shortLocation: offering.short_location,
+    monitor: offering.monitors?.length ? offering.monitors.join(", ") : MONITOR_FALLBACK_LABEL,
     duration: `${offering.duration_minutes || 40} minutos` };
 }
 
@@ -805,6 +831,7 @@ function formatVagas(count, withAvailable = false) {
 }
 
 function getMonitorInitials(monitorName) {
+  if (isMissingMonitorName(monitorName)) return "M";
   const clean = String(monitorName ?? "")
     .replace(/^(Monitora|Monitor)\s+/i, "")
     .replace(/\./g, "")
@@ -1635,7 +1662,11 @@ function hasAnyBlockingOverlayOpen() {
       monitorSlotForm.classList.contains("is-mobile-sheet-open") &&
       window.innerWidth <= 768
   );
-  return anyModalOpen || mobileSheetOpen || monitorSheetOpen;
+  const filtersSheet = document.getElementById("step1-filters-sheet");
+  const filtersSheetOpen = Boolean(
+    filtersSheet && !filtersSheet.classList.contains("is-hidden") && window.innerWidth <= 768
+  );
+  return anyModalOpen || mobileSheetOpen || monitorSheetOpen || filtersSheetOpen;
 }
 
 function lockBodyScroll(shouldLock) {
@@ -1972,7 +2003,7 @@ function speakCurrentScreen() {
 
   if (ui.activeView === "landing") {
     const h = document.getElementById("landing-phrase-title")?.textContent?.trim() || "Monitora+";
-    summary = `Tela inicial do Monitora+. ${h}. Você pode entrar com matrícula ou e-mail institucional, criar conta ou abrir configurações de acessibilidade.`;
+    summary = `Tela inicial do Monitora+. ${h}. Você pode entrar com matrícula ou e-mail, criar conta ou abrir configurações de acessibilidade.`;
   } else if (ui.activeView === "agendar") {
     if (ui.step === 1) {
       summary = `Etapa 1 de 3: Escolher monitoria. Filtre por disciplina ou busque pelo nome do monitor.`;
@@ -2304,7 +2335,7 @@ function syncMobileChrome() {
   const step3FormVisible = Boolean(step3Form && !step3Form.classList.contains("is-hidden"));
   const isCheckoutFocus =
     !settingsOpen && ui.activeView === "agendar" && (ui.step === 2 || (ui.step === 3 && step3FormVisible));
-  const hasStickyBottomCta = !settingsOpen && ui.activeView === "agendar" && ui.step === 2;
+  const hasStickyBottomCta = isCheckoutFocus;
   document.body.classList.toggle("has-mobile-sticky-cta", isCheckoutFocus);
   document.body.classList.toggle("has-mobile-bottom-cta", hasStickyBottomCta);
   if (getPrefs().vlibras) positionVlibrasShadowAccess();
@@ -2438,7 +2469,7 @@ function formatTimelineWhen(slot) {
 }
 
 function getShortMonitorName(fullName) {
-  return String(fullName || "").replace(/^Monitora?\s+/i, "").trim();
+  return formatCleanMonitorName(fullName);
 }
 
 function openOfferingStep2FromInicio(offeringId) {
@@ -2582,11 +2613,14 @@ function renderInicio() {
       <h2 class="inicio-pass-subject">${escapeHtml(off.subject)}</h2>
       <p class="inicio-pass-meta">${escapeHtml(getShortMonitorName(off.monitor))} · ${escapeHtml(off.shortLocation || off.location)}</p>
       <div class="inicio-pass-actions">
-        <button type="button" class="btn btn-primary inicio-pass-cta" data-inicio-ics="${escapeHtml(bk.id)}">
+        <button type="button" class="btn btn-primary inicio-pass-cta inicio-pass-cta-desktop" data-inicio-ics="${escapeHtml(bk.id)}">
           Adicionar à agenda
         </button>
-        <button type="button" class="inicio-pass-link" data-inicio-go="agendamentos">
+        <button type="button" class="inicio-pass-link inicio-pass-link-desktop" data-inicio-go="agendamentos">
           Ver detalhes →
+        </button>
+        <button type="button" class="btn btn-primary inicio-pass-cta inicio-pass-cta-mobile" data-inicio-go="agendamentos">
+          Ver atendimento
         </button>
       </div>
     `;
@@ -2613,7 +2647,7 @@ function renderInicio() {
         <button type="button" class="btn btn-primary inicio-pass-cta" data-inicio-go="monitor">
           Abrir painel →
         </button>
-        <button type="button" class="inicio-pass-link" data-inicio-open-catalog="true">
+        <button type="button" class="inicio-pass-link inicio-pass-link-desktop" data-inicio-open-catalog="true">
           Agendar monitoria →
         </button>
       </div>
@@ -2646,7 +2680,7 @@ function renderInicio() {
         desc: `${item.off.shortSubject} · ${getShortMonitorName(item.off.monitor)}`,
       }));
     } else {
-      weekEmptyMsg = "Nenhuma outra sessão marcada além da próxima ao lado.";
+      weekEmptyMsg = "Nenhuma outra sessão marcada para esta semana.";
     }
   } else if (passMode === "monitor") {
     const restMonitor = upcomingMonitorSlots.slice(1, 4);
@@ -2660,6 +2694,9 @@ function renderInicio() {
       weekEmptyMsg = "Nenhum outro horário publicado além da próxima sessão.";
     }
   }
+
+  const weekAsideEl = timelineEl.closest(".inicio-week");
+  weekAsideEl?.classList.toggle("is-week-empty", weekItems.length === 0);
 
   if (weekItems.length === 0) {
     timelineEl.classList.remove("has-items");
@@ -2744,6 +2781,7 @@ function renderInicio() {
 // ==================== NAVEGAÇÃO ====================
 function switchView(viewName, useTransition = false) {
   closeMonitorSlotSheet(false);
+  closeStep1FiltersSheet(false);
   closeInicioSearchPopover();
   document.body.classList.remove("is-mobile-input-focused");
   const user = getCurrentUser();
@@ -3096,11 +3134,11 @@ function setAuthTab(tabName) {
     if (tabName === "login") {
       headTitle.innerHTML =
         '<span class="auth-title-desktop">Entrar no Monitora+</span><span class="auth-title-mobile">Acesse sua conta</span>';
-      headSub.textContent = "Acesse com sua matrícula ou e-mail institucional.";
+      headSub.textContent = "Acesse com sua matrícula ou e-mail.";
     } else {
       headTitle.innerHTML =
         '<span class="auth-title-desktop">Criar conta no Monitora+</span><span class="auth-title-mobile">Crie sua conta</span>';
-      headSub.textContent = "Cadastre-se com seus dados institucionais.";
+      headSub.textContent = "Informe sua matrícula e seus dados de acesso.";
     }
   }
 
@@ -3147,7 +3185,7 @@ function handleLoginSubmit(e) {
   const identifier = identifierEl.value.trim();
   const password = passwordEl.value;
   const errors = [];
-  if (!identifier) errors.push({ el: identifierEl, message: "Informe sua matrícula ou e-mail institucional." });
+  if (!identifier) errors.push({ el: identifierEl, message: "Informe sua matrícula ou e-mail." });
   if (!password) errors.push({ el: passwordEl, message: "Digite sua senha para continuar." });
   if (applyFieldErrors(form, errors)) return;
   return runApiAction("auth", async () => {
@@ -3172,7 +3210,7 @@ function validateNewAccountFields({ name, ra, email, password }) {
     errors.push({ el: raEl, message: "A matrícula deve conter de 5 a 12 números." });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errors.push({ el: emailEl, message: "Informe um e-mail institucional válido." });
+    errors.push({ el: emailEl, message: "Informe um e-mail válido." });
   }
   if (password.length < 6) {
     errors.push({ el: passEl, message: "A senha deve ter no mínimo 6 caracteres." });
@@ -3300,6 +3338,7 @@ function cancelReschedule(returnToBookings = false) {
 }
 
 function setStep(stepNumber) {
+  closeStep1FiltersSheet(false);
   const applyStep = () => {
     ui.step = stepNumber;
     if (stepNumber === 1) ui.reschedulingBookingId = null;
@@ -3411,12 +3450,6 @@ function formatBookingTopic(topic) {
   return /^d[uú]vidas?\b/i.test(clean) ? clean : `Dúvida: ${clean}`;
 }
 
-function formatCleanMonitorName(monitorStr) {
-  return String(monitorStr || "")
-    .replace(/^Monitora?\s+/i, "")
-    .trim();
-}
-
 function formatCompactLocation(off) {
   if (!off) return "";
   const raw = String(off.location || off.shortLocation || "");
@@ -3468,6 +3501,146 @@ function closeMonitorSlotSheet(restoreFocus = false) {
   lastMonitorSheetTriggerEl = null;
 }
 
+// ==================== BOTTOM SHEET DE FILTROS (ETAPA 1 MOBILE — ESTADO RASCUNHO) ====================
+let step1FilterDraft = { mode: "Todas", subject: "Todas" };
+let lastStep1FiltersTriggerEl = null;
+
+function renderStep1FiltersSheetDraft() {
+  const modeWrap = document.getElementById("filters-sheet-mode-options");
+  const subjWrap = document.getElementById("filters-sheet-subject-options");
+  if (modeWrap) {
+    modeWrap.querySelectorAll("[data-draft-mode]").forEach((btn) => {
+      const active = btn.dataset.draftMode === step1FilterDraft.mode;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-pressed", String(active));
+    });
+  }
+  if (subjWrap) {
+    const subjects = ["Todas", ...OFFERINGS.map((o) => o.shortSubject)];
+    subjWrap.innerHTML = subjects
+      .map((subj) => {
+        const active = step1FilterDraft.subject === subj;
+        return `
+          <button
+            type="button"
+            class="filter-opt-chip${active ? " is-active" : ""}"
+            data-draft-subject="${escapeHtml(subj)}"
+            aria-pressed="${active}"
+          >
+            ${escapeHtml(subj)}
+          </button>
+        `;
+      })
+      .join("");
+  }
+}
+
+function openStep1FiltersSheet() {
+  if (window.innerWidth > 768) return;
+  const sheet = document.getElementById("step1-filters-sheet");
+  const backdrop = document.getElementById("step1-filters-backdrop");
+  const triggerBtn = document.getElementById("btn-step1-open-filters");
+  if (!sheet || !backdrop) return;
+  lastStep1FiltersTriggerEl = document.activeElement instanceof HTMLElement ? document.activeElement : triggerBtn;
+  step1FilterDraft = {
+    mode: ui.modeFilter || "Todas",
+    subject: ui.subjectFilter || "Todas",
+  };
+  renderStep1FiltersSheetDraft();
+  backdrop.classList.remove("is-hidden");
+  sheet.classList.remove("is-hidden");
+  triggerBtn?.setAttribute("aria-expanded", "true");
+  syncBodyScrollLock();
+  if (getPrefs().vlibras) positionVlibrasShadowAccess();
+  setTimeout(() => {
+    document.getElementById("btn-close-step1-filters")?.focus();
+  }, 40);
+}
+
+function closeStep1FiltersSheet(restoreFocus = false) {
+  const sheet = document.getElementById("step1-filters-sheet");
+  const backdrop = document.getElementById("step1-filters-backdrop");
+  const triggerBtn = document.getElementById("btn-step1-open-filters");
+  const wasOpen = Boolean(sheet && !sheet.classList.contains("is-hidden"));
+  sheet?.classList.add("is-hidden");
+  backdrop?.classList.add("is-hidden");
+  triggerBtn?.setAttribute("aria-expanded", "false");
+  syncBodyScrollLock();
+  if (getPrefs().vlibras) positionVlibrasShadowAccess();
+  if (wasOpen && restoreFocus && lastStep1FiltersTriggerEl && document.contains(lastStep1FiltersTriggerEl)) {
+    lastStep1FiltersTriggerEl.focus();
+  }
+  lastStep1FiltersTriggerEl = null;
+}
+
+function applyStep1FiltersDraft() {
+  ui.modeFilter = step1FilterDraft.mode || "Todas";
+  ui.subjectFilter = step1FilterDraft.subject || "Todas";
+  closeStep1FiltersSheet(true);
+  renderStep1();
+}
+
+function renderStep1MobileFilterState() {
+  const activeFilters = [];
+  if (ui.modeFilter && ui.modeFilter !== "Todas") {
+    activeFilters.push({ kind: "mode", label: ui.modeFilter });
+  }
+  if (ui.subjectFilter && ui.subjectFilter !== "Todas") {
+    activeFilters.push({ kind: "subject", label: ui.subjectFilter });
+  }
+
+  const count = activeFilters.length;
+  const openBtn = document.getElementById("btn-step1-open-filters");
+  const countEl = document.getElementById("step1-filter-count");
+  const rowEl = document.getElementById("step1-active-filters-row");
+
+  if (openBtn) openBtn.classList.toggle("has-active-filters", count > 0);
+  if (countEl) {
+    countEl.textContent = String(count);
+    countEl.classList.toggle("is-hidden", count === 0);
+  }
+  if (rowEl) {
+    if (count === 0) {
+      rowEl.classList.add("is-hidden");
+      rowEl.innerHTML = "";
+    } else {
+      rowEl.classList.remove("is-hidden");
+      const chipsHtml = activeFilters
+        .map(
+          (f) => `
+          <button
+            type="button"
+            class="active-filter-chip"
+            data-remove-filter="${escapeHtml(f.kind)}"
+            aria-label="Remover filtro ${escapeHtml(f.label)}"
+          >
+            <span>${escapeHtml(f.label)}</span>
+            <span class="active-filter-chip-x" aria-hidden="true">×</span>
+          </button>
+        `
+        )
+        .join("");
+      const clearHtml =
+        count > 1
+          ? `<button type="button" class="active-filter-clear-btn" data-remove-filter="all">Limpar</button>`
+          : "";
+      rowEl.innerHTML = chipsHtml + clearHtml;
+    }
+  }
+
+  const viewBtn = document.getElementById("btn-step1-mobile-view");
+  const viewLabel = document.getElementById("step1-mobile-view-label");
+  if (viewBtn) {
+    const isMatrix = ui.step1Layout === "matrix";
+    viewBtn.classList.toggle("is-active", isMatrix);
+    viewBtn.setAttribute("aria-pressed", String(isMatrix));
+    viewBtn.title = isMatrix ? "Voltar para lista" : "Alternar para grade semanal";
+    viewBtn.querySelector(".icon-view-grid")?.classList.toggle("is-hidden", isMatrix);
+    viewBtn.querySelector(".icon-view-list")?.classList.toggle("is-hidden", !isMatrix);
+    if (viewLabel) viewLabel.textContent = isMatrix ? "Lista" : "Grade";
+  }
+}
+
 function renderStep1() {
   document.querySelectorAll("[data-step1-layout]").forEach((b) => {
     const active = b.dataset.step1Layout === ui.step1Layout;
@@ -3508,6 +3681,7 @@ function renderStep1() {
     });
   }
   syncAllSlidingIndicators();
+  renderStep1MobileFilterState();
 
   const query = normalizeText(ui.search);
   const filteredOfferings = OFFERINGS.filter((off) => {
@@ -3556,7 +3730,7 @@ function renderStep1() {
               <div class="row-body">
                 <p class="row-title">${escapeHtml(off.subject)}</p>
                 <div class="row-meta-line">
-                  <span class="row-meta">${escapeHtml(off.monitor)}</span>
+                  <span class="row-meta">${escapeHtml(formatCleanMonitorName(off.monitor))}</span>
                   <span class="row-meta-sep" aria-hidden="true">·</span>
                   <span class="row-loc-tag">${escapeHtml(placeTag)}</span>
                 </div>
@@ -4139,7 +4313,7 @@ function renderBookings() {
         off.shortLocation || off.location
       )}
               </p>
-              <p class="mobile-card-meta-line">${escapeHtml(off.monitor)} · ${escapeHtml(
+              <p class="mobile-card-meta-line">${escapeHtml(formatCleanMonitorName(off.monitor))} · ${escapeHtml(
         off.shortLocation || off.location
       )}</p>
               <p class="row-meta booking-topic-quote" style="margin-top:4px">${escapeHtml(formatBookingTopic(bk.topic))}</p>
@@ -5440,6 +5614,50 @@ function bindEvents() {
     });
   });
 
+  document.getElementById("btn-step1-mobile-view")?.addEventListener("click", () => {
+    ui.step1Layout = ui.step1Layout === "matrix" ? "list" : "matrix";
+    document.querySelectorAll("[data-step1-layout]").forEach((b) => {
+      const active = b.dataset.step1Layout === ui.step1Layout;
+      b.classList.toggle("is-active", active);
+      b.setAttribute("aria-pressed", String(active));
+    });
+    renderStep1();
+  });
+
+  document.getElementById("btn-step1-open-filters")?.addEventListener("click", openStep1FiltersSheet);
+  document.getElementById("btn-close-step1-filters")?.addEventListener("click", () => closeStep1FiltersSheet(true));
+  document.getElementById("step1-filters-backdrop")?.addEventListener("click", () => closeStep1FiltersSheet(true));
+
+  document.getElementById("filters-sheet-mode-options")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-draft-mode]");
+    if (!btn) return;
+    step1FilterDraft.mode = btn.dataset.draftMode || "Todas";
+    renderStep1FiltersSheetDraft();
+  });
+
+  document.getElementById("filters-sheet-subject-options")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-draft-subject]");
+    if (!btn) return;
+    step1FilterDraft.subject = btn.dataset.draftSubject || "Todas";
+    renderStep1FiltersSheetDraft();
+  });
+
+  document.getElementById("btn-filters-clear")?.addEventListener("click", () => {
+    step1FilterDraft = { mode: "Todas", subject: "Todas" };
+    renderStep1FiltersSheetDraft();
+  });
+
+  document.getElementById("btn-filters-apply")?.addEventListener("click", applyStep1FiltersDraft);
+
+  document.getElementById("step1-active-filters-row")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-remove-filter]");
+    if (!btn) return;
+    const kind = btn.dataset.removeFilter;
+    if (kind === "mode" || kind === "all") ui.modeFilter = "Todas";
+    if (kind === "subject" || kind === "all") ui.subjectFilter = "Todas";
+    renderStep1();
+  });
+
   document.getElementById("btn-clear-search").addEventListener("click", () => {
     ui.search = "";
     ui.subjectFilter = "Todas";
@@ -5568,14 +5786,46 @@ function bindEvents() {
   document.getElementById("btn-back-step2").addEventListener("click", () => setStep(2));
   document.getElementById("btn-back-step2-mobile")?.addEventListener("click", () => setStep(2));
 
-  // Proteção de teclado iOS na Etapa 3: recolhe barra sticky quando textarea/input está em foco
+  // Proteção de teclado mobile na Etapa 3: garante campo de dúvida visível acima do rodapé fixo
   const step3ShellEl = document.getElementById("step3-form-shell");
   let step3FocusTimer = null;
+  function ensureStep3InputVisible(inputEl) {
+    if (!inputEl || window.innerWidth > 768) return;
+    if (!document.body.classList.contains("is-mobile-input-focused")) {
+      document.body.classList.add("is-mobile-input-focused");
+    }
+    const actionsBar = step3ShellEl?.querySelector(".step3-actions");
+    const rect = inputEl.getBoundingClientRect();
+    const vvHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const barRect = actionsBar ? actionsBar.getBoundingClientRect() : null;
+    const safeBottom = Math.min(vvHeight, barRect && barRect.top > 0 ? barRect.top : vvHeight) - 16;
+    const safeTop = 64;
+    if (rect.bottom > safeBottom) {
+      window.scrollBy({ top: rect.bottom - safeBottom, behavior: "auto" });
+    } else if (rect.top < safeTop) {
+      window.scrollBy({ top: rect.top - safeTop, behavior: "auto" });
+    }
+  }
+  const handleStep3ViewportOrInput = () => {
+    if (window.innerWidth > 768) return;
+    const active = document.activeElement;
+    if (active && step3ShellEl?.contains(active) && active.matches?.("input, textarea, select")) {
+      ensureStep3InputVisible(active);
+    }
+  };
   step3ShellEl?.addEventListener("focusin", (e) => {
     if (window.innerWidth > 768) return;
     if (!e.target?.matches?.("input, textarea, select")) return;
     if (step3FocusTimer) clearTimeout(step3FocusTimer);
     document.body.classList.add("is-mobile-input-focused");
+    const target = e.target;
+    setTimeout(() => ensureStep3InputVisible(target), 80);
+    setTimeout(() => ensureStep3InputVisible(target), 300);
+  });
+  step3ShellEl?.addEventListener("input", (e) => {
+    if (window.innerWidth > 768) return;
+    if (!e.target?.matches?.("input, textarea, select")) return;
+    ensureStep3InputVisible(e.target);
   });
   step3ShellEl?.addEventListener("focusout", () => {
     if (window.innerWidth > 768) return;
@@ -5590,6 +5840,8 @@ function bindEvents() {
       }
     }, 120);
   });
+  window.visualViewport?.addEventListener("resize", handleStep3ViewportOrInput);
+  window.addEventListener("resize", handleStep3ViewportOrInput);
   document.getElementById("btn-s3-switch-account").addEventListener("click", () => {
     state.currentUserId = null;
     saveState();
@@ -5807,6 +6059,11 @@ function bindEvents() {
         trapFocusInModal(e, settingsModal);
         return;
       }
+      const filtersSheet = document.getElementById("step1-filters-sheet");
+      if (filtersSheet && !filtersSheet.classList.contains("is-hidden") && window.innerWidth <= 768) {
+        trapFocusInModal(e, filtersSheet);
+        return;
+      }
       const monitorSlotForm = document.getElementById("form-new-slot");
       if (monitorSlotForm && monitorSlotForm.classList.contains("is-mobile-sheet-open") && window.innerWidth <= 768) {
         trapFocusInModal(e, monitorSlotForm);
@@ -5841,6 +6098,11 @@ function bindEvents() {
       const confirmModal = document.getElementById("confirm-modal");
       if (confirmModal && !confirmModal.classList.contains("is-hidden")) {
         closeConfirmDialog();
+        return;
+      }
+      const filtersSheet = document.getElementById("step1-filters-sheet");
+      if (filtersSheet && !filtersSheet.classList.contains("is-hidden") && window.innerWidth <= 768) {
+        closeStep1FiltersSheet(true);
         return;
       }
       const monitorSlotForm = document.getElementById("form-new-slot");
@@ -6517,6 +6779,7 @@ function initCustomSelects() {
     if (ui.activeView === "agendar") renderStepper();
     if (window.innerWidth > 768) {
       closeMonitorSlotSheet(false);
+      closeStep1FiltersSheet(false);
     }
     if (window.innerWidth <= 768 && ui.activeSettingsTab === "atalhos") {
       setSettingsTab("geral");
