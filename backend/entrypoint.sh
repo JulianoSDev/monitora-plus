@@ -1,10 +1,8 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
-echo "Aguardando banco..."
-while ! flask --app "app_factory:create_app()" db upgrade; do
-    echo "Falhou, tentando de novo em 2s..."
-    sleep 2
-done
+echo "Aplicando migrações..."
+flask --app "app_factory:create_app()" db upgrade
 
 echo "Banco pronto."
 

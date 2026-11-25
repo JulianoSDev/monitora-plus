@@ -42,7 +42,7 @@ class User(db.Model):
     ra = db.Column(db.String(12), nullable=False, unique=True)  # matrícula
     email = db.Column(db.String(120), nullable=False, unique=True)  # sempre em minúsculas
     password_hash = db.Column(db.String(80), nullable=False)
-    course = db.Column(db.String(60))  # turma (só aluno)
+    course = db.Column(db.String(80))  # turma (só aluno)
     offering_id = db.Column(db.String(20), db.ForeignKey("offerings.id"))  # disciplina (só monitor)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=db.func.now())
 
@@ -53,7 +53,10 @@ class Slot(db.Model):
     __tablename__ = "slots"
     __table_args__ = (
         db.CheckConstraint("capacity BETWEEN 1 AND 15", name="ck_slots_capacity"),
-        db.UniqueConstraint("offering_id", "date", "start_time", name="uq_slots_offering_date_start"),
+        db.Index(
+            "uq_slots_offering_date_start", "offering_id", "date", "start_time",
+            unique=True, postgresql_where=db.text("deleted_at IS NULL"),
+        ),
         db.Index("ix_slots_offering_date", "offering_id", "date"),
     )
 
@@ -64,6 +67,7 @@ class Slot(db.Model):
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
     capacity = db.Column(db.Integer, nullable=False)
+    deleted_at = db.Column(db.DateTime(timezone=True))
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=db.func.now())
 
 

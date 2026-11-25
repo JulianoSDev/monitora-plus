@@ -21,3 +21,10 @@ def list_slots():
 def publish_slot():
     slot = SlotService.publish(g.current_user, get_json_body())
     return jsonify({"slot": slot}), 201
+
+
+@bp.delete("/<int:slot_id>")
+@monitor_required
+def delete_slot(slot_id: int):
+    SlotService.delete(g.current_user, slot_id)
+    return "", 204

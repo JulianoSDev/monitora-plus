@@ -18,7 +18,8 @@ class OfferingService:
                                s.capacity - (SELECT COUNT(*) FROM bookings b
                                              WHERE b.slot_id = s.id AND b.status = 'Confirmado'), 0))
                            FROM slots s
-                           WHERE s.offering_id = o.id AND (s.date + s.start_time) > :now
+                           WHERE s.offering_id = o.id AND s.deleted_at IS NULL
+                             AND (s.date + s.start_time) > :now
                        ), 0) AS integer) AS remaining_total
                 FROM offerings o
                 ORDER BY o.subject

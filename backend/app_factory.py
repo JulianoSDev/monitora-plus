@@ -9,15 +9,18 @@ from datetime import timedelta
 def create_app():
     load_dotenv()
     app = Flask(__name__)
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
     #Configurações do app ():
     app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI")
-    app.config["JWT_CSRF_COOKIE_PROTECT"] = True
+    app.config["JWT_COOKIE_CSRF_PROTECT"] = True
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
-    app.config["JWT_COOKIE_SECURE"] = False if os.getenv("JWT_COOKIE_SECURE") == "False" else True
-    app.config["JWT_COOKIE_SAMESITE"] = os.getenv("JWT_COOKIE_SAMETSITE", "Lax")
+    app.config["JWT_COOKIE_SECURE"] = os.getenv("JWT_COOKIE_SECURE", "True").lower() == "true"
+    app.config["JWT_COOKIE_SAMESITE"] = os.getenv("JWT_COOKIE_SAMESITE", "Lax")
+    if app.config["JWT_COOKIE_SAMESITE"] == "None" and not app.config["JWT_COOKIE_SECURE"]:
+        raise ValueError("SameSite=None exige JWT_COOKIE_SECURE=True (HTTPS).")
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=int(os.getenv("JWT_EXPIRES_HOURS", "8")))
-    app.config["TIMEZONE"] = os.getenv("TIMEZONE")
+    app.config["TIMEZONE"] = os.getenv("TIMEZONE", "America/Sao_Paulo")
 
     app.url_map.strict_slashes = False  # /api/offerings e /api/offerings/ funcionam
     app.json.sort_keys = False  # mantém a ordem dos campos como escrita no código
@@ -32,7 +35,8 @@ def create_app():
     bcrypt.init_app(app)
     migrate.init_app(app, db)
 
-    cors.init_app(app, supports_credentials=True, origins= os.getenv("CORS_ORIGINS"))
+    origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+    cors.init_app(app, supports_credentials=True, origins=origins)
 
     import models  # noqa: F401  (registra as tabelas no metadata do SQLAlchemy)
     from api import api_bp

@@ -1,0 +1,5 @@
+# Alternativa futura com domínio: aponte um registro A para o IP da VPS,
+# libere TCP 80/443 no GCP e no host, valide e recarregue o Caddy.
+api.seudominio.com {
+    reverse_proxy 127.0.0.1:8000
+}

@@ -81,7 +81,7 @@ class ScheduleService:
             text(
                 """
                 SELECT id, offering_id, date, start_time, end_time, capacity
-                FROM slots WHERE id = :id FOR UPDATE
+                FROM slots WHERE id = :id AND deleted_at IS NULL FOR UPDATE
                 """
             ),
             {"id": slot_id},
@@ -317,6 +317,8 @@ class ScheduleService:
 
         if new_status == "Confirmado":
             slot = ScheduleService._lock_slot(booking["slot_id"])
+            if not slot:
+                raise ServiceError("Este horário foi excluído pelo monitor.", 409)
             if current == "Cancelado":
                 # Desfazer cancelamento = ocupar a vaga de novo: vale todas as regras de um agendamento.
                 ScheduleService._ensure_bookable(booking["student_id"], slot, ignore_booking_id=booking_id)

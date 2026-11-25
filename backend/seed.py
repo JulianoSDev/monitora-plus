@@ -8,7 +8,11 @@ Sem a opção --update-codes, rodar de novo NÃO altera os códigos que já est�
 Os códigos abaixo são os do protótipo do front: troque pelos reais antes de ir para produção.
 """
 
+import json
+import os
 import sys
+
+from flask import current_app
 
 from sqlalchemy import text
 
@@ -80,6 +84,16 @@ OFFERINGS = [
 
 
 def seed(update_codes: bool = False) -> None:
+    raw_codes = os.getenv("PROFESSOR_CODES_JSON")
+    codes = json.loads(raw_codes) if raw_codes else {}
+    if not isinstance(codes, dict):
+        raise ValueError("PROFESSOR_CODES_JSON deve ser um objeto JSON.")
+    if current_app.config["JWT_COOKIE_SECURE"] and not all(off["id"] in codes for off in OFFERINGS):
+        raise ValueError("Configure PROFESSOR_CODES_JSON com seis códigos privados para HTTPS.")
+    for off in OFFERINGS:
+        code = codes.get(off["id"], off["code"])
+        if not isinstance(code, str) or not code.strip() or len(code.strip().encode("utf-8")) > 72:
+            raise ValueError("Código de professor deve ser texto não vazio de até 72 bytes.")
     db.create_all()
 
     code_update = ", professor_code_hash = EXCLUDED.professor_code_hash" if update_codes else ""
@@ -102,7 +116,8 @@ def seed(update_codes: bool = False) -> None:
 
     for off in OFFERINGS:
         params = {k: v for k, v in off.items() if k != "code"}
-        params["code_hash"] = bcrypt.generate_password_hash(off["code"]).decode("utf-8")
+        code = codes.get(off["id"], off["code"]).strip().upper()
+        params["code_hash"] = bcrypt.generate_password_hash(code).decode("utf-8")
         db.session.execute(sql, params)
 
     db.session.commit()

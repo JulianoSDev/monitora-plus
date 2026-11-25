@@ -2,6 +2,9 @@
 
 API do sistema de agendamento de monitorias. JWT em cookie `HttpOnly` + proteção CSRF, SQL puro com `text()`.
 
+Deploy na VPS existente, HTTPS temporário sem domínio e testes isolados:
+veja [DEPLOY.md](DEPLOY.md).
+
 ## Estrutura
 
 ```
@@ -30,6 +33,8 @@ venv\Scripts\activate            # Windows  (Linux/Mac: source venv/bin/activate
 pip install -r requirements.txt
 
 copy .env.example .env           # e edite (DATABASE_URL, JWT_SECRET_KEY, CORS_ORIGINS)
+# Em HTTP local: JWT_COOKIE_SECURE=False, JWT_COOKIE_SAMESITE=Lax,
+# SQLALCHEMY_DATABASE_URI com host localhost e credenciais do seu PostgreSQL.
 python seed.py                   # cria as tabelas e grava as disciplinas
 flask --app app_factory run      # ou: python app_factory.py, ISSO PARA TESTES, EM PRODUÇÃO USE UM SERVIDOR WSGI!!!
 ```
@@ -50,15 +55,14 @@ No `login`/`register` a API define dois cookies:
 
 Regras para o front:
 1. Todo `fetch` usa `credentials: "include"`.
-2. `POST`, `PUT`, `PATCH` e `DELETE` autenticados precisam do header `X-CSRF-TOKEN` com o valor do cookie `csrf_access_token`. `GET` não precisa.
+2. `POST`, `PUT`, `PATCH` e `DELETE` autenticados (incluindo logout) precisam do header `X-CSRF-TOKEN`. Use `csrf_token` retornado no JSON por login/cadastro e `/auth/me`. `GET` não precisa. Em outro domínio, o JS não consegue ler o cookie `csrf_access_token`.
 3. `401` = sem sessão / expirada (mandar para o login). `403` = sem permissão **ou** CSRF ausente.
 4. O token vale 8 horas (`JWT_EXPIRES_HOURS`), sem refresh.
 
 ```js
 const API = "/api"; // em desenvolvimento: "http://localhost:5000/api"
 
-const csrf = () =>
-  document.cookie.split("; ").find((c) => c.startsWith("csrf_access_token="))?.split("=")[1];
+let csrfToken; // restaurado no JSON de GET /auth/me após recarregar
 
 async function api(path, { method = "GET", body } = {}) {
   const res = await fetch(API + path, {
@@ -66,12 +70,13 @@ async function api(path, { method = "GET", body } = {}) {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(method !== "GET" ? { "X-CSRF-TOKEN": csrf() } : {}),
+      ...(method !== "GET" && csrfToken ? { "X-CSRF-TOKEN": csrfToken } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
   });
-  const data = await res.json().catch(() => ({}));
+  const data = res.status === 204 ? {} : await res.json();
   if (!res.ok) throw Object.assign(new Error(data.error || "Erro"), { status: res.status, fields: data.fields || {} });
+  if (data.csrf_token) csrfToken = data.csrf_token;
   return data;
 }
 ```
@@ -114,6 +119,7 @@ Todas com prefixo `/api`. 🔒 = exige cookie de sessão · 🎓 = só monitor.
 |---|---|---|
 | `GET /slots?offering_id=off-alg` 🔒 | `offering_id` opcional | `{slots: [{id, offering_id, date, day_name, start_time, end_time, time, capacity, occupied, remaining}]}` só futuros |
 | `POST /slots` 🎓 | `date` (`AAAA-MM-DD`), `time` (`"14:00 - 14:40"`, uma das 4 faixas), `capacity` (1 a 15), `professor_code` | 201 `{slot}` na disciplina do monitor |
+| `DELETE /slots/{id}` 🎓 | CSRF; monitor da mesma disciplina | 204; 409 se houver reserva confirmada; preserva histórico e permite republicar |
 
 ### Agendamentos
 | Método e rota | Corpo/Query | O que faz |

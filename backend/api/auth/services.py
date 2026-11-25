@@ -14,8 +14,6 @@ RA_RE = re.compile(r"^\d{5,12}$")
 MIN_PASSWORD_LENGTH = 4  # mesmo valor do front; considere subir para 8
 MAX_PASSWORD_BYTES = 72  # limite do bcrypt
 
-COURSES = ["ES1A", "ES1B", "S1"]
-
 USER_COLUMNS = "id, role, name, ra, email, course, offering_id"
 
 _dummy_hash: str | None = None
@@ -45,7 +43,8 @@ class AuthService:
         ra = clean_text(data.get("ra"))
         email = clean_text(data.get("email")).lower()
         password = data.get("password")
-        course = clean_text(data.get("course"))
+        course_raw = data.get("course")
+        course = " ".join(course_raw.split()) if isinstance(course_raw, str) else ""
         offering_id = clean_text(data.get("offering_id"))
         professor_code = clean_text(data.get("professor_code")).upper()
 
@@ -68,8 +67,8 @@ class AuthService:
 
         offering = None
         if role == "student":
-            if course not in COURSES:
-                errors["course"] = "Selecione uma turma válida."
+            if not course or len(course) > 80 or any(ord(c) < 32 for c in course):
+                errors["course"] = "Informe uma turma válida com até 80 caracteres."
         elif role == "monitor":
             offering = db.session.execute(
                 text("SELECT id, professor_code_hash FROM offerings WHERE id = :id"),

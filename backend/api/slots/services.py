@@ -52,7 +52,7 @@ class SlotService:
                    (SELECT COUNT(*) FROM bookings b
                     WHERE b.slot_id = s.id AND b.status = 'Confirmado') AS occupied
             FROM slots s
-            WHERE (s.date + s.start_time) > :now
+            WHERE s.deleted_at IS NULL AND (s.date + s.start_time) > :now
         """
         params: dict = {"now": now_local()}
         if offering_id:
@@ -62,6 +62,27 @@ class SlotService:
 
         rows = db.session.execute(text(sql), params).mappings().all()
         return [SlotService.serialize(r) for r in rows]
+
+    @staticmethod
+    @transactional
+    def delete(user: dict, slot_id: int) -> None:
+        # Mesmo lock usado ao reservar/reconfirmar. Preserva reservas históricas.
+        slot = db.session.execute(
+            text("SELECT id, offering_id FROM slots WHERE id = :id "
+                 "AND deleted_at IS NULL FOR UPDATE"), {"id": slot_id},
+        ).mappings().first()
+        if not slot:
+            raise ServiceError("Horário não encontrado.", 404)
+        if slot["offering_id"] != user["offering_id"]:
+            raise ServiceError("Você só pode excluir horários da sua disciplina.", 403)
+        if db.session.execute(
+            text("SELECT 1 FROM bookings WHERE slot_id = :id "
+                 "AND status = 'Confirmado' LIMIT 1"), {"id": slot_id},
+        ).first():
+            raise ServiceError("Não é possível excluir um horário com agendamentos confirmados.", 409)
+        db.session.execute(
+            text("UPDATE slots SET deleted_at = now() WHERE id = :id"), {"id": slot_id},
+        )
 
     @staticmethod
     @transactional
