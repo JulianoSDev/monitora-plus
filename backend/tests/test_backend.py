@@ -213,6 +213,45 @@ class BackendIntegrationTest(unittest.TestCase):
             self.assertEqual(second.json["user"]["ra"], "7788991")
             self.assertIn("csrf_token", second.json)
 
+    def test_preferences_sync_and_tracked_reset(self):
+        client, csrf = self.register(course="Eng. Software · 1º A")
+        # 1. Conta nova nunca salvou nem resetou -> preferences=None e updated_at=None
+        initial = self.request(client, "GET", "/api/prefs")
+        self.assertEqual(initial.status_code, 200, initial.json)
+        self.assertIsNone(initial.json["preferences"])
+        self.assertIsNone(initial.json["updated_at"])
+
+        # 2. Rejeita blockConflicts (nao sincronizado) e valores fora da whitelist
+        rejected = self.request(client, "PUT", "/api/prefs", csrf, json={"preferences": {"blockConflicts": False}})
+        self.assertEqual(rejected.status_code, 422, rejected.json)
+        self.assertIn("blockConflicts", rejected.json["fields"])
+
+        # 3. Salva preferencias validas -> retorna updated_at preenchido
+        saved = self.request(
+            client,
+            "PUT",
+            "/api/prefs",
+            csrf,
+            json={"preferences": {"theme": "dark", "themePreset": "academic-navy", "fontScale": 1.12, "reducedMotion": True}},
+        )
+        self.assertEqual(saved.status_code, 200, saved.json)
+        self.assertEqual(saved.json["preferences"]["theme"], "dark")
+        self.assertEqual(saved.json["preferences"]["themePreset"], "academic-navy")
+        self.assertEqual(saved.json["preferences"]["fontScale"], 1.12)
+        self.assertIsNotNone(saved.json["updated_at"])
+
+        # 4. Resetar via DELETE -> limpa preferences para None MAS registra updated_at != None
+        reset = self.request(client, "DELETE", "/api/prefs", csrf)
+        self.assertEqual(reset.status_code, 200, reset.json)
+        self.assertIsNone(reset.json["preferences"])
+        self.assertIsNotNone(reset.json["updated_at"])
+
+        # 5. Leitura posterior confirma reset rastreado (nao volta para updated_at=None)
+        after_reset = self.request(client, "GET", "/api/prefs")
+        self.assertEqual(after_reset.status_code, 200)
+        self.assertIsNone(after_reset.json["preferences"])
+        self.assertEqual(after_reset.json["updated_at"], reset.json["updated_at"])
+
 
 if __name__ == "__main__":
     unittest.main()

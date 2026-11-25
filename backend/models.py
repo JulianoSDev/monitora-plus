@@ -5,6 +5,8 @@ estes models existem para descrever o schema (db.create_all()) e como referênci
 Os defaults ficam no BANCO (server_default), para que INSERTs em SQL puro também os recebam.
 """
 
+from sqlalchemy.dialects.postgresql import JSONB
+
 from extensions import db
 
 
@@ -52,6 +54,8 @@ class User(db.Model):
     offering_id = db.Column(db.String(20), db.ForeignKey("offerings.id"))  # disciplina (só monitor)
     google_sub = db.Column(db.String(64))
     avatar_url = db.Column(db.String(500))
+    preferences = db.Column(JSONB)
+    preferences_updated_at = db.Column(db.DateTime(timezone=True))
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=db.func.now())
 
 

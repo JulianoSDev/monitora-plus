@@ -6367,4 +6367,48 @@ input:-webkit-autofill:focus {
   transition: background-color 9999s ease-out 0s;
 }
 
+/* Indicador discreto de sincronização de preferências em Configurações */
+.settings-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.settings-sync-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.settings-sync-badge[data-sync-state="account"] {
+  color: var(--text-secondary);
+}
+
+.settings-sync-badge[data-sync-state="account"]::before {
+  background: var(--green);
+}
+
+.settings-sync-badge[data-sync-state="syncing"]::before {
+  background: var(--accent);
+}
+
 

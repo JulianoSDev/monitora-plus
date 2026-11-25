@@ -20,8 +20,8 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="styles.css?v=20261125g1" />
-  <link rel="stylesheet" href="mobile.css?v=20261125g1" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="styles.css?v=20261125h1" />
+  <link rel="stylesheet" href="mobile.css?v=20261125h1" media="(max-width: 768px)" />
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="theme-light is-landing-mode">
@@ -1208,7 +1208,12 @@
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
               <span>Ajustes</span>
             </button>
-            <h2 id="settings-panel-title">Geral</h2>
+            <div class="settings-title-row">
+              <h2 id="settings-panel-title">Geral</h2>
+              <span id="settings-sync-status" class="settings-sync-badge" data-sync-state="device" aria-live="polite">
+                Salvo neste dispositivo
+              </span>
+            </div>
             <p class="step-sub" id="settings-panel-desc">Configure como o catálogo de monitorias e confirmações funcionam.</p>
           </div>
           <button type="button" class="icon-btn settings-close-desktop" id="btn-close-settings" aria-label="Fechar configurações">
@@ -1834,8 +1839,8 @@
     </div>
   </footer>
 
-  <script src="api-config.js?v=20261125f1"></script>
-  <script src="api.js?v=20261125f1"></script>
-  <script src="app.js?v=20261125f1"></script>
+  <script src="api-config.js?v=20261125h1"></script>
+  <script src="api.js?v=20261125h1"></script>
+  <script src="app.js?v=20261125h1"></script>
 </body>
 </html>

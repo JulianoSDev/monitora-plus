@@ -66,6 +66,33 @@ const DEFAULT_PREFS = {
   customFg: null,
 };
 
+const USER_PREFS_PREFIX = "monitoraplus_v7_prefs_user_";
+const PREFS_SYNC_DEBOUNCE_MS = 400;
+
+const VALID_THEME_VALUES = ["light", "dark", "contrast"];
+const VALID_COLOR_MODE_VALUES = [null, "system", "light", "dark", "contrast"];
+const VALID_PRESET_VALUES = ["monitora", "academic-navy", "forest-slate", "amber-studio", "olive-moss", "graphite"];
+const VALID_FONT_VALUES = ["dm-sans", "system", "readable", "mono"];
+const VALID_LAYOUT_VALUES = ["list", "matrix"];
+const VALID_ICS_VALUES = [0, 15, 30, 60];
+const VALID_CVD_VALUES = ["none", "protanopia", "deuteranopia", "tritanopia", "achromatopsia"];
+const SYNCABLE_BOOL_KEYS = [
+  "confirmBeforeBook",
+  "autoIcsHint",
+  "dyslexiaSpacing",
+  "readingMask",
+  "pauseDistractions",
+  "extraFocus",
+  "largeTargets",
+  "reducedMotion",
+  "vlibras",
+];
+const SYNCABLE_HEX_KEYS = ["customAccent", "customBg", "customFg"];
+
+let prefsSyncState = { source: "device", status: "device", updatedAt: null };
+let pendingPrefsTimer = null;
+let pendingPrefsRequestSeq = 0;
+
 const SETTINGS_TAB_META = {
   geral: {
     title: "Geral",
@@ -122,32 +149,260 @@ const ui = {
   monitorTab: "bookings",
 };
 
-// ==================== PERSISTÊNCIA ====================
-function loadState() {
-  let stored = {};
+// ==================== PERSISTÊNCIA E SINCRONIZAÇÃO DE PREFERÊNCIAS ====================
+function getUserPrefsStorageKey(userId) {
+  return `${USER_PREFS_PREFIX}${String(userId)}`;
+}
+
+function sanitizeSyncablePrefs(raw) {
+  const src = raw && typeof raw === "object" ? raw : {};
+  const nested = src.prefs && typeof src.prefs === "object" ? src.prefs : src;
+  const theme = VALID_THEME_VALUES.includes(src.theme)
+    ? src.theme
+    : VALID_THEME_VALUES.includes(nested.theme)
+    ? nested.theme
+    : "light";
+  const rawScale = Number.isFinite(src.fontScale)
+    ? src.fontScale
+    : Number.isFinite(nested.fontScale)
+    ? nested.fontScale
+    : 1;
+  const fontScale = Math.round(Math.min(1.52, Math.max(0.88, Number(rawScale))) * 100) / 100;
+
+  const cleanPrefs = { ...DEFAULT_PREFS };
+  delete cleanPrefs.blockConflicts;
+
+  cleanPrefs.colorMode = VALID_COLOR_MODE_VALUES.includes(nested.colorMode) ? nested.colorMode : null;
+  cleanPrefs.themePreset = VALID_PRESET_VALUES.includes(nested.themePreset) ? nested.themePreset : "monitora";
+  cleanPrefs.uiFont = VALID_FONT_VALUES.includes(nested.uiFont) ? nested.uiFont : "dm-sans";
+  cleanPrefs.defaultLayout = VALID_LAYOUT_VALUES.includes(nested.defaultLayout) ? nested.defaultLayout : "list";
+  cleanPrefs.icsReminderMinutes = VALID_ICS_VALUES.includes(nested.icsReminderMinutes) ? nested.icsReminderMinutes : 30;
+  cleanPrefs.cvdFilter = VALID_CVD_VALUES.includes(nested.cvdFilter) ? nested.cvdFilter : "none";
+
+  SYNCABLE_BOOL_KEYS.forEach((k) => {
+    if (typeof nested[k] === "boolean") cleanPrefs[k] = nested[k];
+  });
+  SYNCABLE_HEX_KEYS.forEach((k) => {
+    const val = nested[k];
+    if (val === null) cleanPrefs[k] = null;
+    else if (typeof val === "string" && /^#[0-9a-fA-F]{6}$/.test(val.trim())) cleanPrefs[k] = val.trim().toLowerCase();
+  });
+
+  return { theme, fontScale, prefs: cleanPrefs };
+}
+
+function buildSyncablePrefsPayload(bundle = state) {
+  const clean = sanitizeSyncablePrefs(bundle);
+  return {
+    theme: clean.theme,
+    fontScale: clean.fontScale,
+    ...clean.prefs,
+  };
+}
+
+function hasCustomPrefsBeyondDefaults(bundle) {
+  const current = buildSyncablePrefsPayload(bundle);
+  const defaults = buildSyncablePrefsPayload({ theme: "light", fontScale: 1, prefs: DEFAULT_PREFS });
+  return Object.keys(defaults).some((key) => current[key] !== defaults[key]);
+}
+
+function readStoredPrefsBundle(storageKey) {
   try {
-    stored = JSON.parse(localStorage.getItem(STORAGE_KEY)
-      || localStorage.getItem("monitoraplus_v6_state") || "{}");
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return null;
+    return sanitizeSyncablePrefs(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredPrefsBundle(storageKey, bundle) {
+  try {
+    const clean = sanitizeSyncablePrefs(bundle);
+    localStorage.setItem(storageKey, JSON.stringify({
+      theme: clean.theme,
+      fontScale: clean.fontScale,
+      prefs: clean.prefs,
+    }));
+  } catch {
+    /* Preferências continuam em memória. */
+  }
+}
+
+function applyPrefsBundleToState(bundle) {
+  const clean = sanitizeSyncablePrefs(bundle);
+  state.theme = clean.theme;
+  state.fontScale = clean.fontScale;
+  state.prefs = { ...clean.prefs, blockConflicts: true };
+  if (typeof ui !== "undefined") {
+    ui.step1Layout = state.prefs.defaultLayout;
+  }
+}
+
+function renderPrefsSyncStatus() {
+  const el = document.getElementById("settings-sync-status");
+  if (!el) return;
+  const st = prefsSyncState.status;
+  el.dataset.syncState = st;
+  if (st === "syncing") el.textContent = "Sincronizando…";
+  else if (st === "account") el.textContent = "Salvo na conta";
+  else el.textContent = "Salvo neste dispositivo";
+}
+
+function setPrefsSyncStatus(status, source = prefsSyncState.source, updatedAt = prefsSyncState.updatedAt) {
+  prefsSyncState = { status, source, updatedAt };
+  renderPrefsSyncStatus();
+}
+
+function cancelPendingPrefsSave() {
+  if (pendingPrefsTimer) {
+    clearTimeout(pendingPrefsTimer);
+    pendingPrefsTimer = null;
+  }
+  pendingPrefsRequestSeq += 1;
+}
+
+function loadState() {
+  let stored = null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("monitoraplus_v6_state");
+    if (raw) stored = sanitizeSyncablePrefs(JSON.parse(raw));
     localStorage.removeItem("monitoraplus_v6_state"); // apaga senhas e contas do protótipo
   } catch { /* Preferências indisponíveis não impedem o uso da API. */ }
-  return { users: [], slots: [], historySlots: [], bookings: [], currentUserId: null,
-    theme: ["light", "dark", "contrast"].includes(stored.theme) ? stored.theme : "light",
-    fontScale: Number.isFinite(stored.fontScale) ? Math.min(1.52, Math.max(0.88, stored.fontScale)) : 1,
-    prefs: { ...DEFAULT_PREFS, ...(stored.prefs || {}), blockConflicts: true } };
+  const clean = stored || sanitizeSyncablePrefs({ theme: "light", fontScale: 1, prefs: DEFAULT_PREFS });
+  return {
+    users: [],
+    slots: [],
+    historySlots: [],
+    bookings: [],
+    currentUserId: null,
+    theme: clean.theme,
+    fontScale: clean.fontScale,
+    prefs: { ...clean.prefs, blockConflicts: true },
+  };
 }
 
 function getPrefs() {
-  if (!state.prefs) state.prefs = { ...DEFAULT_PREFS };
+  if (!state.prefs) state.prefs = { ...DEFAULT_PREFS, blockConflicts: true };
   return state.prefs;
 }
 
-function saveState() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      theme: state.theme, fontScale: state.fontScale, prefs: state.prefs,
-    }));
-  } catch { /* Preferências continuam em memória. */ }
+function scheduleRemotePrefsSave() {
+  const userId = state.currentUserId;
+  if (!userId) {
+    setPrefsSyncStatus("device", "device", null);
+    return;
+  }
+  const sessionVer = remoteSessionVersion;
+  cancelPendingPrefsSave();
+  const seq = pendingPrefsRequestSeq;
+  setPrefsSyncStatus("syncing", prefsSyncState.source, prefsSyncState.updatedAt);
+
+  pendingPrefsTimer = setTimeout(async () => {
+    pendingPrefsTimer = null;
+    if (sessionVer !== remoteSessionVersion || state.currentUserId !== userId || seq !== pendingPrefsRequestSeq) {
+      return;
+    }
+    const payload = buildSyncablePrefsPayload(state);
+    try {
+      const res = await apiClient.request("/prefs", {
+        method: "PUT",
+        body: { preferences: payload },
+      });
+      if (sessionVer !== remoteSessionVersion || state.currentUserId !== userId || seq !== pendingPrefsRequestSeq) {
+        return;
+      }
+      setPrefsSyncStatus("account", "account", res?.updated_at || null);
+    } catch {
+      if (sessionVer !== remoteSessionVersion || state.currentUserId !== userId || seq !== pendingPrefsRequestSeq) {
+        return;
+      }
+      setPrefsSyncStatus("device", "device", prefsSyncState.updatedAt);
+    }
+  }, PREFS_SYNC_DEBOUNCE_MS);
+}
+
+function saveState(options = {}) {
+  const shouldSyncRemote = options.syncRemote !== false;
+  const userId = state.currentUserId;
+  const targetKey = userId ? getUserPrefsStorageKey(userId) : STORAGE_KEY;
+  writeStoredPrefsBundle(targetKey, state);
+
+  if (userId && shouldSyncRemote) {
+    scheduleRemotePrefsSave();
+  } else if (!userId) {
+    setPrefsSyncStatus("device", "device", null);
+  }
   if (typeof ui !== "undefined" && ui.activeView === "inicio") renderInicio();
+}
+
+async function syncPrefsWithServer(user, sessionVer, allowGuestSeed = true) {
+  if (!user) return;
+  cancelPendingPrefsSave();
+  const userKey = getUserPrefsStorageKey(user.id);
+  const cachedUserBundle = readStoredPrefsBundle(userKey);
+  const guestBundle = readStoredPrefsBundle(STORAGE_KEY);
+
+  // Carrega imediatamente apenas o cache isolado desta conta (nunca o de outra conta)
+  applyPrefsBundleToState(cachedUserBundle || { theme: "light", fontScale: 1, prefs: DEFAULT_PREFS });
+  applyThemeAndA11y();
+  setPrefsSyncStatus("syncing", "device", null);
+
+  try {
+    const res = await apiClient.request("/prefs");
+    if (sessionVer !== remoteSessionVersion || state.currentUserId !== user.id) return;
+
+    const remotePrefs = res?.preferences ?? null;
+    const remoteUpdatedAt = res?.updated_at ?? null;
+
+    if (remotePrefs !== null) {
+      // Servidor tem preferências gravadas -> servidor vence sempre
+      applyPrefsBundleToState(remotePrefs);
+      writeStoredPrefsBundle(userKey, state);
+      applyThemeAndA11y();
+      if (ui.activeView === "agendar" && ui.step === 1) renderStep1();
+      setPrefsSyncStatus("account", "account", remoteUpdatedAt);
+      return;
+    }
+
+    if (remoteUpdatedAt !== null) {
+      // Reset explícito registrado no servidor -> aplica defaults e sobrescreve cache antigo deste aparelho
+      applyPrefsBundleToState({ theme: "light", fontScale: 1, prefs: DEFAULT_PREFS });
+      writeStoredPrefsBundle(userKey, state);
+      applyThemeAndA11y();
+      if (ui.activeView === "agendar" && ui.step === 1) renderStep1();
+      setPrefsSyncStatus("account", "account", remoteUpdatedAt);
+      return;
+    }
+
+    // Conta virgem (preferences === null && updated_at === null): só importa prefs de visitante se personalizadas
+    if (allowGuestSeed && guestBundle && hasCustomPrefsBeyondDefaults(guestBundle)) {
+      applyPrefsBundleToState(guestBundle);
+      writeStoredPrefsBundle(userKey, state);
+      applyThemeAndA11y();
+      try {
+        const seeded = await apiClient.request("/prefs", {
+          method: "PUT",
+          body: { preferences: buildSyncablePrefsPayload(guestBundle) },
+        });
+        if (sessionVer !== remoteSessionVersion || state.currentUserId !== user.id) return;
+        setPrefsSyncStatus("account", "account", seeded?.updated_at || null);
+      } catch {
+        if (sessionVer !== remoteSessionVersion || state.currentUserId !== user.id) return;
+        setPrefsSyncStatus("device", "device", null);
+      }
+      return;
+    }
+
+    applyPrefsBundleToState({ theme: "light", fontScale: 1, prefs: DEFAULT_PREFS });
+    writeStoredPrefsBundle(userKey, state);
+    applyThemeAndA11y();
+    setPrefsSyncStatus("account", "account", null);
+  } catch {
+    if (sessionVer !== remoteSessionVersion || state.currentUserId !== user.id) return;
+    // Offline ou VPS ainda sem /api/prefs -> degrada graciosamente para dispositivo
+    setPrefsSyncStatus("device", "device", null);
+  }
 }
 
 // ==================== API E ESTADO REMOTO ====================
@@ -263,6 +518,7 @@ function setApiStatus(message = "", loading = false) {
 }
 
 function clearRemoteSession() {
+  cancelPendingPrefsSave();
   remoteSessionVersion += 1;
   refreshInFlight = null;
   state.users = [];
@@ -271,6 +527,11 @@ function clearRemoteSession() {
   state.bookings = [];
   state.currentUserId = null;
   apiClient.clearSession();
+  // Restaura preferências de visitante (deslogado) para que a próxima conta nunca herde prefs da conta anterior
+  const guestBundle = readStoredPrefsBundle(STORAGE_KEY) || { theme: "light", fontScale: 1, prefs: DEFAULT_PREFS };
+  applyPrefsBundleToState(guestBundle);
+  setPrefsSyncStatus("device", "device", null);
+  applyThemeAndA11y();
   ui.selectedSlotId = null;
   ui.lastCreatedBookingId = null;
   ui.reschedulingBookingId = null;
@@ -413,7 +674,9 @@ async function acceptRemoteSession(response, registered = false) {
       : "O navegador não manteve sua sessão. Permita cookies deste site e tente entrar novamente.", 403);
     throw error;
   }
+  cancelPendingPrefsSave();
   remoteSessionVersion += 1;
+  const sessionVer = remoteSessionVersion;
   refreshInFlight = null;
   const user = mapUser(verified.user || response.user);
   state.users = [user];
@@ -421,7 +684,8 @@ async function acceptRemoteSession(response, registered = false) {
   state.slots = [];
   state.historySlots = [];
   state.bookings = [];
-  await refreshSafely();
+  await Promise.all([refreshSafely(), syncPrefsWithServer(user, sessionVer, true)]);
+  if (sessionVer !== remoteSessionVersion) return user;
   ui.step = 1;
   renderTopbar();
   switchView("inicio");
@@ -473,10 +737,15 @@ async function bootstrapRemote() {
     }
   }
   await refreshSafely();
-  renderTopbar();
   const activeUser = getCurrentUser();
   if (activeUser) {
-    showQuickAuthStage(activeUser);
+    await syncPrefsWithServer(activeUser, remoteSessionVersion, false);
+  } else {
+    setPrefsSyncStatus("device", "device", null);
+  }
+  renderTopbar();
+  if (getCurrentUser()) {
+    showQuickAuthStage(getCurrentUser());
   }
 }
 
@@ -1495,6 +1764,7 @@ function openSettingsModal(initialTab = "geral", mobileDetail = false) {
   lastSettingsTriggerEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   syncSettingsAccountBox();
   syncSettingsAgendaBox();
+  renderPrefsSyncStatus();
   setSettingsTab(initialTab || ui.activeSettingsTab || "geral");
   applyThemeAndA11y();
   const win = document.querySelector(".settings-window");
@@ -1753,10 +2023,17 @@ function stopSpeaking() {
 function exportUserBookingsJson() {
   const user = getCurrentUser();
   const mine = user ? state.bookings.filter((b) => b.studentId === user.id) : [];
+  const fromAccount = Boolean(user && prefsSyncState.source === "account");
   const payload = {
     exportedAt: new Date().toISOString(),
     system: "Monitora+ UNIFSA",
     user: user ? { name: user.name, ra: user.ra, email: user.email, role: user.role } : null,
+    preferencesSource: fromAccount ? "account" : "device",
+    preferencesSourceLabel: fromAccount
+      ? "Conta (sincronizado no servidor)"
+      : "Dispositivo (salvo apenas neste navegador)",
+    preferencesUpdatedAt: fromAccount ? prefsSyncState.updatedAt : null,
+    preferences: buildSyncablePrefsPayload(state),
     bookings: mine.map((bk) => {
       const slot = getSlot(bk.slotId);
       const off = slot ? getOffering(slot.offeringId) : null;
@@ -1784,15 +2061,31 @@ function exportUserBookingsJson() {
   showToast("Cópia dos seus dados baixada.", null, "success");
 }
 
-function resetPrefsToDefault() {
-  state.theme = "light";
-  state.fontScale = 1;
-  state.prefs = { ...DEFAULT_PREFS };
-  ui.step1Layout = state.prefs.defaultLayout;
-  saveState();
+async function resetPrefsToDefault() {
+  cancelPendingPrefsSave();
+  applyPrefsBundleToState({ theme: "light", fontScale: 1, prefs: DEFAULT_PREFS });
+  saveState({ syncRemote: false });
   applyThemeAndA11y();
   if (ui.activeView === "agendar" && ui.step === 1) renderStep1();
   announceA11y("Preferências restauradas para o padrão.");
+
+  const userId = state.currentUserId;
+  const sessionVer = remoteSessionVersion;
+  if (userId) {
+    setPrefsSyncStatus("syncing", prefsSyncState.source, prefsSyncState.updatedAt);
+    try {
+      const res = await apiClient.request("/prefs", { method: "DELETE" });
+      if (sessionVer !== remoteSessionVersion || state.currentUserId !== userId) return;
+      setPrefsSyncStatus("account", "account", res?.updated_at || null);
+      showToast("Preferências restauradas na sua conta.");
+      return;
+    } catch {
+      if (sessionVer !== remoteSessionVersion || state.currentUserId !== userId) return;
+      setPrefsSyncStatus("device", "device", prefsSyncState.updatedAt);
+      showToast("Preferências restauradas neste dispositivo.");
+      return;
+    }
+  }
   showToast("Preferências de aparência e acessibilidade restauradas.");
 }
 
@@ -4535,15 +4828,18 @@ function bindEvents() {
     }
   });
 
-  const performLogout = () => runApiAction("logout", async () => {
-    await apiClient.request("/auth/logout", { method: "POST" });
-    clearRemoteSession();
-    closeProfileMenu();
-    closeSettingsModal();
-    renderTopbar();
-    switchView("landing");
-    showToast("Sessão encerrada.");
-  });
+  const performLogout = () => {
+    cancelPendingPrefsSave();
+    return runApiAction("logout", async () => {
+      await apiClient.request("/auth/logout", { method: "POST" });
+      clearRemoteSession();
+      closeProfileMenu();
+      closeSettingsModal();
+      renderTopbar();
+      switchView("landing");
+      showToast("Sessão encerrada.");
+    });
+  };
 
   document.getElementById("btn-account-action").addEventListener("click", (e) => {
     e.stopPropagation();
@@ -5003,15 +5299,7 @@ function bindEvents() {
   document.getElementById("btn-stop-speak")?.addEventListener("click", stopSpeaking);
   document.getElementById("btn-export-data")?.addEventListener("click", exportUserBookingsJson);
   document.getElementById("btn-reset-prefs")?.addEventListener("click", resetPrefsToDefault);
-  document.getElementById("btn-settings-logout")?.addEventListener("click", () => {
-    state.currentUserId = null;
-    saveState();
-    closeSettingsModal();
-    renderTopbar();
-    hideOtpStage();
-    switchView("landing");
-    showToast("Sessão encerrada.");
-  });
+  document.getElementById("btn-settings-logout")?.addEventListener("click", performLogout);
   document.getElementById("btn-settings-delete-account")?.addEventListener("click", confirmDeleteAccount);
 
   // Régua / Guia de leitura (acompanha cursor e foco de teclado)
