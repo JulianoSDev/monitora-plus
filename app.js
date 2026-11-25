@@ -1606,7 +1606,7 @@ function exportUserBookingsJson() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-  showToast("Dados exportados em JSON.");
+  showToast("Cópia dos seus dados baixada.", null, "success");
 }
 
 function resetPrefsToDefault() {
@@ -1746,8 +1746,8 @@ function renderTopbar() {
     if (topbarInitials) topbarInitials.textContent = initialsUpper;
     if (ddAvatar) ddAvatar.textContent = initialsUpper;
     if (ddName) ddName.textContent = user.name;
-    if (ddRoleBadge) ddRoleBadge.textContent = isMonitor ? "Monitor(a)" : "Estudante";
-    if (ddSub) ddSub.textContent = `${roleTag} · ${user.email}`;
+    if (ddRoleBadge) ddRoleBadge.textContent = isMonitor ? "Monitor" : "Estudante";
+    if (ddSub) ddSub.textContent = user.email;
   } else {
     label.textContent = "Entrar";
     const topbarInitials = document.getElementById("topbar-user-initials");
@@ -2566,11 +2566,16 @@ function openMonitorSlotSheet() {
   form.setAttribute("aria-label", "Publicar novo horário");
   syncBodyScrollLock();
   if (getPrefs().vlibras) positionVlibrasShadowAccess();
-  setTimeout(() => document.getElementById("ms-date")?.focus(), 40);
+  setTimeout(() => {
+    const dateInput = document.getElementById("ms-date");
+    const dateCtx = customDateRegistry.get(dateInput);
+    (dateCtx?.trigger || dateInput)?.focus();
+  }, 40);
 }
 
 function closeMonitorSlotSheet(restoreFocus = false) {
   closeAllCustomSelects();
+  closeAllCustomDatePickers();
   const form = document.getElementById("form-new-slot");
   const backdrop = document.getElementById("monitor-slot-sheet-backdrop");
   const wasOpen = Boolean(form && form.classList.contains("is-mobile-sheet-open"));
@@ -3280,7 +3285,6 @@ function renderBookings() {
             <div class="booking-info">
               <div class="booking-meta-top">
                 <span class="mobile-card-datetime">${escapeHtml(mobileDt)}</span>
-                <span class="mono-badge" translate="no">${escapeHtml(bk.protocol)}</span>
                 <span class="status-tag is-${escapeHtml(bk.status)}">${escapeHtml(bk.status)}</span>
               </div>
               <p class="row-title">${escapeHtml(off.subject)}</p>
@@ -3398,7 +3402,6 @@ function renderMonitorPanel() {
               <div class="booking-info">
                 <div class="booking-meta-top">
                   <span class="mobile-card-datetime">${escapeHtml(mobileDt)}</span>
-                  <span class="mono-badge">${escapeHtml(bk.protocol)}</span>
                   <span class="status-tag is-${escapeHtml(bk.status)}">${escapeHtml(bk.status)}</span>
                 </div>
                 <p class="row-title"><span class="mon-stu-name">${escapeHtml(
@@ -3408,17 +3411,11 @@ function renderMonitorPanel() {
         )})</span><span class="mon-stu-ra-mobile">${escapeHtml(stu ? stu.ra : "—")}</span></p>
                 <p class="row-meta booking-meta-desktop">${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)}</p>
                 <p class="row-meta booking-topic-quote" style="margin-top:4px">${escapeHtml(formatBookingTopic(bk.topic))}</p>
-                ${
-                  bk.status !== "Confirmado"
-                    ? `<span class="monitor-card-protocol-mobile">${escapeHtml(bk.protocol)}</span>`
-                    : ""
-                }
               </div>
             </div>
             ${
               bk.status === "Confirmado"
                 ? `<div class="booking-actions">
-                     <span class="monitor-card-protocol-mobile">${escapeHtml(bk.protocol)}</span>
                      <button type="button" class="btn btn-secondary" data-complete-bk="${escapeHtml(
                        bk.id
                      )}">Concluir</button>
@@ -4023,10 +4020,6 @@ function bindEvents() {
     closeProfileMenu();
     openSettingsModal("acessibilidade", true);
   });
-  document.getElementById("btn-profile-account")?.addEventListener("click", () => {
-    closeProfileMenu();
-    openSettingsModal("conta", true);
-  });
   document.getElementById("btn-profile-settings")?.addEventListener("click", () => {
     closeProfileMenu();
     openSettingsModal("geral", false);
@@ -4041,10 +4034,6 @@ function bindEvents() {
     if (e.target.id === "faq-modal") closeFaqModal();
   });
   document.getElementById("btn-cancel-reschedule")?.addEventListener("click", () => cancelReschedule(true));
-  document.getElementById("btn-profile-export")?.addEventListener("click", () => {
-    closeProfileMenu();
-    exportUserBookingsJson();
-  });
   document.getElementById("btn-profile-logout")?.addEventListener("click", performLogout);
 
   document.getElementById("profile-sheet-backdrop")?.addEventListener("click", () => closeProfileMenu(true));
@@ -4055,6 +4044,9 @@ function bindEvents() {
     }
     if (!e.target.closest(".bc-select-wrap") && !e.target.closest(".bc-select-popover")) {
       closeAllCustomSelects();
+    }
+    if (!e.target.closest(".bc-date-wrap") && !e.target.closest(".bc-date-popover")) {
+      closeAllCustomDatePickers();
     }
   });
 
@@ -4964,8 +4956,18 @@ function bindEvents() {
       }
     }
     if (e.key === "Escape") {
+      if (document.querySelector(".bc-date-wrap.is-open")) {
+        const openDateWrap = document.querySelector(".bc-date-wrap.is-open");
+        const dateTrigger = openDateWrap?.querySelector(".bc-date-trigger");
+        closeAllCustomDatePickers();
+        dateTrigger?.focus();
+        return;
+      }
       if (document.querySelector(".bc-select-wrap.is-open")) {
+        const openSelectWrap = document.querySelector(".bc-select-wrap.is-open");
+        const selectTrigger = openSelectWrap?.querySelector(".bc-select-trigger");
         closeAllCustomSelects();
+        selectTrigger?.focus();
         return;
       }
       const ssoModal = document.getElementById("sso-modal");
@@ -5072,32 +5074,53 @@ function closeAllCustomSelects(exceptWrap = null) {
   });
 }
 
-function positionCustomPopover(trigger, popover) {
+const customDateRegistry = new WeakMap();
+
+function positionFixedPopover(trigger, popover, desiredWidth, maxDesiredHeight = 248) {
   const rect = trigger.getBoundingClientRect();
   const margin = 12;
-  const popWidth = Math.min(window.innerWidth - margin * 2, Math.max(rect.width, 280));
-  const left =
+  const popWidth = Math.min(window.innerWidth - margin * 2, Math.max(rect.width, desiredWidth));
+
+  // Mede o origin real do containing block (compensa filter em html[data-cvd] ou body scroll-locked)
+  const prevVis = popover.style.visibility;
+  popover.style.visibility = "hidden";
+  popover.style.top = "0px";
+  popover.style.left = "0px";
+  popover.style.bottom = "auto";
+  popover.style.width = `${Math.round(popWidth)}px`;
+  const originRect = popover.getBoundingClientRect();
+  const offsetX = originRect.left;
+  const offsetY = originRect.top;
+
+  const targetLeft =
     rect.left + popWidth <= window.innerWidth - margin
       ? Math.max(margin, rect.left)
       : Math.max(margin, rect.right - popWidth);
 
-  popover.style.width = `${Math.round(popWidth)}px`;
-  popover.style.left = `${Math.round(left)}px`;
-
   const spaceBelow = window.innerHeight - rect.bottom - margin;
   const spaceAbove = rect.top - margin;
-  const contentHeight = popover.scrollHeight || 180;
-  const maxDesired = 248;
+  const contentHeight = popover.scrollHeight || 220;
 
-  if (spaceBelow >= Math.min(contentHeight, maxDesired) || spaceBelow >= spaceAbove) {
-    popover.style.top = `${Math.round(rect.bottom + 6)}px`;
-    popover.style.bottom = "auto";
-    popover.style.maxHeight = `${Math.max(120, Math.min(maxDesired, Math.floor(spaceBelow)))}px`;
+  let targetTop;
+  let maxHeight;
+  if (spaceBelow >= Math.min(contentHeight, maxDesiredHeight) || spaceBelow >= spaceAbove) {
+    targetTop = rect.bottom + 6;
+    maxHeight = Math.max(120, Math.min(maxDesiredHeight, Math.floor(spaceBelow)));
   } else {
-    popover.style.bottom = `${Math.round(window.innerHeight - rect.top + 6)}px`;
-    popover.style.top = "auto";
-    popover.style.maxHeight = `${Math.max(120, Math.min(maxDesired, Math.floor(spaceAbove)))}px`;
+    maxHeight = Math.max(120, Math.min(maxDesiredHeight, Math.floor(spaceAbove)));
+    const actualHeight = Math.min(contentHeight, maxHeight);
+    targetTop = Math.max(margin, rect.top - actualHeight - 6);
   }
+
+  popover.style.left = `${Math.round(targetLeft - offsetX)}px`;
+  popover.style.top = `${Math.round(targetTop - offsetY)}px`;
+  popover.style.bottom = "auto";
+  popover.style.maxHeight = `${maxHeight}px`;
+  popover.style.visibility = prevVis === "hidden" ? "" : prevVis;
+}
+
+function positionCustomPopover(trigger, popover) {
+  positionFixedPopover(trigger, popover, 280, 248);
 }
 
 function syncCustomSelect(selectEl) {
@@ -5125,8 +5148,11 @@ function upgradeCustomSelect(selectEl) {
   const trigger = document.createElement("button");
   trigger.type = "button";
   trigger.className = "bc-select-trigger";
+  trigger.setAttribute("role", "combobox");
   trigger.setAttribute("aria-haspopup", "listbox");
   trigger.setAttribute("aria-expanded", "false");
+  const listboxId = selectEl.id ? `${selectEl.id}-listbox` : `bc-listbox-${Math.random().toString(36).slice(2, 8)}`;
+  trigger.setAttribute("aria-controls", listboxId);
 
   const labelElRef = selectEl.id ? document.querySelector(`label[for="${selectEl.id}"]`) : null;
   if (labelElRef) {
@@ -5171,6 +5197,7 @@ function upgradeCustomSelect(selectEl) {
   trigger.appendChild(chevron);
 
   const popover = document.createElement("div");
+  popover.id = listboxId;
   popover.className = "bc-select-popover is-hidden";
   popover.setAttribute("role", "listbox");
   if (labelElRef?.id) popover.setAttribute("aria-labelledby", labelElRef.id);
@@ -5238,11 +5265,14 @@ function upgradeCustomSelect(selectEl) {
 
   const openPopover = (viaKeyboard = false) => {
     closeAllCustomSelects(wrap);
+    closeAllCustomDatePickers();
     wrap.classList.add("is-open");
     trigger.setAttribute("aria-expanded", "true");
+    popover.style.visibility = "hidden";
     document.body.appendChild(popover);
     popover.classList.remove("is-hidden");
     positionCustomPopover(trigger, popover);
+    popover.style.visibility = "";
 
     if (viaKeyboard) {
       const activeOpt = popover.querySelector('[aria-selected="true"]') || optionBtns[0];
@@ -5297,18 +5327,320 @@ function upgradeCustomSelect(selectEl) {
   syncCustomSelect(selectEl);
 }
 
+function closeAllCustomDatePickers(exceptWrap = null) {
+  document.querySelectorAll(".bc-date-wrap.is-open").forEach((wrap) => {
+    if (wrap === exceptWrap) return;
+    wrap.classList.remove("is-open");
+    const trigger = wrap.querySelector(".bc-date-trigger");
+    const popover = wrap._bcDatePopover || wrap.querySelector(".bc-date-popover");
+    trigger?.setAttribute("aria-expanded", "false");
+    if (popover) {
+      popover.classList.add("is-hidden");
+      popover.style.top = "";
+      popover.style.bottom = "";
+      popover.style.left = "";
+      popover.style.width = "";
+      popover.style.maxHeight = "";
+      popover.style.visibility = "";
+      if (popover.parentNode !== wrap) {
+        wrap.appendChild(popover);
+      }
+    }
+  });
+}
+
+function parseIsoDateParts(iso) {
+  const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  return { year: Number(m[1]), month: Number(m[2]) - 1, day: Number(m[3]) };
+}
+
+function formatIsoFromParts(year, monthIdx, day) {
+  const mm = String(monthIdx + 1).padStart(2, "0");
+  const dd = String(day).padStart(2, "0");
+  return `${year}-${mm}-${dd}`;
+}
+
+function formatCustomDateLabel(iso) {
+  const parts = parseIsoDateParts(iso);
+  if (!parts) return "Selecione a data";
+  const d = new Date(parts.year, parts.month, parts.day);
+  const wk = FULL_WEEKDAYS[d.getDay()] || "";
+  const shortWk = wk ? wk.slice(0, 3) : "";
+  return `${String(parts.day).padStart(2, "0")}/${String(parts.month + 1).padStart(2, "0")}/${parts.year}${
+    shortWk ? ` · ${shortWk}` : ""
+  }`;
+}
+
+function upgradeCustomDatePicker(inputEl) {
+  if (!inputEl || customDateRegistry.has(inputEl)) return;
+
+  const minIso = inputEl.getAttribute("min") || "2026-11-18";
+  const maxIso = inputEl.getAttribute("max") || "2026-12-31";
+  const initialParts = parseIsoDateParts(inputEl.value) || parseIsoDateParts(minIso) || { year: 2026, month: 10, day: 28 };
+  let viewYear = initialParts.year;
+  let viewMonth = initialParts.month;
+
+  const wrap = document.createElement("div");
+  wrap.className = "bc-date-wrap";
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "bc-date-trigger";
+  trigger.id = `${inputEl.id}-trigger`;
+  trigger.setAttribute("aria-haspopup", "dialog");
+  trigger.setAttribute("aria-expanded", "false");
+
+  const labelElRef = inputEl.id ? document.querySelector(`label[for="${inputEl.id}"]`) : null;
+  if (labelElRef) {
+    if (!labelElRef.id) labelElRef.id = `label-${inputEl.id}`;
+    trigger.setAttribute("aria-labelledby", labelElRef.id);
+    labelElRef.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      trigger.focus();
+      trigger.click();
+    });
+  }
+
+  const triggerMain = document.createElement("span");
+  triggerMain.className = "bc-date-trigger-main";
+
+  const iconSpan = document.createElement("span");
+  iconSpan.className = "bc-date-icon";
+  iconSpan.setAttribute("aria-hidden", "true");
+  iconSpan.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
+
+  const labelSpan = document.createElement("span");
+  labelSpan.className = "bc-date-label";
+  triggerMain.appendChild(iconSpan);
+  triggerMain.appendChild(labelSpan);
+
+  const chevron = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  chevron.setAttribute("viewBox", "0 0 24 24");
+  chevron.setAttribute("width", "14");
+  chevron.setAttribute("height", "14");
+  chevron.setAttribute("fill", "none");
+  chevron.setAttribute("stroke", "currentColor");
+  chevron.setAttribute("stroke-width", "2.2");
+  chevron.setAttribute("stroke-linecap", "round");
+  chevron.setAttribute("stroke-linejoin", "round");
+  chevron.setAttribute("aria-hidden", "true");
+  chevron.classList.add("bc-select-chevron");
+  chevron.innerHTML = `<polyline points="6 9 12 15 18 9"/>`;
+
+  trigger.appendChild(triggerMain);
+  trigger.appendChild(chevron);
+
+  const popover = document.createElement("div");
+  popover.className = "bc-date-popover is-hidden";
+  popover.setAttribute("role", "dialog");
+  popover.setAttribute("aria-label", "Selecionar data");
+
+  const head = document.createElement("div");
+  head.className = "bc-date-head";
+
+  const monthLabel = document.createElement("p");
+  monthLabel.className = "bc-date-month-label";
+
+  const navWrap = document.createElement("div");
+  navWrap.className = "bc-date-nav";
+
+  const prevBtn = document.createElement("button");
+  prevBtn.type = "button";
+  prevBtn.className = "bc-date-nav-btn";
+  prevBtn.setAttribute("aria-label", "Mês anterior");
+  prevBtn.textContent = "‹";
+
+  const nextBtn = document.createElement("button");
+  nextBtn.type = "button";
+  nextBtn.className = "bc-date-nav-btn";
+  nextBtn.setAttribute("aria-label", "Próximo mês");
+  nextBtn.textContent = "›";
+
+  navWrap.appendChild(prevBtn);
+  navWrap.appendChild(nextBtn);
+  head.appendChild(monthLabel);
+  head.appendChild(navWrap);
+
+  const weekdaysEl = document.createElement("div");
+  weekdaysEl.className = "bc-date-weekdays";
+  weekdaysEl.setAttribute("aria-hidden", "true");
+  weekdaysEl.innerHTML = "<span>DOM</span><span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span>";
+
+  const gridEl = document.createElement("div");
+  gridEl.className = "bc-date-grid";
+  gridEl.setAttribute("role", "grid");
+  gridEl.setAttribute("aria-label", "Dias disponíveis");
+
+  popover.appendChild(head);
+  popover.appendChild(weekdaysEl);
+  popover.appendChild(gridEl);
+
+  const MONTH_NAMES_PT = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+  ];
+
+  const syncLabel = () => {
+    labelSpan.textContent = formatCustomDateLabel(inputEl.value);
+  };
+
+  const renderCalendar = () => {
+    monthLabel.textContent = `${MONTH_NAMES_PT[viewMonth]} ${viewYear}`;
+    const minParts = parseIsoDateParts(minIso);
+    const maxParts = parseIsoDateParts(maxIso);
+    if (minParts) {
+      prevBtn.disabled = viewYear < minParts.year || (viewYear === minParts.year && viewMonth <= minParts.month);
+    }
+    if (maxParts) {
+      nextBtn.disabled = viewYear > maxParts.year || (viewYear === maxParts.year && viewMonth >= maxParts.month);
+    }
+
+    const firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
+    const totalDays = new Date(viewYear, viewMonth + 1, 0).getDate();
+    let html = "";
+    for (let i = 0; i < firstWeekday; i += 1) {
+      html += `<span class="bc-date-day-empty" aria-hidden="true"></span>`;
+    }
+    for (let day = 1; day <= totalDays; day += 1) {
+      const iso = formatIsoFromParts(viewYear, viewMonth, day);
+      const isDisabled = iso < minIso || iso > maxIso;
+      const isSelected = iso === inputEl.value;
+      html += `<button type="button" class="bc-date-day${isSelected ? " is-selected" : ""}" data-date-iso="${iso}" aria-pressed="${isSelected}" ${isDisabled ? "disabled" : ""}>${day}</button>`;
+    }
+    gridEl.innerHTML = html;
+  };
+
+  prevBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    viewMonth -= 1;
+    if (viewMonth < 0) {
+      viewMonth = 11;
+      viewYear -= 1;
+    }
+    renderCalendar();
+  });
+
+  nextBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    viewMonth += 1;
+    if (viewMonth > 11) {
+      viewMonth = 0;
+      viewYear += 1;
+    }
+    renderCalendar();
+  });
+
+  gridEl.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const btn = e.target.closest("[data-date-iso]");
+    if (!btn || btn.disabled) return;
+    inputEl.value = btn.dataset.dateIso;
+    syncLabel();
+    closeAllCustomDatePickers();
+    inputEl.dispatchEvent(new Event("change", { bubbles: true }));
+    trigger.focus();
+  });
+
+  gridEl.addEventListener("keydown", (e) => {
+    const enabled = Array.from(gridEl.querySelectorAll("[data-date-iso]:not(:disabled)"));
+    const curIdx = enabled.indexOf(document.activeElement);
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeAllCustomDatePickers();
+      trigger.focus();
+      return;
+    }
+    if (curIdx === -1 || enabled.length === 0) return;
+    let target = null;
+    if (e.key === "ArrowRight") target = enabled[Math.min(enabled.length - 1, curIdx + 1)];
+    if (e.key === "ArrowLeft") target = enabled[Math.max(0, curIdx - 1)];
+    if (e.key === "ArrowDown") target = enabled[Math.min(enabled.length - 1, curIdx + 7)];
+    if (e.key === "ArrowUp") target = enabled[Math.max(0, curIdx - 7)];
+    if (e.key === "Home") target = enabled[0];
+    if (e.key === "End") target = enabled[enabled.length - 1];
+    if (target) {
+      e.preventDefault();
+      target.focus();
+    }
+  });
+
+  inputEl.classList.add("bc-date-native-hidden");
+  inputEl.setAttribute("tabindex", "-1");
+  inputEl.setAttribute("aria-hidden", "true");
+  inputEl.parentNode.insertBefore(wrap, inputEl);
+  wrap.appendChild(inputEl);
+  wrap.appendChild(trigger);
+  wrap.appendChild(popover);
+  wrap._bcDatePopover = popover;
+
+  const openDatePopover = (viaKeyboard = false) => {
+    closeAllCustomSelects();
+    closeAllCustomDatePickers(wrap);
+    const p = parseIsoDateParts(inputEl.value);
+    if (p) {
+      viewYear = p.year;
+      viewMonth = p.month;
+    }
+    renderCalendar();
+    wrap.classList.add("is-open");
+    trigger.setAttribute("aria-expanded", "true");
+    popover.style.visibility = "hidden";
+    document.body.appendChild(popover);
+    popover.classList.remove("is-hidden");
+    positionFixedPopover(trigger, popover, 286, 340);
+    popover.style.visibility = "";
+    if (viaKeyboard) {
+      const sel = popover.querySelector(".bc-date-day.is-selected") || popover.querySelector(".bc-date-day:not(:disabled)");
+      sel?.focus();
+    }
+  };
+
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (wrap.classList.contains("is-open")) {
+      closeAllCustomDatePickers();
+    } else {
+      openDatePopover(false);
+    }
+  });
+
+  trigger.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openDatePopover(true);
+    }
+  });
+
+  inputEl.addEventListener("change", syncLabel);
+  customDateRegistry.set(inputEl, { wrap, trigger, labelEl: labelSpan, popover, syncLabel });
+  syncLabel();
+}
+
+function initCustomDatePickers() {
+  document.querySelectorAll('input[type="date"][data-custom-date="true"]').forEach(upgradeCustomDatePicker);
+}
+
 function initCustomSelects() {
   document.querySelectorAll('select[data-custom-select="true"]').forEach(upgradeCustomSelect);
+  initCustomDatePickers();
 
   window.addEventListener(
     "scroll",
     (e) => {
-      if (e.target?.closest?.(".bc-select-popover")) return;
+      if (e.target?.closest?.(".bc-select-popover") || e.target?.closest?.(".bc-date-popover")) return;
       const openWrap = document.querySelector(".bc-select-wrap.is-open");
-      if (!openWrap) return;
-      const trigger = openWrap.querySelector(".bc-select-trigger");
-      const popover = openWrap._bcPopover;
-      if (trigger && popover) positionCustomPopover(trigger, popover);
+      if (openWrap) {
+        const trigger = openWrap.querySelector(".bc-select-trigger");
+        const popover = openWrap._bcPopover;
+        if (trigger && popover) positionCustomPopover(trigger, popover);
+      }
+      const openDate = document.querySelector(".bc-date-wrap.is-open");
+      if (openDate) {
+        const trigger = openDate.querySelector(".bc-date-trigger");
+        const popover = openDate._bcDatePopover;
+        if (trigger && popover) positionFixedPopover(trigger, popover, 286, 340);
+      }
     },
     true
   );
@@ -5336,10 +5668,17 @@ function initCustomSelects() {
     syncMobileChrome();
     syncBodyScrollLock();
     const openWrap = document.querySelector(".bc-select-wrap.is-open");
-    if (!openWrap) return;
-    const trigger = openWrap.querySelector(".bc-select-trigger");
-    const popover = openWrap._bcPopover;
-    if (trigger && popover) positionCustomPopover(trigger, popover);
+    if (openWrap) {
+      const trigger = openWrap.querySelector(".bc-select-trigger");
+      const popover = openWrap._bcPopover;
+      if (trigger && popover) positionCustomPopover(trigger, popover);
+    }
+    const openDate = document.querySelector(".bc-date-wrap.is-open");
+    if (openDate) {
+      const trigger = openDate.querySelector(".bc-date-trigger");
+      const popover = openDate._bcDatePopover;
+      if (trigger && popover) positionFixedPopover(trigger, popover, 286, 340);
+    }
   });
 }
 

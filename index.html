@@ -20,8 +20,8 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="styles.css?v=20261124h1" />
-  <link rel="stylesheet" href="mobile.css?v=20261124h1" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="styles.css?v=20261125a1" />
+  <link rel="stylesheet" href="mobile.css?v=20261125a1" media="(max-width: 768px)" />
 </head>
 <body class="theme-light is-landing-mode">
   <a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
@@ -116,14 +116,22 @@
 
               <div class="profile-dd-sep" role="separator"></div>
             </div>
-            <div class="profile-dd-section-label">Tema rápido</div>
-            <div class="profile-dd-theme-row" role="group" aria-label="Alternar tema rápido">
+            <div class="profile-dd-section-label">Aparência</div>
+            <div class="profile-dd-theme-row" role="group" aria-label="Alternar aparência">
               <button type="button" class="profile-dd-theme-btn theme-opt" data-theme="light">Claro</button>
               <button type="button" class="profile-dd-theme-btn theme-opt" data-theme="dark">Escuro</button>
               <button type="button" class="profile-dd-theme-btn theme-opt" data-theme="contrast">AAA</button>
             </div>
 
             <div class="profile-dd-sep" role="separator"></div>
+            <div class="profile-dd-section-label">Preferências e ajuda</div>
+            <button type="button" class="profile-dd-item" role="menuitem" id="btn-profile-settings">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.77 1 1.51 1H21a2 2 0 0 1 0 4h-.09c-.74 0-1.25.4-1.51 1Z" />
+              </svg>
+              <span>Configurações</span>
+            </button>
             <button type="button" class="profile-dd-item" role="menuitem" id="btn-profile-a11y">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="4.5" r="1.5" />
@@ -131,34 +139,13 @@
               </svg>
               <span>Acessibilidade</span>
             </button>
-            <button type="button" class="profile-dd-item" role="menuitem" id="btn-profile-settings">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.77 1 1.51 1H21a2 2 0 0 1 0 4h-.09c-.74 0-1.25.4-1.51 1Z" />
-              </svg>
-              <span>Configurações gerais</span>
-            </button>
             <button type="button" class="profile-dd-item" role="menuitem" id="btn-profile-faq">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
-              <span>Ajuda rápida (FAQ)</span>
-            </button>
-            <button type="button" class="profile-dd-item" role="menuitem" id="btn-profile-account">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-              <span>Conta e Privacidade (LGPD)</span>
-            </button>
-            <button type="button" class="profile-dd-item" role="menuitem" id="btn-profile-export">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              <span>Exportar dados (.json)</span>
+              <span>Ajuda (FAQ)</span>
             </button>
 
             <div class="profile-dd-sep" role="separator"></div>
@@ -878,7 +865,7 @@
             <div class="field-row">
               <div class="field">
                 <label for="ms-date">Data</label>
-                <input type="date" id="ms-date" name="slotDate" value="2026-11-28" min="2026-11-18" max="2026-12-20" required />
+                <input type="date" id="ms-date" name="slotDate" value="2026-11-28" min="2026-11-18" max="2026-12-20" data-custom-date="true" required />
               </div>
               <div class="field">
                 <label for="ms-time">Horário</label>
@@ -1554,10 +1541,10 @@
 
                 <div class="settings-row">
                   <div>
-                    <strong>Exportar meus dados (.json)</strong>
-                    <p>Baixa cópia estruturada dos seus agendamentos (portabilidade LGPD).</p>
+                    <strong>Baixar cópia dos meus dados</strong>
+                    <p>Salva um arquivo com seu perfil e histórico de agendamentos (portabilidade LGPD).</p>
                   </div>
-                  <button type="button" class="btn btn-secondary" id="btn-export-data">Exportar JSON</button>
+                  <button type="button" class="btn btn-secondary" id="btn-export-data">Baixar dados</button>
                 </div>
 
                 <div class="settings-row">
@@ -1751,6 +1738,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261124h1"></script>
+  <script src="app.js?v=20261125a1"></script>
 </body>
 </html>

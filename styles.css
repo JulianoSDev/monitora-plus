@@ -1667,14 +1667,15 @@ h2 {
 
 .cal-shell {
   width: 100%;
-  max-width: 1000px;
+  max-width: 920px;
+  min-height: 440px;
   margin: 0 auto;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: 0 10px 30px rgba(20, 27, 41, 0.05);
   display: grid;
-  grid-template-columns: 260px 1fr 290px;
+  grid-template-columns: 270px minmax(0, 1fr) 260px;
   overflow: hidden;
 }
 
@@ -1685,8 +1686,9 @@ body.theme-contrast .cal-shell {
 
 .cal-shell-2col {
   width: 100%;
-  max-width: 900px;
-  grid-template-columns: 280px 1fr;
+  max-width: 920px;
+  min-height: 440px;
+  grid-template-columns: 270px minmax(0, 1fr);
 }
 
 .cal-left {
@@ -2535,9 +2537,12 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
 }
 
 .svg-defs-hidden {
-  position: absolute;
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
   width: 0;
   height: 0;
+  overflow: hidden;
   pointer-events: none;
 }
 
@@ -2843,6 +2848,12 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
   border-bottom: none;
 }
 
+.settings-row > .btn,
+.settings-danger-box > .btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .settings-row strong {
   display: block;
   font-size: 0.88rem;
@@ -3132,6 +3143,7 @@ body.a11y-pause-distractions *:active {
   .cal-shell-2col,
   .students-split {
     grid-template-columns: 1fr;
+    min-height: 0;
   }
 
   .cal-left,
@@ -3142,15 +3154,9 @@ body.a11y-pause-distractions *:active {
 }
 
 /* ==================== CUSTOM SELECT POPOVER ==================== */
-.bc-select-native-hidden {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  overflow: hidden !important;
-  margin: 0 !important;
-  padding: 0 !important;
+.bc-select-native-hidden,
+.bc-date-native-hidden {
+  display: none !important;
 }
 
 .bc-select-wrap {
@@ -3238,8 +3244,8 @@ body.a11y-pause-distractions *:active {
 
 .bc-select-popover {
   position: fixed;
-  top: 0;
-  left: 0;
+  top: -9999px;
+  left: -9999px;
   min-width: 210px;
   max-height: 248px;
   overflow-y: auto;
@@ -3256,6 +3262,202 @@ body.a11y-pause-distractions *:active {
   flex-direction: column;
   gap: 2px;
   animation: selectPopIn 0.14s var(--ease-out);
+}
+
+/* ==================== CUSTOM DATE PICKER POPOVER (PAINEL DO MONITOR) ==================== */
+.bc-date-wrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.bc-date-trigger {
+  width: 100%;
+  min-height: 42px;
+  height: 42px;
+  padding: 0 11px 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bc-date-trigger:hover {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+.bc-date-trigger[aria-expanded="true"],
+.bc-date-trigger:focus-visible {
+  outline: 2px solid transparent;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+
+.bc-date-trigger-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.bc-date-icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+}
+
+.bc-date-trigger[aria-expanded="true"] .bc-date-icon {
+  color: var(--accent-text);
+}
+
+.bc-date-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+
+.bc-date-popover {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  width: 286px;
+  max-width: calc(100vw - 24px);
+  z-index: 960;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+  animation: selectPopIn 0.14s var(--ease-out);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+body.theme-contrast .bc-date-popover {
+  border-width: 2px;
+  box-shadow: none;
+}
+
+.bc-date-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.bc-date-month-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.bc-date-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bc-date-nav-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+
+.bc-date-nav-btn:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.bc-date-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.bc-date-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.bc-date-weekdays span {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.bc-date-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.bc-date-day {
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-grid;
+  place-items: center;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.bc-date-day:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.bc-date-day.is-selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 700;
+}
+
+.bc-date-day:disabled {
+  color: var(--text-muted);
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+
+.bc-date-day-empty {
+  height: 34px;
 }
 
 @keyframes selectPopIn {
@@ -4483,6 +4685,8 @@ body.theme-contrast .wcag-guard-strip[data-level="aa"] .wcag-status-badge {
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text-secondary);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* ==================== AUTENTICAÇÃO: SENHA VISÍVEL + SSO INSTITUCIONAL (GENNERA / GOOGLE) ==================== */
