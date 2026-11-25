@@ -3499,3 +3499,39 @@ body.is-scroll-locked div[vw] [vw-access-button] {
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+/* Smoke-safe da nova tela Início no mobile (<= 768px): zero overflow horizontal sem redesenhar o resto */
+.inicio-shell {
+  padding-top: 6px;
+}
+
+.inicio-greeting {
+  font-size: 1.375rem;
+}
+
+.inicio-search-input {
+  font-size: max(16px, calc(16px * var(--font-scale, 1)));
+  padding-right: 14px;
+}
+
+.inicio-search-kbd {
+  display: none;
+}
+
+.inicio-grid {
+  margin-top: 22px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.inicio-pass-card {
+  padding: 18px;
+}
+
+.inicio-time-start {
+  font-size: 2rem;
+}
+
+.inicio-time-end {
+  font-size: 1.25rem;
+}

@@ -321,6 +321,39 @@ function saveState() {
   } catch {
     // Ignora em modo privado restrito
   }
+  if (typeof ui !== "undefined" && ui.activeView === "inicio") {
+    renderInicio();
+  }
+}
+
+let lastInputWasKeyboard = false;
+document.addEventListener(
+  "keydown",
+  (e) => {
+    if (e.key === "Tab" || e.key === "Enter" || e.key === " " || e.key.startsWith("Arrow")) {
+      lastInputWasKeyboard = true;
+    }
+  },
+  true
+);
+document.addEventListener(
+  "pointerdown",
+  () => {
+    lastInputWasKeyboard = false;
+  },
+  true
+);
+
+function runWithViewTransition(fn) {
+  if (typeof document.startViewTransition === "function" && !prefersReducedMotion()) {
+    try {
+      document.startViewTransition(() => fn());
+      return;
+    } catch {
+      // Fallback síncrono se houver transição concorrente
+    }
+  }
+  fn();
 }
 
 // ==================== HELPERS ====================
@@ -1345,7 +1378,7 @@ function closeSettingsModal() {
   modal?.classList.add("is-hidden");
   syncBodyScrollLock();
   syncMobileChrome();
-  if (wasOpen && lastSettingsTriggerEl && document.contains(lastSettingsTriggerEl)) {
+  if (wasOpen && lastInputWasKeyboard && lastSettingsTriggerEl && document.contains(lastSettingsTriggerEl)) {
     lastSettingsTriggerEl.focus();
   }
   lastSettingsTriggerEl = null;
@@ -1509,7 +1542,7 @@ function closeFaqModal() {
   const wasOpen = modal && !modal.classList.contains("is-hidden");
   modal?.classList.add("is-hidden");
   syncBodyScrollLock();
-  if (wasOpen && lastFaqTriggerEl && document.contains(lastFaqTriggerEl)) {
+  if (wasOpen && lastInputWasKeyboard && lastFaqTriggerEl && document.contains(lastFaqTriggerEl)) {
     lastFaqTriggerEl.focus();
   }
   lastFaqTriggerEl = null;
@@ -1675,7 +1708,7 @@ function closeProfileMenu(restoreFocus = false) {
   syncBodyScrollLock();
   btn?.setAttribute("aria-expanded", "false");
 
-  if (wasOpen && restoreFocus && btn && document.contains(btn)) {
+  if (wasOpen && restoreFocus && lastInputWasKeyboard && btn && document.contains(btn)) {
     btn.focus();
   }
 }
@@ -1766,6 +1799,7 @@ function renderTopbar() {
   document.getElementById("badge-agendamentos").textContent = String(activeCount);
   syncSettingsAgendaBox();
   syncMobileChrome();
+  if (ui.activeView === "inicio") renderInicio();
 }
 
 function syncMobileChrome() {
@@ -1820,9 +1854,383 @@ function syncMobileChrome() {
   if (getPrefs().vlibras) positionVlibrasShadowAccess();
 }
 
+// ==================== TELA INÍCIO (PÓS-LOGIN DESKTOP-FIRST) ====================
+const PT_WEEKDAYS_SHORT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const PT_MONTHS_LONG = [
+  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+];
+const PT_MONTHS_SHORT = [
+  "jan", "fev", "mar", "abr", "mai", "jun",
+  "jul", "ago", "set", "out", "nov", "dez",
+];
+
+function formatInicioTodayLabel() {
+  const now = new Date();
+  const wk = FULL_WEEKDAYS[now.getDay()] || "Quarta";
+  const day = now.getDate();
+  const month = PT_MONTHS_LONG[now.getMonth()] || "novembro";
+  return `${wk}, ${day} de ${month}`;
+}
+
+function formatInicioGreeting(user) {
+  const hour = new Date().getHours();
+  const salute = hour >= 5 && hour < 12 ? "Bom dia" : hour >= 12 && hour < 18 ? "Boa tarde" : "Boa noite";
+  const firstName = user?.name ? user.name.trim().split(/\s+/)[0] : "";
+  return firstName ? `${salute}, ${firstName}` : salute;
+}
+
+function getSlotStartDate(dateIso, timeStr) {
+  const p = parseIsoDateParts(dateIso);
+  if (!p) return null;
+  const startPart = String(timeStr || "").split(" - ")[0].trim();
+  const [hh, mm] = startPart.split(":").map(Number);
+  return new Date(p.year, p.month, p.day, Number.isFinite(hh) ? hh : 14, Number.isFinite(mm) ? mm : 0, 0, 0);
+}
+
+function formatRelativeCountdown(slot) {
+  const start = getSlotStartDate(slot.dateIso, slot.time);
+  const startTime = (slot.time || "").split(" - ")[0] || slot.time;
+  if (!start) return `${slot.dayName} às ${startTime}`;
+
+  const now = new Date();
+  const diffMs = start.getTime() - now.getTime();
+  const diffMins = Math.round(diffMs / 60000);
+
+  if (diffMins >= -40 && diffMins <= 0) {
+    return "Em andamento agora";
+  }
+
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const slotMidnight = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+  const diffDays = Math.round((slotMidnight - todayMidnight) / 86400000);
+
+  if (diffMins > 0 && diffDays === 0) {
+    if (diffMins < 60) return `Começa em ${diffMins}min`;
+    const h = Math.floor(diffMins / 60);
+    const m = diffMins % 60;
+    return m > 0 ? `Começa em ${h}h ${m}min` : `Começa em ${h}h`;
+  }
+  if (diffDays === 1) {
+    return `Amanhã às ${startTime}`;
+  }
+  if (diffDays > 1 && diffDays <= 7) {
+    const shortM = PT_MONTHS_SHORT[start.getMonth()] || "";
+    return `${slot.dayName}, ${start.getDate()} ${shortM} · ${startTime}`;
+  }
+  const shortM = PT_MONTHS_SHORT[start.getMonth()] || "";
+  return `${slot.dayName}, ${start.getDate()} ${shortM} · ${startTime}`;
+}
+
+function formatTimelineWhen(slot) {
+  const p = parseIsoDateParts(slot.dateIso);
+  const startTime = (slot.time || "").split(" - ")[0] || slot.time;
+  if (!p) return `${slot.dayName.slice(0, 3)} · ${startTime}`;
+  const d = new Date(p.year, p.month, p.day);
+  const wk = PT_WEEKDAYS_SHORT[d.getDay()] || slot.dayName.slice(0, 3);
+  const mon = PT_MONTHS_SHORT[p.month] || "";
+  return `${wk}, ${p.day} ${mon} · ${startTime}`;
+}
+
+function getShortMonitorName(fullName) {
+  return String(fullName || "").replace(/^Monitora?\s+/i, "").trim();
+}
+
+function openOfferingStep2FromInicio(offeringId) {
+  const off = getOffering(offeringId);
+  if (!off) return;
+  closeInicioSearchPopover();
+  const input = document.getElementById("inicio-search-input");
+  if (input) input.value = "";
+  ui.selectedOfferingId = off.id;
+  ui.selectedDateIso = null;
+  ui.selectedSlotId = null;
+  ui.step = 2;
+  switchView("agendar", true);
+}
+
+let inicioSearchFocusedIdx = -1;
+
+function closeInicioSearchPopover() {
+  const pop = document.getElementById("inicio-search-popover");
+  const input = document.getElementById("inicio-search-input");
+  if (pop) pop.classList.add("is-hidden");
+  if (input) input.setAttribute("aria-expanded", "false");
+  inicioSearchFocusedIdx = -1;
+}
+
+function renderInicioSearchPopover(rawQuery) {
+  const pop = document.getElementById("inicio-search-popover");
+  const input = document.getElementById("inicio-search-input");
+  if (!pop || !input) return;
+
+  const q = normalizeText(rawQuery);
+  if (!q) {
+    closeInicioSearchPopover();
+    return;
+  }
+
+  const matches = OFFERINGS.filter((off) => {
+    const hay = normalizeText(
+      `${off.subject} ${off.shortSubject} ${off.title} ${off.monitor} ${off.location} ${off.shortLocation} ${off.mode}`
+    );
+    return hay.includes(q);
+  });
+
+  inicioSearchFocusedIdx = matches.length > 0 ? 0 : -1;
+
+  if (matches.length === 0) {
+    pop.innerHTML = `
+      <div class="inicio-search-empty">
+        <span>Nenhuma monitoria encontrada para "${escapeHtml(rawQuery.trim())}".</span>
+        <button type="button" class="inicio-quick-catalog" data-inicio-open-catalog="true">Ver catálogo →</button>
+      </div>
+    `;
+  } else {
+    pop.innerHTML = matches
+      .map((off, idx) => {
+        const free = getOfferingRemainingTotal(off.id);
+        const nextLbl = getOfferingNextSlotLabel(off.id);
+        const vacTxt = free > 0 ? formatVagas(free, false) : "Lotado";
+        return `
+          <button
+            type="button"
+            class="inicio-search-option${idx === 0 ? " is-focused" : ""}"
+            role="option"
+            aria-selected="${idx === 0}"
+            data-inicio-pick-offering="${escapeHtml(off.id)}"
+          >
+            <span class="inicio-search-opt-main">
+              <span class="inicio-search-opt-title">${escapeHtml(off.subject)}</span>
+              <span class="inicio-search-opt-sub">${escapeHtml(getShortMonitorName(off.monitor))} · ${escapeHtml(off.shortLocation || off.location)}</span>
+            </span>
+            <span class="inicio-search-opt-meta">${escapeHtml(nextLbl)} · ${escapeHtml(vacTxt)}</span>
+          </button>
+        `;
+      })
+      .join("");
+  }
+
+  pop.classList.remove("is-hidden");
+  input.setAttribute("aria-expanded", "true");
+}
+
+function renderInicio() {
+  const user = getCurrentUser();
+  if (!user) return;
+
+  const dateEl = document.getElementById("inicio-date");
+  const greetEl = document.getElementById("inicio-greeting");
+  const chipsEl = document.getElementById("inicio-quick-chips");
+  const passEl = document.getElementById("inicio-pass-card");
+  const timelineEl = document.getElementById("inicio-timeline");
+  const ctxFootEl = document.getElementById("inicio-context-foot");
+  if (!passEl || !timelineEl || !ctxFootEl) return;
+
+  if (dateEl) dateEl.textContent = formatInicioTodayLabel();
+  if (greetEl) greetEl.textContent = formatInicioGreeting(user);
+
+  // Atalhos rápidos dinâmicos: até 3 disciplinas com vagas + Ver catálogo ->
+  if (chipsEl) {
+    const withVacancies = OFFERINGS.map((off) => ({
+      off,
+      free: getOfferingRemainingTotal(off.id),
+    }))
+      .filter((x) => x.free > 0)
+      .sort((a, b) => b.free - a.free)
+      .slice(0, 3);
+
+    chipsEl.innerHTML =
+      withVacancies
+        .map(
+          ({ off, free }) => `
+          <button type="button" class="inicio-quick-chip" data-inicio-pick-offering="${escapeHtml(off.id)}">
+            <span>${escapeHtml(off.shortSubject)}</span>
+            <span class="inicio-quick-chip-meta">· ${escapeHtml(formatVagas(free, false))}</span>
+          </button>
+        `
+        )
+        .join("") +
+      `<button type="button" class="inicio-quick-catalog" data-inicio-open-catalog="true">Ver catálogo →</button>`;
+  }
+
+  const nowMs = Date.now();
+  const activeStudentBookings = state.bookings
+    .filter((b) => b.studentId === user.id && b.status === "Confirmado")
+    .map((bk) => {
+      const slot = state.slots.find((s) => s.id === bk.slotId);
+      const off = slot ? getOffering(slot.offeringId) : null;
+      const startDate = slot ? getSlotStartDate(slot.dateIso, slot.time) : null;
+      return { bk, slot, off, startMs: startDate ? startDate.getTime() : 0 };
+    })
+    .filter((item) => item.slot && item.off)
+    .sort((a, b) => a.startMs - b.startMs);
+
+  const upcomingStudentBookings = activeStudentBookings.filter((item) => item.startMs >= nowMs - 40 * 60000);
+  const nextStudentItem = upcomingStudentBookings[0] || activeStudentBookings[0] || null;
+
+  const isMonitor = user.role === "monitor";
+  const monitorOff = isMonitor ? getOffering(user.offeringId) : null;
+  const monitorSlots = isMonitor
+    ? state.slots
+        .filter((s) => s.offeringId === user.offeringId)
+        .map((slot) => {
+          const startDate = getSlotStartDate(slot.dateIso, slot.time);
+          const occupied = Math.min(slot.capacity, getSlotOccupied(slot));
+          return { slot, occupied, startMs: startDate ? startDate.getTime() : 0 };
+        })
+        .sort((a, b) => a.startMs - b.startMs)
+    : [];
+  const upcomingMonitorSlots = monitorSlots.filter((item) => item.startMs >= nowMs - 40 * 60000);
+  const nextMonitorSlotItem = upcomingMonitorSlots[0] || monitorSlots[0] || null;
+  const monitorActiveBookings = isMonitor
+    ? state.bookings.filter((b) => {
+        const sl = state.slots.find((s) => s.id === b.slotId);
+        return Boolean(sl && sl.offeringId === user.offeringId && b.status === "Confirmado");
+      })
+    : [];
+
+  // Cartão Passe (Coluna Esquerda)
+  if (nextStudentItem) {
+    const { bk, slot, off } = nextStudentItem;
+    const [startTime, endTime] = String(slot.time || "").split(" - ");
+    const relText = formatRelativeCountdown(slot);
+    passEl.innerHTML = `
+      <div class="inicio-pass-top">
+        <span class="inicio-pass-rel">
+          <span class="inicio-live-dot" aria-hidden="true"></span>
+          <span>${escapeHtml(relText)}</span>
+        </span>
+        <span class="inicio-pass-kicker">Próxima sessão</span>
+      </div>
+      <div class="inicio-pass-time">
+        <span class="inicio-time-start">${escapeHtml(startTime || slot.time)}</span>
+        ${endTime ? `<span class="inicio-time-end">— ${escapeHtml(endTime)}</span>` : ""}
+      </div>
+      <h2 class="inicio-pass-subject">${escapeHtml(off.subject)}</h2>
+      <p class="inicio-pass-meta">${escapeHtml(getShortMonitorName(off.monitor))} · ${escapeHtml(off.shortLocation || off.location)}</p>
+      <div class="inicio-pass-actions">
+        <button type="button" class="btn btn-primary inicio-pass-cta" data-inicio-ics="${escapeHtml(bk.id)}">
+          Adicionar à agenda
+        </button>
+        <button type="button" class="inicio-pass-link" data-inicio-go="agendamentos">
+          Ver detalhes →
+        </button>
+      </div>
+    `;
+  } else if (isMonitor && monitorOff && nextMonitorSlotItem) {
+    const { slot, occupied } = nextMonitorSlotItem;
+    const [startTime, endTime] = String(slot.time || "").split(" - ");
+    const relText = formatRelativeCountdown(slot);
+    passEl.innerHTML = `
+      <div class="inicio-pass-top">
+        <span class="inicio-pass-rel">
+          <span class="inicio-live-dot" aria-hidden="true"></span>
+          <span>${escapeHtml(relText)}</span>
+        </span>
+        <span class="inicio-pass-kicker">Sua monitoria</span>
+      </div>
+      <div class="inicio-pass-time">
+        <span class="inicio-time-start">${escapeHtml(startTime || slot.time)}</span>
+        ${endTime ? `<span class="inicio-time-end">— ${escapeHtml(endTime)}</span>` : ""}
+      </div>
+      <h2 class="inicio-pass-subject">${escapeHtml(monitorOff.subject)}</h2>
+      <p class="inicio-pass-meta">${occupied}/${slot.capacity} alunos · ${escapeHtml(monitorOff.shortLocation || monitorOff.location)}</p>
+      <div class="inicio-pass-actions">
+        <button type="button" class="btn btn-primary inicio-pass-cta" data-inicio-go="monitor">
+          Abrir painel →
+        </button>
+        <button type="button" class="inicio-pass-link" data-inicio-open-catalog="true">
+          Agendar monitoria →
+        </button>
+      </div>
+    `;
+  } else {
+    passEl.innerHTML = `
+      <div class="inicio-pass-top">
+        <span class="inicio-pass-kicker">Próxima sessão</span>
+      </div>
+      <h2 class="inicio-pass-empty-title">Nenhum atendimento agendado</h2>
+      <p class="inicio-pass-empty-sub">Escolha uma disciplina com horários livres para reservar sua vaga.</p>
+      <div class="inicio-pass-actions">
+        <button type="button" class="btn btn-primary inicio-pass-cta" data-inicio-open-catalog="true">
+          Agendar monitoria →
+        </button>
+      </div>
+    `;
+  }
+
+  // Timeline "Sua semana" (Coluna Direita — sem caixa externa)
+  let weekItems = [];
+  if (activeStudentBookings.length > 0) {
+    weekItems = activeStudentBookings.slice(0, 4).map((item, idx) => ({
+      isNext: item === nextStudentItem || (idx === 0 && !nextStudentItem),
+      when: formatTimelineWhen(item.slot),
+      desc:
+        activeStudentBookings.length === 1
+          ? `${item.off.shortSubject} · ${getShortMonitorName(item.off.monitor)}`
+          : `${item.off.subject} · ${getShortMonitorName(item.off.monitor)}`,
+    }));
+  } else if (isMonitor && monitorSlots.length > 0) {
+    const monList = (upcomingMonitorSlots.length > 0 ? upcomingMonitorSlots : monitorSlots).slice(0, 4);
+    weekItems = monList.map((item, idx) => ({
+      isNext: idx === 0,
+      when: formatTimelineWhen(item.slot),
+      desc: `${monitorOff ? monitorOff.shortSubject : "Monitoria"} · ${item.occupied}/${item.slot.capacity} alunos`,
+    }));
+  }
+
+  if (weekItems.length === 0) {
+    timelineEl.classList.remove("has-items");
+    timelineEl.innerHTML = `<p class="inicio-week-empty">Nenhum compromisso futuro nesta semana.</p>`;
+  } else {
+    timelineEl.classList.add("has-items");
+    timelineEl.innerHTML = weekItems
+      .map(
+        (it) => `
+        <div class="inicio-tl-item${it.isNext ? " is-next" : ""}">
+          <span class="inicio-tl-dot" aria-hidden="true"></span>
+          <span class="inicio-tl-when">${escapeHtml(it.when)}</span>
+          <span class="inicio-tl-desc">${escapeHtml(it.desc)}</span>
+        </div>
+      `
+      )
+      .join("");
+  }
+
+  // Bloco contextual inferior (Monitor vs. Estudante)
+  if (isMonitor) {
+    const subjName = monitorOff ? monitorOff.subject : "Disciplina vinculada";
+    const pubCount = monitorSlots.length;
+    const stuCount = monitorActiveBookings.length;
+    const pubTxt = `${pubCount} ${pubCount === 1 ? "horário publicado" : "horários publicados"}`;
+    const stuTxt = `${stuCount} ${stuCount === 1 ? "aluno agendado" : "alunos agendados"}`;
+    ctxFootEl.innerHTML = `
+      <span class="inicio-ctx-title">Sua monitoria · ${escapeHtml(subjName)}</span>
+      <p class="inicio-ctx-sub">${escapeHtml(pubTxt)} · ${escapeHtml(stuTxt)}</p>
+      <button type="button" class="inicio-ctx-link" data-inicio-go="monitor">Abrir painel →</button>
+    `;
+  } else {
+    const activeCount = activeStudentBookings.length;
+    const quotaMax = 4;
+    const pct = Math.min(100, Math.round((activeCount / quotaMax) * 100));
+    ctxFootEl.innerHTML = `
+      <div class="inicio-ctx-head">
+        <span class="inicio-ctx-title">Limite semanal</span>
+        <span class="inicio-ctx-stat">${activeCount} de ${quotaMax} agendamentos ativos</span>
+      </div>
+      <div class="inicio-quota-track" aria-hidden="true">
+        <div class="inicio-quota-fill" style="width:${pct}%"></div>
+      </div>
+      <button type="button" class="inicio-ctx-link" data-inicio-go="agendamentos">Ver histórico →</button>
+    `;
+  }
+}
+
 // ==================== NAVEGAÇÃO ====================
-function switchView(viewName) {
+function switchView(viewName, useTransition = false) {
   closeMonitorSlotSheet(false);
+  closeInicioSearchPopover();
   document.body.classList.remove("is-mobile-input-focused");
   const user = getCurrentUser();
   if (viewName !== "landing" && !user) {
@@ -1830,43 +2238,57 @@ function switchView(viewName) {
     showToast("Faça login para acessar os horários e dados acadêmicos.");
   }
   if (viewName === "monitor" && user?.role !== "monitor") {
-    viewName = "agendar";
+    viewName = "inicio";
   }
 
-  ui.activeView = viewName;
-  if (viewName !== "agendar") {
-    ui.reschedulingBookingId = null;
-  }
-  document.body.classList.toggle("is-landing-mode", viewName === "landing");
-  applyCustomColors();
-
-  document.querySelectorAll(".view-section").forEach((sec) => {
-    sec.classList.toggle("is-active", sec.id === `view-${viewName}`);
-  });
-
-  document.querySelectorAll(".nav-link").forEach((link) => {
-    const active = link.dataset.view === viewName;
-    link.classList.toggle("is-active", active);
-    if (active) {
-      link.setAttribute("aria-current", "page");
-    } else {
-      link.removeAttribute("aria-current");
+  const prevView = ui.activeView;
+  const applySwitch = () => {
+    ui.activeView = viewName;
+    if (viewName !== "agendar") {
+      ui.reschedulingBookingId = null;
     }
-  });
+    document.body.classList.toggle("is-landing-mode", viewName === "landing");
+    applyCustomColors();
 
-  if (viewName === "landing") {
-    startPhraseCarousel();
+    document.querySelectorAll(".view-section").forEach((sec) => {
+      sec.classList.toggle("is-active", sec.id === `view-${viewName}`);
+    });
+
+    document.querySelectorAll(".nav-link").forEach((link) => {
+      const active = link.dataset.view === viewName;
+      link.classList.toggle("is-active", active);
+      if (active) {
+        link.setAttribute("aria-current", "page");
+      } else {
+        link.removeAttribute("aria-current");
+      }
+    });
+
+    if (viewName === "landing") {
+      startPhraseCarousel();
+    } else {
+      stopPhraseCarousel();
+    }
+
+    if (viewName === "inicio") renderInicio();
+    if (viewName === "agendar") renderAgendar();
+    if (viewName === "agendamentos") renderBookings();
+    if (viewName === "monitor") renderMonitorPanel();
+    syncMobileChrome();
+    syncAllSlidingIndicators();
+
+    if (prevView === "landing" && viewName !== "landing" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+  };
+
+  if (useTransition && prevView !== viewName && prevView !== "landing" && viewName !== "landing") {
+    runWithViewTransition(applySwitch);
   } else {
-    stopPhraseCarousel();
+    applySwitch();
   }
-
-  if (viewName === "agendar") renderAgendar();
-  if (viewName === "agendamentos") renderBookings();
-  if (viewName === "monitor") renderMonitorPanel();
-  syncMobileChrome();
-  syncAllSlidingIndicators();
-
-  window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });
 }
 
 // ==================== AUTENTICAÇÃO E VERIFICAÇÃO OTP ====================
@@ -1978,12 +2400,8 @@ function handleLoginSubmit(e) {
   saveState();
   renderTopbar();
 
-  if (user.role === "monitor") {
-    switchView("monitor");
-  } else {
-    ui.step = 1;
-    switchView("agendar");
-  }
+  ui.step = 1;
+  switchView("inicio");
   showToast(`Bem-vindo(a), ${user.name.split(" ")[0]}!`);
 }
 
@@ -2270,12 +2688,8 @@ function startSsoSync(userId) {
     saveState();
     closeSsoModal(false);
     renderTopbar();
-    if (user.role === "monitor") {
-      switchView("monitor");
-    } else {
-      ui.step = 1;
-      switchView("agendar");
-    }
+    ui.step = 1;
+    switchView("inicio");
     showToast(`Conectado via ${cfg.name} · ${acc.shortToastName}`, null, "success");
   }, delayMs);
 }
@@ -2325,7 +2739,7 @@ function handleRegisterSubmit(e) {
   clearFormErrors(form);
   renderTopbar();
   ui.step = 1;
-  switchView("agendar");
+  switchView("inicio");
   showToast("Conta de estudante criada com sucesso!");
 }
 
@@ -2357,7 +2771,8 @@ function handleVerifyOtpSubmit(e) {
   hideOtpStage();
   document.getElementById("form-register").reset();
   renderTopbar();
-  switchView("monitor");
+  ui.step = 1;
+  switchView("inicio");
   showToast("Conta de monitor autorizada e ativada!");
 }
 
@@ -2428,14 +2843,21 @@ function cancelReschedule(returnToBookings = false) {
 }
 
 function setStep(stepNumber) {
-  ui.step = stepNumber;
-  if (stepNumber === 1) ui.reschedulingBookingId = null;
-  if (stepNumber < 3) ui.step3Completed = false;
-  renderAgendar();
-  if (window.innerWidth <= 768) {
-    window.scrollTo({ top: 0, behavior: "auto" });
+  const applyStep = () => {
+    ui.step = stepNumber;
+    if (stepNumber === 1) ui.reschedulingBookingId = null;
+    if (stepNumber < 3) ui.step3Completed = false;
+    renderAgendar();
+    if (window.innerWidth <= 768) {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+  if (window.innerWidth > 768 && ui.step !== stepNumber) {
+    runWithViewTransition(applyStep);
   } else {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    applyStep();
   }
 }
 
@@ -3983,9 +4405,14 @@ function bindEvents() {
   });
 
   // Topbar & Navegação
-  document.getElementById("btn-brand-home").addEventListener("click", () => {
+  document.getElementById("btn-brand-home").addEventListener("click", (e) => {
     triggerBrandPulse();
-    switchView("landing");
+    if (!lastInputWasKeyboard) e.currentTarget.blur();
+    if (getCurrentUser()) {
+      switchView("inicio", true);
+    } else {
+      switchView("landing");
+    }
   });
 
   const performLogout = () => {
@@ -4048,13 +4475,95 @@ function bindEvents() {
     if (!e.target.closest(".bc-date-wrap") && !e.target.closest(".bc-date-popover")) {
       closeAllCustomDatePickers();
     }
+    if (!e.target.closest("#inicio-search-wrap")) {
+      closeInicioSearchPopover();
+    }
   });
 
   document.querySelectorAll(".nav-link").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (!lastInputWasKeyboard) btn.blur();
       if (btn.dataset.view === "agendar") ui.step = 1;
-      switchView(btn.dataset.view);
+      switchView(btn.dataset.view, true);
     });
+  });
+
+  // Tela Início: Barra de comando, atalhos rápidos, cartão Passe e luz especular neutra
+  const inicioSearchInput = document.getElementById("inicio-search-input");
+  const inicioSearchPopover = document.getElementById("inicio-search-popover");
+  inicioSearchInput?.addEventListener("input", (e) => {
+    renderInicioSearchPopover(e.target.value);
+  });
+  inicioSearchInput?.addEventListener("focus", (e) => {
+    if (e.target.value.trim()) renderInicioSearchPopover(e.target.value);
+  });
+  inicioSearchInput?.addEventListener("keydown", (e) => {
+    if (!inicioSearchPopover || inicioSearchPopover.classList.contains("is-hidden")) {
+      if (e.key === "ArrowDown" && inicioSearchInput.value.trim()) {
+        e.preventDefault();
+        renderInicioSearchPopover(inicioSearchInput.value);
+      }
+      return;
+    }
+    const opts = Array.from(inicioSearchPopover.querySelectorAll("[data-inicio-pick-offering]"));
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeInicioSearchPopover();
+      return;
+    }
+    if (opts.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      inicioSearchFocusedIdx = (inicioSearchFocusedIdx + 1) % opts.length;
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      inicioSearchFocusedIdx = (inicioSearchFocusedIdx - 1 + opts.length) % opts.length;
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const chosen = opts[inicioSearchFocusedIdx] || opts[0];
+      if (chosen) openOfferingStep2FromInicio(chosen.dataset.inicioPickOffering);
+      return;
+    } else {
+      return;
+    }
+    opts.forEach((opt, i) => {
+      const active = i === inicioSearchFocusedIdx;
+      opt.classList.toggle("is-focused", active);
+      opt.setAttribute("aria-selected", String(active));
+    });
+    opts[inicioSearchFocusedIdx]?.scrollIntoView({ block: "nearest" });
+  });
+
+  document.getElementById("view-inicio")?.addEventListener("click", (e) => {
+    const pickBtn = e.target.closest("[data-inicio-pick-offering]");
+    if (pickBtn) {
+      openOfferingStep2FromInicio(pickBtn.dataset.inicioPickOffering);
+      return;
+    }
+    const catalogBtn = e.target.closest("[data-inicio-open-catalog]");
+    if (catalogBtn) {
+      closeInicioSearchPopover();
+      ui.step = 1;
+      switchView("agendar", true);
+      return;
+    }
+    const goBtn = e.target.closest("[data-inicio-go]");
+    if (goBtn) {
+      switchView(goBtn.dataset.inicioGo, true);
+      return;
+    }
+    const icsBtn = e.target.closest("[data-inicio-ics]");
+    if (icsBtn) {
+      downloadIcs(icsBtn.dataset.inicioIcs, icsBtn);
+    }
+  });
+
+  const inicioPassCard = document.getElementById("inicio-pass-card");
+  inicioPassCard?.addEventListener("pointermove", (e) => {
+    if (prefersReducedMotion() || document.body.classList.contains("theme-contrast")) return;
+    const rect = inicioPassCard.getBoundingClientRect();
+    inicioPassCard.style.setProperty("--mx", `${Math.round(e.clientX - rect.left)}px`);
+    inicioPassCard.style.setProperty("--my", `${Math.round(e.clientY - rect.top)}px`);
   });
 
   document.querySelectorAll("[data-mobile-nav]").forEach((btn) => {
@@ -5021,16 +5530,14 @@ function bindEvents() {
       return;
     }
     const tag = document.activeElement?.tagName;
-    if (
-      e.key === "/" &&
-      tag !== "INPUT" &&
-      tag !== "TEXTAREA" &&
-      tag !== "SELECT" &&
-      ui.activeView === "agendar" &&
-      ui.step === 1
-    ) {
-      e.preventDefault();
-      document.getElementById("input-search").focus();
+    if (e.key === "/" && tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT") {
+      if (ui.activeView === "inicio") {
+        e.preventDefault();
+        document.getElementById("inicio-search-input")?.focus();
+      } else if (ui.activeView === "agendar" && ui.step === 1) {
+        e.preventDefault();
+        document.getElementById("input-search")?.focus();
+      }
     }
   });
 }

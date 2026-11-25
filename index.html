@@ -20,8 +20,8 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="styles.css?v=20261125a1" />
-  <link rel="stylesheet" href="mobile.css?v=20261125a1" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="styles.css?v=20261125b1" />
+  <link rel="stylesheet" href="mobile.css?v=20261125b1" media="(max-width: 768px)" />
 </head>
 <body class="theme-light is-landing-mode">
   <a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
@@ -44,7 +44,10 @@
       </button>
 
       <nav class="main-nav" aria-label="Navegação principal" id="main-nav">
-        <button type="button" class="nav-link is-active" data-view="agendar" aria-current="page">
+        <button type="button" class="nav-link is-active" data-view="inicio" aria-current="page">
+          Início
+        </button>
+        <button type="button" class="nav-link" data-view="agendar">
           Agendar
         </button>
         <button type="button" class="nav-link" data-view="agendamentos">
@@ -492,6 +495,48 @@
           <div class="mobile-landing-footer" aria-hidden="true">
             <span><span translate="no">UNIFSA</span> · Engenharia de Software</span>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 0.5: INÍCIO (PÓS-LOGIN DESKTOP-FIRST) ==================== -->
+    <section id="view-inicio" class="view-section" aria-labelledby="inicio-greeting">
+      <div class="inicio-shell">
+        <div class="inicio-command">
+          <p class="inicio-date" id="inicio-date">Quarta, 25 de novembro</p>
+          <h1 class="inicio-greeting" id="inicio-greeting">Boa tarde</h1>
+
+          <div class="inicio-search-wrap" id="inicio-search-wrap">
+            <svg class="inicio-search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3.5-3.5" />
+            </svg>
+            <input
+              type="search"
+              id="inicio-search-input"
+              class="inicio-search-input"
+              placeholder="Buscar disciplina, monitor ou dúvida…"
+              autocomplete="off"
+              aria-label="Buscar disciplina, monitor ou dúvida"
+              aria-controls="inicio-search-popover"
+              aria-expanded="false"
+              role="combobox"
+            />
+            <kbd class="inicio-search-kbd" aria-hidden="true">/</kbd>
+            <div id="inicio-search-popover" class="inicio-search-popover is-hidden" role="listbox" aria-label="Resultados de monitorias"></div>
+          </div>
+
+          <div class="inicio-quick-row" id="inicio-quick-chips" aria-label="Atalhos de disciplinas com vagas"></div>
+        </div>
+
+        <div class="inicio-grid">
+          <article class="inicio-pass-card" id="inicio-pass-card" aria-live="polite"></article>
+
+          <aside class="inicio-week" aria-labelledby="inicio-week-heading">
+            <h2 class="inicio-week-title" id="inicio-week-heading">Sua semana</h2>
+            <div class="inicio-timeline" id="inicio-timeline" aria-live="polite"></div>
+            <div class="inicio-context-foot" id="inicio-context-foot"></div>
+          </aside>
         </div>
       </div>
     </section>
@@ -1738,6 +1783,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261125a1"></script>
+  <script src="app.js?v=20261125b1"></script>
 </body>
 </html>
