@@ -1,7 +1,6 @@
 /**
- * Monitora+ — Portal de Agendamento de Monitorias Acadêmicas (v6)
- * Landing 50/50 (Gennera + Assaad) + Ícone M Interativo + Verificação em 6 caixinhas
- * + Fluxo Cal.com em 3 etapas + Painel do Monitor isolado por disciplina.
+ * Monitora+ — Portal de Agendamento de Monitorias Acadêmicas
+ * Autenticação, agendamento em 3 etapas e painel do monitor isolado por disciplina.
  */
 
 const STORAGE_KEY = "monitoraplus_v6_state";
@@ -236,8 +235,8 @@ const SETTINGS_TAB_META = {
     desc: "Ajuste tema visual, escala de texto e redução de movimento.",
   },
   acessibilidade: {
-    title: "Acessibilidade e Tecnologia Assistiva",
-    desc: "Recursos reais alinhados à WCAG 2.2 para visão, cognição, mobilidade e voz.",
+    title: "Acessibilidade",
+    desc: "Ajustes de cor, leitura, foco por teclado e leitor em voz alta.",
   },
   agenda: {
     title: "Agenda e Lembretes",
@@ -910,7 +909,7 @@ function syncWcagGuardUI(bgHex, fgHex) {
     fixBtn?.classList.remove("is-hidden");
   }
 
-  // Ponto 5 (Técnica A): dispara morph apenas na virada de faixa (AAA <-> AA <-> fail), nunca durante arraste no mesmo nível
+  // Dispara transição apenas na mudança de nível de contraste, nunca durante arraste no mesmo nível
   if (prevLevel && prevLevel !== nextLevel && !prefersReducedMotion()) {
     badge.classList.remove("is-wcag-morph");
     hint?.classList.remove("is-wcag-morph");
@@ -1054,6 +1053,8 @@ function applyCustomColors() {
   s.setProperty("--scroll-thumb", `color-mix(in srgb, ${activeFg} 22%, transparent)`);
   s.setProperty("--scroll-thumb-hover", `color-mix(in srgb, ${activeFg} 40%, transparent)`);
   document.documentElement.style.colorScheme = isDarkBg ? "dark" : "light";
+  const themeColorMeta = document.getElementById("meta-theme-color");
+  if (themeColorMeta) themeColorMeta.setAttribute("content", activeBg);
 
   applyAccentAndFont(theme, activeBg);
   syncWcagGuardUI(activeBg, activeFg);
@@ -1069,6 +1070,11 @@ function applyThemeAndA11y() {
   document.body.classList.remove("theme-dark", "theme-light", "theme-contrast");
   document.body.classList.add(`theme-${theme}`);
   document.documentElement.style.colorScheme = theme === "light" ? "light" : "dark";
+  const themeColorMeta = document.getElementById("meta-theme-color");
+  if (themeColorMeta) {
+    const themeColorHex = theme === "light" ? "#f6f6f4" : theme === "contrast" ? "#000000" : "#09090b";
+    themeColorMeta.setAttribute("content", themeColorHex);
+  }
   document.documentElement.style.setProperty("--font-scale", String(scale));
 
   document.body.classList.toggle("a11y-dyslexia", Boolean(prefs.dyslexiaSpacing));
@@ -1460,7 +1466,7 @@ function syncVlibras(enabled) {
   document.body.appendChild(script);
 }
 
-// ==================== AJUDA RÁPIDA / FAQ (HEURÍSTICA 10) & FOCUS TRAP ====================
+// ==================== AJUDA RÁPIDA / FAQ & FOCUS TRAP ====================
 let lastFaqTriggerEl = null;
 
 function trapFocusInModal(e, modalEl) {
@@ -1863,7 +1869,7 @@ function switchView(viewName) {
   window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });
 }
 
-// ==================== AUTH & OTP ASSAAD ====================
+// ==================== AUTENTICAÇÃO E VERIFICAÇÃO OTP ====================
 function setAuthTab(tabName) {
   ui.authTab = tabName;
   document.body.classList.toggle("is-auth-register", tabName === "register");
@@ -2017,8 +2023,8 @@ const SSO_PROVIDERS = {
     loadingHeader: "Gennera · UNIFSA",
     title: "Gennera · UNIFSA",
     desc: "Escolha a conta acadêmica para entrar.",
-    loadingTitle: "Sincronizando matrícula e disciplinas do Gennera...",
-    footer: "Fluxo simulado · Pronto para integração via SAML / API da UNIFSA",
+    loadingTitle: "Sincronizando matrícula e disciplinas do Gennera…",
+    footer: "Ambiente demonstrativo · UNIFSA",
     iconSvg: SSO_GENNERA_ICON_SVG,
     badgeClass: "is-gennera",
   },
@@ -2027,8 +2033,8 @@ const SSO_PROVIDERS = {
     loadingHeader: "Google Institucional",
     title: "Google Institucional",
     desc: "Escolha sua conta @academico.edu.br.",
-    loadingTitle: "Validando conta institucional...",
-    footer: "Fluxo simulado · Pronto para OAuth 2.0 institucional",
+    loadingTitle: "Validando conta institucional…",
+    footer: "Ambiente demonstrativo · UNIFSA",
     iconSvg: SSO_GOOGLE_ICON_SVG,
     badgeClass: "is-google",
   },
@@ -2667,7 +2673,7 @@ function renderStep1() {
             <div class="row-left">
               <span class="monitor-monogram" aria-hidden="true">${escapeHtml(initials)}</span>
               <div class="row-body">
-                <p class="row-title">${escapeHtml(off.subject)}<span class="row-title-suffix-desktop"> — ${escapeHtml(off.title)}</span></p>
+                <p class="row-title">${escapeHtml(off.subject)}</p>
                 <div class="row-meta-line">
                   <span class="row-meta">${escapeHtml(off.monitor)}</span>
                   <span class="row-meta-sep" aria-hidden="true">·</span>
@@ -2831,7 +2837,7 @@ function renderStep2() {
 
   document.getElementById("s2-subject").textContent = off.subject.toUpperCase();
   document.getElementById("s2-title").textContent = off.title;
-  document.getElementById("s2-monitor").textContent = off.monitor;
+  document.getElementById("s2-monitor").textContent = formatCleanMonitorName(off.monitor);
   document.getElementById("s2-location").textContent = off.location;
 
   const s2MobTitle = document.getElementById("s2-mobile-title");
@@ -2967,7 +2973,7 @@ function renderStep3() {
   document.getElementById("s3-datetime").innerHTML = `${escapeHtml(slot.dayName)}, ${formatDateBr(
     slot.dateIso
   )}<br>${escapeHtml(slot.time.replace(" - ", " — "))}`;
-  document.getElementById("s3-monitor").textContent = off.monitor;
+  document.getElementById("s3-monitor").textContent = formatCleanMonitorName(off.monitor);
   document.getElementById("s3-location").textContent = off.location;
   const remCount = getSlotRemaining(slot);
   document.getElementById("s3-vacancies").textContent = `${remCount} de ${slot.capacity} ${
@@ -3124,15 +3130,15 @@ function handleConfirmBooking(e) {
     if (successTitle) successTitle.textContent = isReschedule ? "Monitoria reagendada" : "Monitoria confirmada";
     if (successSub) {
       successSub.textContent = isReschedule
-        ? "Seu horário foi atualizado mantendo o mesmo protocolo abaixo."
-        : "Seu atendimento está reservado. Guarde o código de protocolo abaixo.";
+        ? "Horário atualizado. Seu protocolo permanece o mesmo."
+        : "Vaga reservada. Apresente o protocolo abaixo no atendimento.";
     }
 
     const isMobileNow = window.innerWidth <= 768;
     const summaryDateVal = isMobileNow
       ? formatMonitorMobileDatetime(slot.dateIso, slot.dayName, slot.time)
       : `${slot.dayName}, ${formatDateBr(slot.dateIso)} · ${slot.time}`;
-    const summaryMonitorVal = isMobileNow ? formatCleanMonitorName(off.monitor) : off.monitor;
+    const summaryMonitorVal = formatCleanMonitorName(off.monitor);
     const summaryLocVal = isMobileNow ? formatCompactLocation(off) : off.location;
 
     document.getElementById("success-protocol").textContent = protocol;
@@ -3174,8 +3180,8 @@ function handleConfirmBooking(e) {
   openConfirmDialog({
     title: reschedBk ? "Confirmar troca de horário?" : "Confirmar agendamento?",
     desc: reschedBk
-      ? "A vaga anterior só será liberada após confirmar este novo horário."
-      : "Confira os dados abaixo antes de reservar sua vaga.",
+      ? "A vaga anterior só é liberada após confirmar a troca."
+      : "",
     summaryHtml: buildConfirmSummaryCard({
       title: off.subject,
       rows: [
@@ -3185,7 +3191,7 @@ function handleConfirmBooking(e) {
             ? formatMonitorMobileDatetime(slot.dateIso, slot.dayName, slot.time)
             : `${slot.dayName}, ${formatDateBr(slot.dateIso)} às ${slot.time}`,
         },
-        { label: "Monitor", value: isMobileConfirm ? formatCleanMonitorName(off.monitor) : off.monitor },
+        { label: "Monitor", value: formatCleanMonitorName(off.monitor) },
         {
           label: isMobileConfirm ? "Local" : "Local / Modalidade",
           value: isMobileConfirm
@@ -3226,7 +3232,7 @@ function renderBookings() {
     return;
   }
 
-  subEl.textContent = `Atendimentos de ${user.name} (Mat. ${user.ra})`;
+  subEl.textContent = "Seus agendamentos ativos e histórico.";
   if (window.innerWidth <= 768) {
     const bookingsTabs = document.querySelector("#view-agendamentos .underline-tabs");
     if (bookingsTabs) bookingsTabs.scrollLeft = 0;
@@ -3274,10 +3280,10 @@ function renderBookings() {
             <div class="booking-info">
               <div class="booking-meta-top">
                 <span class="mobile-card-datetime">${escapeHtml(mobileDt)}</span>
-                <span class="mono-badge">${escapeHtml(bk.protocol)}</span>
+                <span class="mono-badge" translate="no">${escapeHtml(bk.protocol)}</span>
                 <span class="status-tag is-${escapeHtml(bk.status)}">${escapeHtml(bk.status)}</span>
               </div>
-              <p class="row-title">${escapeHtml(off.subject)}<span class="row-title-suffix-desktop"> — ${escapeHtml(off.title)}</span></p>
+              <p class="row-title">${escapeHtml(off.subject)}</p>
               <p class="row-meta booking-meta-desktop">
                 ${escapeHtml(slot.dayName)}, ${formatDateBr(slot.dateIso)} · ${escapeHtml(slot.time)} · ${escapeHtml(
         off.shortLocation || off.location
@@ -3322,7 +3328,7 @@ function renderMonitorPanel() {
   document.getElementById("ms-prof-code").placeholder = expectedCode || "Ex.: IHC026";
   document.getElementById(
     "monitor-sub"
-  ).textContent = `Disciplina vinculada: ${subjectName}. Apenas agendamentos e horários desta matéria aparecem aqui.`;
+  ).textContent = `${subjectName} · Agendamentos e horários da sua disciplina.`;
   const mobileSubEl = document.getElementById("monitor-sub-mobile");
   if (mobileSubEl) mobileSubEl.textContent = subjectName;
 
@@ -4164,7 +4170,7 @@ function bindEvents() {
     announceA11y(`Fonte da interface alterada para ${e.target.selectedOptions[0]?.textContent || e.target.value}.`);
   });
 
-  // Aparência -> Avançado: cores personalizadas + validador WCAG 2.1 ao vivo
+  // Aparência: cores personalizadas e validação de contraste ao vivo
   let customColorSaveTimer = null;
   const scheduleColorSave = () => {
     clearTimeout(customColorSaveTimer);
@@ -4385,7 +4391,7 @@ function bindEvents() {
     if (rect && rect.height) updateMaskY(rect.top + rect.height / 2);
   });
 
-  // Auth Tabs & Assaad Links
+  // Alternância entre Entrar e Criar conta
   document.querySelectorAll("[data-auth-tab]").forEach((tab) => {
     tab.addEventListener("click", () => setAuthTab(tab.dataset.authTab));
   });
@@ -4698,7 +4704,7 @@ function bindEvents() {
     switchView("landing");
   });
 
-  // Limpeza automática de erros inline ao digitar (Heurística 9)
+  // Limpeza automática de erros inline ao digitar
   ["form-login", "form-register", "form-new-slot"].forEach((formId) => {
     const formEl = document.getElementById(formId);
     if (!formEl) return;

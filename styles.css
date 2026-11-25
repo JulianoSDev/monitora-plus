@@ -1,6 +1,5 @@
 /* =========================================================
-   Monitora+ Design System (v6)
-   Landing 50/50 (Gennera + Assaad) + Cal.diy + Schedule-X
+   Monitora+ Design System
    ========================================================= */
 
 :root {
@@ -12,8 +11,8 @@
   --border-strong: #3f3f46;
 
   --text: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
+  --text-secondary: #b0b0ba;
+  --text-muted: #90909c;
 
   --accent: #c2592b;
   --accent-hover: #d46535;
@@ -30,8 +29,8 @@
 
   --split-left-bg: #111319;
   --split-left-text: #fafafa;
-  --split-left-sub: #a1a1aa;
-  --split-left-muted: #71717a;
+  --split-left-sub: #b0b0ba;
+  --split-left-muted: #90909c;
   --split-left-border: #27272a;
   --split-left-accent: #d96b38;
   --split-left-ring: rgba(255, 255, 255, 0.1);
@@ -52,7 +51,7 @@
 
   --font-scale: 1;
   --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: "Space Grotesk", "DM Sans", system-ui, sans-serif;
+  --font-display: var(--font-sans);
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -79,12 +78,12 @@ body.theme-light {
 
   --text: #141b29;
   --text-secondary: #52525b;
-  --text-muted: #71717a;
+  --text-muted: #5c5c66;
 
   --accent: #b44b1e;
   --accent-hover: #9a3d16;
   --accent-soft: rgba(180, 75, 30, 0.08);
-  --accent-text: #b44b1e;
+  --accent-text: #9e3f16;
   --accent-fg: #ffffff;
   --on-accent: var(--accent-fg);
 
@@ -231,6 +230,20 @@ textarea {
   color: inherit;
 }
 
+button,
+a,
+summary,
+[role="tab"],
+[role="button"] {
+  touch-action: manipulation;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -291,28 +304,6 @@ textarea {
   transform: translate(1.5px, 1.5px);
 }
 
-.card-emblem-btn {
-  width: 58px;
-  height: 58px;
-  margin: 0 auto 14px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--emblem-bg);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: transform 0.2s var(--ease-out), border-color 0.2s ease;
-}
-
-.card-emblem-btn:hover {
-  transform: translateY(-2px) scale(1.03);
-  border-color: var(--accent);
-}
-
-.card-emblem-btn:active {
-  transform: scale(0.96);
-}
-
 /* ==================== MODO LANDING (OCULTA TOPBAR E FOOTER) ==================== */
 body.is-landing-mode .topbar,
 body.is-landing-mode .site-footer {
@@ -324,7 +315,7 @@ body.is-landing-mode .main-shell {
   padding: 0;
 }
 
-/* ==================== LANDING 50/50 (GENNERA + ASSAAD) ==================== */
+/* ==================== LANDING 50/50 ==================== */
 .split-landing {
   min-height: 100vh;
   display: grid;
@@ -464,9 +455,10 @@ body.is-landing-mode .main-shell {
 .split-left-foot {
   position: relative;
   z-index: 2;
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
-  letter-spacing: 0.04em;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
   color: var(--split-left-muted);
 }
 
@@ -478,22 +470,13 @@ body.is-landing-mode .main-shell {
   place-items: center;
 }
 
-.split-right-tools {
-  position: absolute;
-  top: 16px;
-  right: 24px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .assaad-card {
   width: 100%;
   max-width: 410px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 24px 24px 18px;
+  padding: 26px 24px 20px;
   box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
   animation: viewEnter 0.45s var(--ease-out) both;
 }
@@ -513,37 +496,13 @@ body.theme-contrast .assaad-card {
   font-family: var(--font-display);
   font-size: 1.32rem;
   font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
 .assaad-head p {
   margin: 5px 0 0;
   font-size: 0.86rem;
   color: var(--text-secondary);
-}
-
-.assaad-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 18px;
-}
-
-.assaad-tab {
-  min-height: 40px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-secondary);
-  font-size: 0.86rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.assaad-tab.is-active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-text);
 }
 
 .assaad-links {
@@ -570,32 +529,7 @@ body.theme-contrast .assaad-card {
   text-decoration: underline;
 }
 
-.assaad-demo-foot {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.mini-text-btn {
-  border: none;
-  background: transparent;
-  padding: 2px 4px;
-  color: var(--text-secondary);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.mini-text-btn:hover {
-  color: var(--accent-text);
-}
-
-/* ==================== ETAPA B OTP (ESTILO ASSAAD 6 CAIXINHAS) ==================== */
+/* ==================== ETAPA B OTP (VERIFICAÇÃO EM 6 DÍGITOS) ==================== */
 .otp-info-banner {
   display: flex;
   align-items: center;
@@ -617,7 +551,7 @@ body.theme-contrast .assaad-card {
   color: var(--green);
   display: grid;
   place-items: center;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -643,7 +577,7 @@ body.theme-contrast .assaad-card {
 }
 
 .otp-box:focus {
-  outline: none;
+  outline: 2px solid transparent;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
@@ -734,8 +668,10 @@ body.theme-contrast .assaad-card {
 }
 
 .nav-count {
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
+  font-weight: 600;
   padding: 1px 6px;
   border-radius: 4px;
   background: var(--surface-2);
@@ -865,9 +801,9 @@ body.theme-contrast .assaad-card {
 
 .profile-dd-role-badge {
   flex-shrink: 0;
-  font-size: 0.67rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 999px;
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -875,13 +811,13 @@ body.theme-contrast .assaad-card {
 }
 
 .profile-dd-meta > span {
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
 }
 
 .profile-dd-section-label {
   padding: 4px 10px 3px;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -930,8 +866,9 @@ body.theme-contrast .assaad-card {
 }
 
 .profile-dd-count {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
   padding: 1px 7px;
   border-radius: 999px;
   background: var(--accent-tint);
@@ -1005,28 +942,25 @@ body.theme-contrast .profile-dd-theme-btn.theme-opt.is-active {
 .theme-switch,
 .font-switch {
   display: inline-flex;
+  padding: 3px;
+  gap: 2px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--surface);
   overflow: hidden;
 }
 
 .theme-opt,
 .font-btn {
-  min-height: 36px;
+  min-height: 32px;
   padding: 0 10px;
   border: none;
-  border-right: 1px solid var(--border);
+  border-radius: calc(var(--radius-md) - 3px);
   background: transparent;
   font-size: 0.78rem;
   font-weight: 500;
   color: var(--text-secondary);
   cursor: pointer;
-}
-
-.theme-opt:last-child,
-.font-btn:last-child {
-  border-right: none;
 }
 
 .theme-opt.is-active {
@@ -1396,6 +1330,7 @@ h1 {
   font-weight: 700;
   letter-spacing: -0.025em;
   line-height: 1.15;
+  text-wrap: balance;
 }
 
 h2 {
@@ -1403,7 +1338,8 @@ h2 {
   font-family: var(--font-display);
   font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
 }
 
 .step-sub {
@@ -1449,8 +1385,10 @@ h2 {
 
 .mode-filter-group {
   display: inline-flex;
+  padding: 3px;
+  gap: 2px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--surface);
   overflow: hidden;
 }
@@ -1501,26 +1439,24 @@ h2 {
 
 .layout-toggle {
   display: inline-flex;
+  padding: 3px;
+  gap: 2px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--surface);
   overflow: hidden;
 }
 
 .layout-btn {
-  min-height: 36px;
+  min-height: 32px;
   padding: 0 12px;
   border: none;
-  border-right: 1px solid var(--border);
+  border-radius: calc(var(--radius-md) - 3px);
   background: transparent;
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-secondary);
   cursor: pointer;
-}
-
-.layout-btn:last-child {
-  border-right: none;
 }
 
 .layout-btn.is-active {
@@ -1569,20 +1505,7 @@ h2 {
 }
 
 .monitor-monogram {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  font-size: 0.76rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  margin-top: 2px;
+  display: none;
 }
 
 .row-body {
@@ -1591,7 +1514,7 @@ h2 {
 }
 
 .row-title {
-  margin: 0 0 5px;
+  margin: 0 0 4px;
   font-size: 0.96rem;
   font-weight: 600;
   line-height: 1.35;
@@ -1601,7 +1524,7 @@ h2 {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px 10px;
+  gap: 4px 0;
 }
 
 .row-meta {
@@ -1613,15 +1536,20 @@ h2 {
 .row-loc-tag {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text-secondary);
-  font-size: 0.75rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.81rem;
   font-weight: 500;
   line-height: 1.3;
   white-space: nowrap;
+}
+
+.row-loc-tag::before {
+  content: "·";
+  margin: 0 7px;
+  color: var(--border-strong);
 }
 
 .row-right {
@@ -1678,8 +1606,10 @@ h2 {
 }
 
 .matrix-table th {
-  font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  font-weight: 600;
   color: var(--text-secondary);
   background: var(--surface-2);
 }
@@ -1718,12 +1648,13 @@ h2 {
 }
 
 .matrix-slot-btn span {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
   color: var(--text-secondary);
 }
 
-/* ==================== CAL.COM SHELL (PASSOS 2 & 3) ==================== */
+/* ==================== ETAPAS 2 & 3 (CALENDÁRIO E CONFIRMAÇÃO) ==================== */
 @media (min-width: 961px) and (min-height: 700px) {
   #step-2:not(.is-hidden),
   #step-3:not(.is-hidden) {
@@ -1780,9 +1711,10 @@ body.theme-contrast .cal-shell {
 
 .mono-kicker {
   display: block;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.06em;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   color: var(--text-muted);
   text-transform: uppercase;
   margin-bottom: 6px;
@@ -1801,7 +1733,7 @@ body.theme-contrast .cal-shell {
 }
 
 .cal-detail-row dt {
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
 }
 
@@ -1812,7 +1744,9 @@ body.theme-contrast .cal-shell {
 }
 
 .mono-val {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
   color: var(--text) !important;
 }
 
@@ -1856,8 +1790,9 @@ body.theme-contrast .cal-shell {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 10px;
 }
@@ -1874,8 +1809,9 @@ body.theme-contrast .cal-shell {
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   background: transparent;
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.86rem;
   color: var(--text-muted);
 }
 
@@ -1972,7 +1908,8 @@ body.theme-contrast .cal-shell {
 }
 
 .slot-time-mono {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 0.92rem;
   font-weight: 600;
 }
@@ -2096,7 +2033,7 @@ body.theme-contrast .cal-shell {
 }
 
 .protocol-pill span {
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -2119,7 +2056,7 @@ body.theme-contrast .cal-shell {
 }
 
 .success-grid dt {
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
 }
 
@@ -2197,7 +2134,7 @@ body.theme-contrast .cal-shell {
 }
 
 .booking-date-day {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text);
@@ -2206,19 +2143,19 @@ body.theme-contrast .cal-shell {
 
 .booking-date-month {
   margin-top: 2px;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-secondary);
 }
 
 .booking-date-wk {
-  margin-top: 3px;
-  font-size: 0.66rem;
+  margin-top: 2px;
+  font-size: 0.75rem;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -2283,8 +2220,17 @@ body.theme-contrast .booking-row.is-status-inactive .booking-date-month {
   background: var(--bg);
 }
 
+.booking-meta-top .mono-badge {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
 .status-tag {
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -2312,6 +2258,24 @@ body.theme-contrast .status-tag.is-Concluído {
   gap: 8px;
 }
 
+.booking-actions .btn-danger {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--danger) 36%, var(--border));
+  color: var(--danger-text);
+}
+
+.booking-actions .btn-danger:hover:not(:disabled),
+.booking-actions .btn-danger:focus-visible {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #ffffff;
+}
+
+body.theme-contrast .booking-actions .btn-danger {
+  border-color: var(--danger);
+  color: var(--danger-text);
+}
+
 .students-split {
   display: grid;
   grid-template-columns: minmax(0, 1.62fr) minmax(300px, 1fr);
@@ -2330,17 +2294,6 @@ body.theme-contrast .status-tag.is-Concluído {
   margin-bottom: 14px;
 }
 
-.panel-box-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-}
-
-.panel-box-head h2 {
-  margin-bottom: 0;
-}
-
 .empty-box {
   max-width: 720px;
   margin: 0 auto;
@@ -2349,33 +2302,6 @@ body.theme-contrast .status-tag.is-Concluído {
   padding: 36px 20px;
   text-align: center;
   color: var(--text-secondary);
-}
-
-.account-privacy-row {
-  margin-top: 20px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.ghost-danger-link {
-  border: none;
-  background: transparent;
-  padding: 4px 0;
-  color: var(--danger-text);
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.ghost-danger-link:hover {
-  text-decoration: underline;
 }
 
 /* ==================== MODAL, TOAST, FOOTER ==================== */
@@ -2404,21 +2330,6 @@ body.theme-contrast .status-tag.is-Concluído {
   animation: viewEnter 0.2s var(--ease-out);
 }
 
-.confirm-summary-box {
-  margin-top: 14px;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--bg);
-  font-size: 0.84rem;
-  color: var(--text-secondary);
-  line-height: 1.55;
-}
-
-.confirm-summary-box strong {
-  color: var(--text);
-}
-
 .modal-actions {
   margin-top: 20px;
   display: flex;
@@ -2426,7 +2337,7 @@ body.theme-contrast .status-tag.is-Concluído {
   gap: 10px;
 }
 
-/* ==================== TOAST SONNER / BASECOAT ==================== */
+/* ==================== TOAST ==================== */
 .toast {
   position: fixed;
   bottom: 22px;
@@ -2485,7 +2396,7 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
 }
 
 .toast-sub {
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-weight: 400;
   line-height: 1.3;
   color: var(--text-muted);
@@ -2605,7 +2516,6 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
 }
 
 .mobile-landing-bar,
-.mobile-gear-btn,
 .settings-close-mobile,
 .settings-chevron,
 .settings-mobile-back {
@@ -2687,10 +2597,11 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
 
 .settings-group-label {
   padding: 4px 10px;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   color: var(--text-muted);
 }
 
@@ -2739,8 +2650,8 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
   background: var(--accent-soft);
   border: 1px solid var(--accent);
   color: var(--accent-text);
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
+  font-family: var(--font-sans);
+  font-size: 0.76rem;
   font-weight: 600;
   display: grid;
   place-items: center;
@@ -2761,7 +2672,7 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
 }
 
 .settings-user-meta span {
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -2815,12 +2726,6 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-}
-
-.settings-card-grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
 }
 
 .select-card,
@@ -2908,36 +2813,6 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
   color: var(--text-secondary);
 }
 
-.swatch-strip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 6px;
-  border-radius: 6px;
-  width: fit-content;
-  margin-bottom: 4px;
-  border: 1px solid var(--border);
-}
-
-.swatch-strip i {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
-.swatch-light { background: #f6f6f4; }
-.swatch-light i:first-child { background: #141b29; }
-.swatch-light i:last-child { background: #b44b1e; }
-
-.swatch-dark { background: #09090b; }
-.swatch-dark i:first-child { background: #fafafa; }
-.swatch-dark i:last-child { background: #d96b38; }
-
-.swatch-contrast { background: #000000; border-color: #ffffff; }
-.swatch-contrast i:first-child { background: #ffffff; }
-.swatch-contrast i:last-child { background: #facc15; }
-
 .settings-grouped-list {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -3007,7 +2882,7 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
   min-width: 36px;
 }
 
-/* Basecoat-inspired Switch & Range Slider */
+/* Switch & Range Slider */
 .bc-switch {
   position: relative;
   flex-shrink: 0;
@@ -3084,16 +2959,6 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
   color: var(--text);
 }
 
-.a11y-compliance-note {
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  margin-bottom: 16px;
-}
-
 .speak-actions {
   display: flex;
   gap: 8px;
@@ -3118,7 +2983,7 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
   border-bottom-width: 2px;
   background: var(--surface);
   font-family: var(--font-mono);
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-weight: 600;
   color: var(--text);
   user-select: none;
@@ -3158,7 +3023,7 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
   color: var(--accent-text);
 }
 
-/* ==================== TECNOLOGIA ASSISTIVA (WCAG 2.2) ==================== */
+/* ==================== ACESSIBILIDADE ==================== */
 html[data-cvd="protanopia"] { filter: url(#cvd-protanopia); }
 html[data-cvd="deuteranopia"] { filter: url(#cvd-deuteranopia); }
 html[data-cvd="tritanopia"] { filter: url(#cvd-tritanopia); }
@@ -3276,17 +3141,7 @@ body.a11y-pause-distractions *:active {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* ==================== CUSTOM SELECT POPOVER (BASECOAT / SHADCN PATTERN) ==================== */
+/* ==================== CUSTOM SELECT POPOVER ==================== */
 .bc-select-native-hidden {
   position: absolute !important;
   width: 1px !important;
@@ -3337,7 +3192,7 @@ body.a11y-pause-distractions *:active {
 
 .bc-select-trigger[aria-expanded="true"],
 .bc-select-trigger:focus-visible {
-  outline: none;
+  outline: 2px solid transparent;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-tint);
 }
@@ -3462,8 +3317,9 @@ body.a11y-pause-distractions *:active {
 }
 
 .bc-select-option-badge {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
   font-weight: 500;
   padding: 2px 6px;
   border-radius: 6px;
@@ -3484,7 +3340,7 @@ body.a11y-pause-distractions *:active {
   opacity: 1;
 }
 
-/* ==================== BLOCO 3: REAGENDAR, FAQ (H10) E VLIBRAS ==================== */
+/* ==================== REAGENDAR, FAQ E VLIBRAS ==================== */
 .btn-sm {
   min-height: 36px;
   padding: 0 12px;
@@ -3496,9 +3352,8 @@ body.a11y-pause-distractions *:active {
   margin: 0 auto 16px;
   padding: 12px 16px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-strong);
-  border-left: 3px solid var(--accent);
-  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  background: var(--accent-soft);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3546,6 +3401,7 @@ body.a11y-pause-distractions *:active {
 
 .faq-list {
   overflow-y: auto;
+  padding: 4px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--bg);
@@ -3563,6 +3419,7 @@ body.a11y-pause-distractions *:active {
   list-style: none;
   min-height: 46px;
   padding: 12px 14px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3682,7 +3539,7 @@ div[vw].is-vlibras-hidden {
   gap: 12px;
 }
 
-/* ==================== SISTEMA DE MOTION & MICRO-INTERAÇÕES (LINEAR / CAL.COM) ==================== */
+/* ==================== SISTEMA DE MOTION E MICRO-INTERAÇÕES ==================== */
 @keyframes surfaceEnter {
   from {
     opacity: 0;
@@ -3925,18 +3782,7 @@ body.theme-contrast .profile-dd-theme-row.has-sliding-pill .sliding-pill {
   animation: toastSlideUp 220ms var(--ease-out);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .sliding-pill,
-  .sliding-underline {
-    transition: none !important;
-  }
-
-  *:active {
-    transform: none !important;
-  }
-}
-
-/* ==================== APARÊNCIA -> AVANÇADO (CORES LIVRES + VALIDADOR WCAG 2.1) ==================== */
+/* ==================== APARÊNCIA: CORES PERSONALIZADAS E VALIDAÇÃO DE CONTRASTE ==================== */
 .settings-advanced {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -4080,7 +3926,7 @@ body.theme-contrast .profile-dd-theme-row.has-sliding-pill .sliding-pill {
   text-transform: uppercase;
   letter-spacing: 0.03em;
   padding: 4px 2px;
-  outline: none;
+  outline: 2px solid transparent;
 }
 
 /* Faixa WCAG integrada ao tema quando legível; blindada (cores fixas hardcoded) quando contraste < 4.5:1 */
@@ -4118,8 +3964,9 @@ body.theme-contrast .profile-dd-theme-row.has-sliding-pill .sliding-pill {
   max-width: 100%;
   padding: 4px 10px;
   border-radius: 8px;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: 0.01em;
@@ -4208,7 +4055,7 @@ body.theme-contrast .wcag-guard-strip[data-level="aa"] .wcag-status-badge {
   border: 1px solid #52525b !important;
 }
 
-/* ==================== RODADA FINAL: MODAL CONFIRMAR, ETAPA 1 MOBILE, APARÊNCIA E MONITOR ==================== */
+/* ==================== CONFIRMAÇÃO, APARÊNCIA E PAINEL DO MONITOR ==================== */
 
 /* 1. Modal Confirmar Agendamento estruturado */
 .confirm-modal-box {
@@ -4480,7 +4327,7 @@ body.theme-contrast .wcag-guard-strip[data-level="aa"] .wcag-status-badge {
   color: var(--accent-fg);
   border: 1px solid var(--border-strong);
   font-family: var(--font-display);
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-weight: 700;
   display: inline-grid;
   place-items: center;
@@ -4567,8 +4414,9 @@ body.theme-contrast .wcag-guard-strip[data-level="aa"] .wcag-status-badge {
   border-radius: 999px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -4605,7 +4453,8 @@ body.theme-contrast .wcag-guard-strip[data-level="aa"] .wcag-status-badge {
 
 .monitor-slot-time {
   margin: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text);
@@ -4625,7 +4474,8 @@ body.theme-contrast .wcag-guard-strip[data-level="aa"] .wcag-status-badge {
 }
 
 .slot-occ-badge {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 0.76rem;
   font-weight: 600;
   padding: 3px 8px;
@@ -4732,7 +4582,7 @@ body.theme-contrast .sso-btn-neutral {
   align-items: center;
   gap: 10px;
   color: var(--text-muted);
-  font-size: 0.74rem;
+  font-size: 0.78rem;
 }
 
 .auth-divider::before,
@@ -4930,7 +4780,7 @@ body.theme-contrast .sso-provider-badge.is-google {
 .sso-avatar.is-sm {
   width: 30px;
   height: 30px;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 body.theme-contrast .sso-avatar {
@@ -4974,7 +4824,7 @@ body.theme-contrast .sso-avatar {
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text-secondary);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 500;
   line-height: 1;
   white-space: nowrap;
@@ -5026,7 +4876,7 @@ body.theme-contrast .sso-role-pill {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
   text-align: center;
 }
@@ -5133,11 +4983,11 @@ body.a11y-pause-distractions .sso-spinner {
 
 .sso-loading-foot {
   margin: 14px 0 0;
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
 }
 
-/* ==================== MOTION CIRÚRGICO (TÉCNICA A: MORPH+BLUR | TÉCNICA B: CLIP-PATH) ==================== */
+/* ==================== TRANSIÇÕES DE MARCA, MODAIS E ESTADOS ==================== */
 :root {
   --morph-blur: 4px;
   --morph-y: 6px;
@@ -5189,7 +5039,7 @@ body.a11y-pause-distractions .sso-spinner {
   }
 }
 
-/* Ponto 1 — Técnica B: Marca M Monitora+ na entrada do Login (340ms + 80ms delay) */
+/* 1. Marca Monitora+ na entrada do Login */
 body.is-landing-mode .split-left-top .brand-on-navy .brand-svg,
 body.is-landing-mode .mobile-brand-lockup .brand-svg {
   animation: brandIconSlideIn 340ms var(--ease-out) 80ms both;
@@ -5201,7 +5051,7 @@ body.is-landing-mode .mobile-brand-lockup .brand-name {
   animation: brandTextReveal 340ms var(--ease-out) 80ms both;
 }
 
-/* Ponto 2 — Técnica A: Morph de altura + micro-blur no Modal / Bottom Sheet SSO */
+/* 2. Transição de altura no Modal / Bottom Sheet SSO */
 .sso-modal-box.is-morphing-height {
   transition: height 240ms var(--ease-out);
   will-change: height;
@@ -5212,7 +5062,7 @@ body.is-landing-mode .mobile-brand-lockup .brand-name {
   animation: morphBlurIn 220ms var(--ease-out) both;
 }
 
-/* Ponto 3 — Técnica A: Toast dinâmico (swap líquido + largura fluida desktop + saída 180ms) */
+/* 3. Toast dinâmico */
 .toast.is-width-morphing {
   transition: width 220ms var(--ease-out);
 }
@@ -5228,7 +5078,7 @@ body.is-landing-mode .mobile-brand-lockup .brand-name {
   pointer-events: none;
 }
 
-/* Ponto 4 — Técnica A: Botões pós-agendamento in-place (#btn-copy-proof / #btn-download-ics) */
+/* 4. Botões pós-agendamento in-place (#btn-copy-proof / #btn-download-ics) */
 .btn-liquid-content {
   display: inline-flex;
   align-items: center;
@@ -5248,7 +5098,7 @@ body.is-landing-mode .mobile-brand-lockup .brand-name {
   color: var(--green);
 }
 
-/* Ponto 5 — Técnica A: Validador WCAG 2.1 somente na virada de faixa (AAA <-> AA <-> fail) */
+/* 5. Indicador de contraste personalizado */
 .wcag-status-badge.is-wcag-morph,
 .wcag-guard-hint.is-wcag-morph,
 .wcag-escape-btn.is-wcag-btn-enter {
@@ -5256,7 +5106,7 @@ body.is-landing-mode .mobile-brand-lockup .brand-name {
   animation: morphBlurIn 220ms var(--ease-out) both;
 }
 
-/* ==================== REGRA DEDICADA: ALTO CONTRASTE AAA (SEM BLUR) & REDUCED MOTION ==================== */
+/* ==================== ALTO CONTRASTE AAA E REDUCED MOTION ==================== */
 body.theme-contrast {
   --morph-blur: 0px;
 }
@@ -5316,6 +5166,23 @@ body.a11y-pause-distractions .wcag-escape-btn.is-wcag-btn-enter {
   :root {
     --morph-blur: 0px;
     --morph-y: 0px;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .sliding-pill,
+  .sliding-underline {
+    transition: none !important;
+  }
+
+  *:active {
+    transform: none !important;
   }
 
   body.is-landing-mode .split-left-top .brand-on-navy .brand-svg,

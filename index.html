@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" id="meta-theme-color" content="#f6f6f4" />
   <title>Monitora+ · Agendamento de Monitorias Acadêmicas</title>
   <meta
     name="description"
@@ -16,11 +17,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="styles.css?v=20261124g1" />
-  <link rel="stylesheet" href="mobile.css?v=20261124g1" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="styles.css?v=20261124h1" />
+  <link rel="stylesheet" href="mobile.css?v=20261124h1" media="(max-width: 768px)" />
 </head>
 <body class="theme-light is-landing-mode">
   <a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
@@ -39,7 +40,7 @@
             d="M56 48V18c0-5.4-6.2-8-10-4.2L32 28l6.6 6.6 6.4-6.4V48c0 2.2 1.8 4 4 4h3c2.2 0 4-1.8 4-4Z"
           />
         </svg>
-        <span class="brand-name">Monitora<span class="brand-plus">+</span></span>
+        <span class="brand-name" translate="no">Monitora<span class="brand-plus">+</span></span>
       </button>
 
       <nav class="main-nav" aria-label="Navegação principal" id="main-nav">
@@ -128,7 +129,7 @@
                 <circle cx="12" cy="4.5" r="1.5" />
                 <path d="M5 8.5h14M12 8.5v5.5m0 0-3 6m3-6 3 6" />
               </svg>
-              <span>Tecnologia Assistiva (WCAG)</span>
+              <span>Acessibilidade</span>
             </button>
             <button type="button" class="profile-dd-item" role="menuitem" id="btn-profile-settings">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -189,10 +190,10 @@
   </header>
 
   <main id="conteudo-principal" class="main-shell">
-    <!-- ==================== VIEW 0: LANDING 50/50 (ESQUERDA GENNERA + DIREITA ASSAAD) ==================== -->
+    <!-- VIEW 0: LANDING -->
     <section id="view-landing" class="view-section is-active" aria-labelledby="landing-phrase-title">
       <div class="split-landing">
-        <!-- METADE ESQUERDA (50%): Painel Editorial com Frases Rotativas estilo Gennera -->
+        <!-- Painel institucional com frases rotativas -->
         <aside class="split-left" id="landing-carousel-area">
           <div class="split-geo-circle" aria-hidden="true"></div>
           <div class="split-geo-ring" aria-hidden="true"></div>
@@ -210,7 +211,7 @@
                   d="M56 48V18c0-5.4-6.2-8-10-4.2L32 28l6.6 6.6 6.4-6.4V48c0 2.2 1.8 4 4 4h3c2.2 0 4-1.8 4-4Z"
                 />
               </svg>
-              <span class="brand-name brand-name-white">Monitora<span class="brand-plus-light">+</span></span>
+              <span class="brand-name brand-name-white" translate="no">Monitora<span class="brand-plus-light">+</span></span>
             </button>
           </div>
 
@@ -254,7 +255,7 @@
           </div>
         </aside>
 
-        <!-- METADE DIREITA (50%): Card Centralizado estilo Assaad -->
+        <!-- Painel de acesso -->
         <div class="split-right">
           <div class="mobile-landing-bar">
             <div class="mobile-brand-lockup">
@@ -268,36 +269,16 @@
                   d="M56 48V18c0-5.4-6.2-8-10-4.2L32 28l6.6 6.6 6.4-6.4V48c0 2.2 1.8 4 4 4h3c2.2 0 4-1.8 4-4Z"
                 />
               </svg>
-              <span class="brand-name">Monitora<span class="brand-plus">+</span></span>
+              <span class="brand-name" translate="no">Monitora<span class="brand-plus">+</span></span>
             </div>
           </div>
 
           <div class="assaad-card">
-            <!-- Ícone interativo no topo do card -->
-            <button
-              type="button"
-              class="card-emblem-btn interactive-brand-trigger"
-              id="btn-emblem-interact"
-              aria-label="Ícone Monitora+"
-              title="Monitora+"
-            >
-              <svg class="brand-svg interactive-mark" viewBox="0 0 64 64" width="34" height="34" aria-hidden="true">
-                <path
-                  class="m-left"
-                  d="M8 48V18c0-5.4 6.2-8 10-4.2L32 28l-6.6 6.6-6.4-6.4V48c0 2.2-1.8 4-4 4h-3c-2.2 0-4-1.8-4-4Z"
-                />
-                <path
-                  class="m-right"
-                  d="M56 48V18c0-5.4-6.2-8-10-4.2L32 28l6.6 6.6 6.4-6.4V48c0 2.2 1.8 4 4 4h3c2.2 0 4-1.8 4-4Z"
-                />
-              </svg>
-            </button>
-
-            <!-- ETAPA A: LOGIN / CRIAR CONTA -->
+            <!-- Etapa A: Login / Criar conta -->
             <div id="auth-stage-main">
               <div class="assaad-head">
                 <h2 id="auth-head-title">
-                  <span class="auth-title-desktop">Entrar no Monitora+</span>
+                  <span class="auth-title-desktop">Entrar no <span translate="no">Monitora+</span></span>
                   <span class="auth-title-mobile">Acesse sua conta</span>
                 </h2>
                 <p id="auth-head-sub">Acesse com sua matrícula ou e-mail institucional.</p>
@@ -308,7 +289,7 @@
                 <div class="sso-grid">
                   <button type="button" class="sso-btn sso-btn-neutral" id="btn-sso-gennera" aria-label="Entrar com Gennera (UNIFSA)">
                     <img src="assets/gennera-icon.svg?v=20261124b1" alt="" width="18" height="18" class="sso-icon-img" aria-hidden="true" />
-                    <span>Gennera</span>
+                    <span translate="no">Gennera</span>
                   </button>
 
                   <button type="button" class="sso-btn sso-btn-neutral" id="btn-sso-google" aria-label="Continuar com Google Institucional">
@@ -318,7 +299,7 @@
                       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                     </svg>
-                    <span>Google</span>
+                    <span translate="no">Google</span>
                   </button>
                 </div>
 
@@ -334,8 +315,10 @@
                   <input
                     type="text"
                     id="login-identifier"
+                    name="identifier"
                     placeholder="2026101 ou nome@academico.edu.br"
                     autocomplete="username"
+                    spellcheck="false"
                     required
                   />
                 </div>
@@ -346,6 +329,7 @@
                     <input
                       type="password"
                       id="login-password"
+                      name="password"
                       placeholder="Digite sua senha"
                       autocomplete="current-password"
                       required
@@ -403,17 +387,17 @@
 
                 <div class="field">
                   <label for="reg-name">Nome completo</label>
-                  <input type="text" id="reg-name" maxlength="70" placeholder="Seu nome completo" required />
+                  <input type="text" id="reg-name" name="fullName" maxlength="70" placeholder="Seu nome completo" autocomplete="name" required />
                 </div>
 
                 <div class="field-row field-row-course">
                   <div class="field">
                     <label for="reg-ra">Matrícula</label>
-                    <input type="text" id="reg-ra" maxlength="12" placeholder="Ex.: 2026145" required />
+                    <input type="text" id="reg-ra" name="registrationId" maxlength="12" placeholder="Ex.: 2026145" autocomplete="off" spellcheck="false" inputmode="numeric" required />
                   </div>
                   <div class="field" id="reg-course-wrap">
                     <label for="reg-course">Turma</label>
-                    <select id="reg-course" data-custom-select="true" data-select-icon="graduation">
+                    <select id="reg-course" name="course" data-custom-select="true" data-select-icon="graduation">
                       <option value="Eng. Software · 1º A">Eng. Software · 1º A</option>
                       <option value="Eng. Software · 1º B">Eng. Software · 1º B</option>
                       <option value="Sistemas Inf. · 1º">Sistemas Inf. · 1º</option>
@@ -423,7 +407,7 @@
 
                 <div class="field is-hidden" id="reg-subject-wrap">
                   <label for="reg-subject">Disciplina</label>
-                  <select id="reg-subject" data-custom-select="true" data-select-icon="book">
+                  <select id="reg-subject" name="subject" data-custom-select="true" data-select-icon="book">
                     <option value="off-ihc">Interação Humano-Computador</option>
                     <option value="off-es">Introdução à Engenharia de Software</option>
                     <option value="off-aoc">Arquitetura e Organização de Computadores</option>
@@ -436,12 +420,12 @@
                 <div class="field-row">
                   <div class="field">
                     <label for="reg-email">E-mail institucional</label>
-                    <input type="email" id="reg-email" placeholder="voce@edu.br" required />
+                    <input type="email" id="reg-email" name="email" placeholder="voce@edu.br" autocomplete="email" spellcheck="false" required />
                   </div>
                   <div class="field">
                     <label for="reg-password">Senha</label>
                     <div class="password-field-wrap">
-                      <input type="password" id="reg-password" minlength="6" placeholder="Mínimo 6 caracteres" required />
+                      <input type="password" id="reg-password" name="newPassword" minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required />
                       <button
                         type="button"
                         class="password-toggle-btn"
@@ -478,7 +462,7 @@
               </div>
             </div>
 
-            <!-- ETAPA B (ESTILO ASSAAD): CÓDIGO DO PROFESSOR EM 6 CAIXINHAS -->
+            <!-- Etapa de verificação de código do docente -->
             <form id="auth-stage-otp" class="is-hidden" novalidate>
               <div class="assaad-head">
                 <h2>Digite o código</h2>
@@ -490,19 +474,19 @@
               <div class="otp-info-banner">
                 <span class="otp-check-icon" aria-hidden="true">✓</span>
                 <span id="otp-banner-text">
-                  Disciplina selecionada. Código de teste: <strong class="mono-inline" id="otp-hint-code">IHC026</strong>
+                  Disciplina selecionada. Código de teste: <strong class="mono-inline" id="otp-hint-code" translate="no">IHC026</strong>
                 </span>
               </div>
 
               <div class="field">
                 <label for="otp-box-0">Código do professor</label>
                 <div class="otp-grid" id="otp-grid" role="group" aria-label="Código de 6 caracteres">
-                  <input type="text" maxlength="1" class="otp-box" id="otp-box-0" autocomplete="off" aria-label="Caractere 1" />
-                  <input type="text" maxlength="1" class="otp-box" id="otp-box-1" autocomplete="off" aria-label="Caractere 2" />
-                  <input type="text" maxlength="1" class="otp-box" id="otp-box-2" autocomplete="off" aria-label="Caractere 3" />
-                  <input type="text" maxlength="1" class="otp-box" id="otp-box-3" autocomplete="off" aria-label="Caractere 4" />
-                  <input type="text" maxlength="1" class="otp-box" id="otp-box-4" autocomplete="off" aria-label="Caractere 5" />
-                  <input type="text" maxlength="1" class="otp-box" id="otp-box-5" autocomplete="off" aria-label="Caractere 6" />
+                  <input type="text" maxlength="1" class="otp-box" id="otp-box-0" name="otp0" autocomplete="one-time-code" spellcheck="false" aria-label="Caractere 1" />
+                  <input type="text" maxlength="1" class="otp-box" id="otp-box-1" name="otp1" autocomplete="off" spellcheck="false" aria-label="Caractere 2" />
+                  <input type="text" maxlength="1" class="otp-box" id="otp-box-2" name="otp2" autocomplete="off" spellcheck="false" aria-label="Caractere 3" />
+                  <input type="text" maxlength="1" class="otp-box" id="otp-box-3" name="otp3" autocomplete="off" spellcheck="false" aria-label="Caractere 4" />
+                  <input type="text" maxlength="1" class="otp-box" id="otp-box-4" name="otp4" autocomplete="off" spellcheck="false" aria-label="Caractere 5" />
+                  <input type="text" maxlength="1" class="otp-box" id="otp-box-5" name="otp5" autocomplete="off" spellcheck="false" aria-label="Caractere 6" />
                 </div>
               </div>
 
@@ -519,7 +503,7 @@
           </div>
 
           <div class="mobile-landing-footer" aria-hidden="true">
-            <span>UNIFSA · Engenharia de Software</span>
+            <span><span translate="no">UNIFSA</span> · Engenharia de Software</span>
           </div>
         </div>
       </div>
@@ -578,8 +562,8 @@
             </div>
           </div>
           <p class="step-sub step1-sub">
-            <span class="sub-desktop">Atendimentos de 40 minutos · Selecione a disciplina ou monitor para consultar dias e horários disponíveis.</span>
-            <span class="sub-mobile">Atendimentos de 40 min · Escolha disciplina ou monitor.</span>
+            <span class="sub-desktop">Sessões de 40 min. Escolha uma disciplina ou monitor.</span>
+            <span class="sub-mobile">Sessões de 40 min · Escolha disciplina ou monitor.</span>
           </p>
 
           <div class="search-wrap">
@@ -590,9 +574,12 @@
             <input
               type="search"
               id="input-search"
+              name="search"
               class="search-input"
               placeholder="Buscar disciplina ou monitor (/)"
               aria-label="Buscar disciplina, assunto ou monitor"
+              autocomplete="off"
+              spellcheck="false"
             />
           </div>
 
@@ -635,7 +622,7 @@
         </div>
       </div>
 
-      <!-- ETAPA 2: CAL.COM -->
+      <!-- Etapa 2: Calendário e horários -->
       <div id="step-2" class="step-panel is-hidden">
         <h1 class="sr-only">Selecionar data e horário da monitoria</h1>
         <div class="cal-shell">
@@ -770,9 +757,10 @@
               </div>
               <textarea
                 id="s3-topic"
+                name="topic"
                 rows="3"
                 maxlength="180"
-                placeholder="Ex.: Lista de exercícios, revisão para avaliação ou trabalho integrador..."
+                placeholder="Ex.: Lista de exercícios, revisão para avaliação ou trabalho integrador…"
                 required
               ></textarea>
             </div>
@@ -789,11 +777,11 @@
         <div id="step3-success-shell" class="success-shell is-hidden">
           <div class="success-check" aria-hidden="true">✓</div>
           <h2 id="success-title">Monitoria confirmada</h2>
-          <p class="step-sub" id="success-sub">Seu atendimento está reservado. Guarde o código de protocolo abaixo.</p>
+          <p class="step-sub" id="success-sub">Vaga reservada. Apresente o protocolo abaixo no atendimento.</p>
 
           <div class="protocol-pill">
             <span>Protocolo</span>
-            <strong id="success-protocol">#MON-2026-000</strong>
+            <strong id="success-protocol" translate="no">#MON-2026-000</strong>
           </div>
 
           <dl class="success-grid" id="success-summary"></dl>
@@ -813,7 +801,7 @@
         <div class="view-head-row">
           <div>
             <h1 id="heading-agendamentos">Meus Agendamentos</h1>
-            <p class="step-sub" id="bookings-owner-sub">Acompanhe seus atendimentos confirmados e históricos.</p>
+            <p class="step-sub" id="bookings-owner-sub">Seus agendamentos ativos e histórico.</p>
           </div>
 
           <div class="underline-tabs" role="group" aria-label="Filtrar por status">
@@ -835,7 +823,7 @@
           <div class="monitor-head-copy">
             <h1 id="heading-monitor">Painel do Monitor</h1>
             <p class="step-sub monitor-sub-desktop" id="monitor-sub">
-              Publique novos horários autorizados pelo docente e acompanhe os alunos inscritos.
+              Agendamentos e horários da sua disciplina.
             </p>
             <p class="monitor-sub-mobile" id="monitor-sub-mobile"></p>
           </div>
@@ -884,17 +872,17 @@
 
             <div class="field">
               <label for="ms-offering-display">Disciplina autorizada</label>
-              <input type="text" id="ms-offering-display" readonly class="readonly-input" />
+              <input type="text" id="ms-offering-display" name="offering" readonly class="readonly-input" />
             </div>
 
             <div class="field-row">
               <div class="field">
                 <label for="ms-date">Data</label>
-                <input type="date" id="ms-date" value="2026-11-28" min="2026-11-18" max="2026-12-20" required />
+                <input type="date" id="ms-date" name="slotDate" value="2026-11-28" min="2026-11-18" max="2026-12-20" required />
               </div>
               <div class="field">
                 <label for="ms-time">Horário</label>
-                <select id="ms-time" data-custom-select="true" data-select-icon="clock">
+                <select id="ms-time" name="slotTime" data-custom-select="true" data-select-icon="clock">
                   <option value="14:00 - 14:40" data-badge="40 min">14:00 - 14:40</option>
                   <option value="15:00 - 15:40" data-badge="40 min">15:00 - 15:40</option>
                   <option value="16:30 - 17:10" data-badge="40 min">16:30 - 17:10</option>
@@ -906,11 +894,11 @@
             <div class="field-row field-row-monitor-code">
               <div class="field">
                 <label for="ms-capacity">Limite de vagas</label>
-                <input type="number" id="ms-capacity" min="1" max="15" value="4" required />
+                <input type="number" id="ms-capacity" name="capacity" min="1" max="15" value="4" required />
               </div>
               <div class="field">
                 <label for="ms-prof-code">Código do professor</label>
-                <input type="text" id="ms-prof-code" maxlength="6" placeholder="Ex.: IHC026" required />
+                <input type="text" id="ms-prof-code" name="profCode" maxlength="6" placeholder="Ex.: IHC026" autocomplete="off" spellcheck="false" required />
               </div>
             </div>
 
@@ -953,7 +941,7 @@
     </div>
   </div>
 
-  <!-- Modal Ajuda Rápida / FAQ (Heurística 10) -->
+  <!-- Modal Ajuda Rápida / FAQ -->
   <div
     id="faq-modal"
     class="modal-backdrop is-hidden"
@@ -1031,7 +1019,7 @@
     </div>
   </div>
 
-  <!-- Central de Configurações e Tecnologia Assistiva (PC 2 colunas + Mobile adaptativo) -->
+  <!-- Central de Configurações -->
   <div
     id="settings-modal"
     class="modal-backdrop is-hidden"
@@ -1167,14 +1155,14 @@
                     <strong>Confirmar antes de concluir</strong>
                     <p>Exibe resumo final de disciplina, horário e monitor antes de gravar a vaga.</p>
                   </div>
-                  <input type="checkbox" id="pref-confirm-book" role="switch" class="bc-switch" checked />
+                  <input type="checkbox" id="pref-confirm-book" name="confirmBook" role="switch" class="bc-switch" checked />
                 </label>
                 <label class="settings-row" for="pref-pause-distractions">
                   <div>
                     <strong>Pausar distrações visuais</strong>
                     <p>Trava a rotação automática de frases e oculta elementos geométricos flutuantes.</p>
                   </div>
-                  <input type="checkbox" id="pref-pause-distractions" role="switch" class="bc-switch" />
+                  <input type="checkbox" id="pref-pause-distractions" name="pauseDistractions" role="switch" class="bc-switch" />
                 </label>
               </div>
             </div>
@@ -1223,7 +1211,7 @@
                       <p>Paleta institucional e destaque harmonizado.</p>
                     </div>
                   </div>
-                  <select id="pref-theme-preset" class="settings-select" data-custom-select="true">
+                  <select id="pref-theme-preset" name="themePreset" class="settings-select" data-custom-select="true">
                     <option value="monitora">Monitora+ Padrão</option>
                     <option value="academic-navy">Azul Acadêmico</option>
                     <option value="forest-slate">Verde Botânico</option>
@@ -1236,7 +1224,7 @@
                 <div class="settings-row settings-row-wrap">
                   <div>
                     <strong>Destaque</strong>
-                    <p>Cor dos botões primários com contraste automático WCAG.</p>
+                    <p>Cor dos botões principais, ajustada automaticamente para boa leitura.</p>
                   </div>
                   <div class="accent-swatches" id="accent-swatches" role="radiogroup" aria-label="Cor de destaque">
                     <button type="button" class="accent-swatch is-active" role="radio" aria-checked="true" data-accent-hex="#b44b1e" style="--swatch:#b44b1e" aria-label="Terracota" title="Terracota"></button>
@@ -1247,7 +1235,7 @@
                     <button type="button" class="accent-swatch" role="radio" aria-checked="false" data-accent-hex="#52525b" style="--swatch:#52525b" aria-label="Grafite" title="Grafite"></button>
                     <label class="accent-swatch-custom" title="Cor de destaque personalizada">
                       <span class="accent-custom-ring" id="accent-custom-dot" aria-hidden="true">+</span>
-                      <input type="color" id="pref-accent-picker" class="color-native-input" value="#b44b1e" aria-label="Escolher cor de destaque personalizada" />
+                      <input type="color" id="pref-accent-picker" name="accentColor" class="color-native-input" value="#b44b1e" aria-label="Escolher cor de destaque personalizada" />
                     </label>
                   </div>
                 </div>
@@ -1257,7 +1245,7 @@
                     <label for="pref-ui-font"><strong>Fonte da interface</strong></label>
                     <p>Tipografia aplicada em textos, títulos e controles.</p>
                   </div>
-                  <select id="pref-ui-font" class="settings-select" data-custom-select="true">
+                  <select id="pref-ui-font" name="uiFont" class="settings-select" data-custom-select="true">
                     <option value="dm-sans">DM Sans (Padrão)</option>
                     <option value="system">Sistema Nativo</option>
                     <option value="readable">Leitura Clara (Verdana)</option>
@@ -1283,6 +1271,7 @@
                     <input
                       type="range"
                       id="settings-font-slider"
+                      name="fontScale"
                       class="bc-range"
                       min="88"
                       max="152"
@@ -1297,9 +1286,9 @@
                 <label class="settings-row" for="pref-reduced-motion">
                   <div>
                     <strong>Reduzir animações</strong>
-                    <p>Desativa transições e deslizes (útil para sensibilidade vestibular / labirintite).</p>
+                    <p>Desativa transições e deslocamentos na interface.</p>
                   </div>
-                  <input type="checkbox" id="pref-reduced-motion" role="switch" class="bc-switch" />
+                  <input type="checkbox" id="pref-reduced-motion" name="reducedMotion" role="switch" class="bc-switch" />
                 </label>
               </div>
             </div>
@@ -1309,7 +1298,7 @@
                 <summary class="settings-advanced-summary">
                   <div class="settings-advanced-title-wrap">
                     <strong>Avançado</strong>
-                    <span>Fundo e primeiro plano personalizados com validador WCAG 2.1</span>
+                    <span>Fundo e texto personalizados com verificação automática de contraste</span>
                   </div>
                   <svg class="settings-advanced-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <polyline points="9 18 15 12 9 6" />
@@ -1323,11 +1312,12 @@
                       <div class="color-pill">
                         <label class="color-dot-btn" title="Escolher cor de fundo">
                           <span class="color-dot-preview" id="custom-bg-dot" aria-hidden="true"></span>
-                          <input type="color" id="custom-bg-picker" class="color-native-input" aria-label="Selecionar cor de fundo" value="#f6f6f4" />
+                          <input type="color" id="custom-bg-picker" name="customBgPicker" class="color-native-input" aria-label="Selecionar cor de fundo" value="#f6f6f4" />
                         </label>
                         <input
                           type="text"
                           id="custom-bg-hex"
+                          name="customBgHex"
                           class="color-hex-input"
                           maxlength="7"
                           spellcheck="false"
@@ -1343,11 +1333,12 @@
                       <div class="color-pill">
                         <label class="color-dot-btn" title="Escolher cor do texto">
                           <span class="color-dot-preview" id="custom-fg-dot" aria-hidden="true"></span>
-                          <input type="color" id="custom-fg-picker" class="color-native-input" aria-label="Selecionar cor do primeiro plano" value="#141b29" />
+                          <input type="color" id="custom-fg-picker" name="customFgPicker" class="color-native-input" aria-label="Selecionar cor do primeiro plano" value="#141b29" />
                         </label>
                         <input
                           type="text"
                           id="custom-fg-hex"
+                          name="customFgHex"
                           class="color-hex-input"
                           maxlength="7"
                           spellcheck="false"
@@ -1379,21 +1370,17 @@
             </div>
           </div>
 
-          <!-- ABA 3: ACESSIBILIDADE (TECNOLOGIA ASSISTIVA WCAG 2.2) -->
+          <!-- Aba 3: Acessibilidade -->
           <div id="settings-tab-acessibilidade" class="settings-tabpanel is-hidden" role="tabpanel">
-            <div class="a11y-compliance-note">
-              <span>WCAG 2.2 · Compatível com leitores de tela (NVDA, VoiceOver, TalkBack) sem alterar a estrutura semântica.</span>
-            </div>
-
             <div class="settings-section-block">
               <span class="settings-block-title">Visão e daltonismo</span>
               <div class="settings-grouped-list">
                 <div class="settings-row settings-row-wrap">
                   <div>
-                    <label for="pref-cvd-filter"><strong>Filtro para Daltonismo (CVD)</strong></label>
-                    <p>Adapta a matriz de cores mantendo textos e ícones explícitos em todo status.</p>
+                    <label for="pref-cvd-filter"><strong>Filtro para daltonismo</strong></label>
+                    <p>Ajusta as cores da tela mantendo textos e ícones claros em todos os avisos.</p>
                   </div>
-                  <select id="pref-cvd-filter" class="settings-select" data-custom-select="true" data-select-icon="eye">
+                  <select id="pref-cvd-filter" name="cvdFilter" class="settings-select" data-custom-select="true" data-select-icon="eye">
                     <option value="none">Nenhum (Padrão)</option>
                     <option value="protanopia">Protanopia (vermelho-verde)</option>
                     <option value="deuteranopia">Deuteranopia (verde-vermelho)</option>
@@ -1405,49 +1392,49 @@
             </div>
 
             <div class="settings-section-block">
-              <span class="settings-block-title">Cognição, dislexia e TDAH</span>
+              <span class="settings-block-title">Leitura e concentração</span>
               <div class="settings-grouped-list">
                 <label class="settings-row" for="pref-dyslexia-spacing">
                   <div>
-                    <strong>Espaçamento para Dislexia</strong>
-                    <p>Amplia entrelinha e distância entre letras e palavras (WCAG 1.4.12).</p>
+                    <strong>Espaçamento para dislexia</strong>
+                    <p>Aumenta o espaço entre linhas, letras e palavras para facilitar a leitura.</p>
                   </div>
-                  <input type="checkbox" id="pref-dyslexia-spacing" role="switch" class="bc-switch" />
+                  <input type="checkbox" id="pref-dyslexia-spacing" name="dyslexiaSpacing" role="switch" class="bc-switch" />
                 </label>
 
                 <label class="settings-row" for="pref-reading-mask">
                   <div>
-                    <strong>Régua / Guia de leitura</strong>
-                    <p>Faixa horizontal suave que acompanha o cursor ou foco para evitar pular linhas.</p>
+                    <strong>Guia de leitura</strong>
+                    <p>Destaca a linha em foco para ajudar a acompanhar o texto sem perder o ponto.</p>
                   </div>
-                  <input type="checkbox" id="pref-reading-mask" role="switch" class="bc-switch" />
+                  <input type="checkbox" id="pref-reading-mask" name="readingMask" role="switch" class="bc-switch" />
                 </label>
               </div>
             </div>
 
             <div class="settings-section-block">
-              <span class="settings-block-title">Mobilidade, teclado e leitor em voz alta</span>
+              <span class="settings-block-title">Teclado, toque e áudio</span>
               <div class="settings-grouped-list">
                 <label class="settings-row" for="pref-extra-focus">
                   <div>
-                    <strong>Foco extra visível (Tab)</strong>
-                    <p>Contorno de alta espessura e contraste ao navegar por teclado ou acionador (WCAG 2.4.13).</p>
+                    <strong>Destaque de foco no teclado</strong>
+                    <p>Deixa o contorno mais visível ao navegar com Tab ou teclado externo.</p>
                   </div>
-                  <input type="checkbox" id="pref-extra-focus" role="switch" class="bc-switch" />
+                  <input type="checkbox" id="pref-extra-focus" name="extraFocus" role="switch" class="bc-switch" />
                 </label>
 
                 <label class="settings-row" for="pref-large-targets">
                   <div>
-                    <strong>Alvos de toque ampliados</strong>
-                    <p>Aumenta altura mínima de botões, horários e dias do calendário para 48px+ (WCAG 2.5.8).</p>
+                    <strong>Botões e alvos maiores</strong>
+                    <p>Aumenta a área de clique de botões, horários e dias do calendário.</p>
                   </div>
-                  <input type="checkbox" id="pref-large-targets" role="switch" class="bc-switch" />
+                  <input type="checkbox" id="pref-large-targets" name="largeTargets" role="switch" class="bc-switch" />
                 </label>
 
                 <div class="settings-row settings-row-wrap">
                   <div>
-                    <strong>Leitor de resumo em voz alta (PT-BR)</strong>
-                    <p>Sintetiza em áudio o contexto e as ações da tela atual pelo navegador.</p>
+                    <strong>Leitura da tela em voz alta</strong>
+                    <p>Lê em áudio o resumo e as ações disponíveis na tela atual.</p>
                   </div>
                   <div class="speak-actions">
                     <button type="button" class="btn btn-secondary" id="btn-speak-screen">Ouvir tela</button>
@@ -1463,15 +1450,15 @@
                 <label class="settings-row" for="pref-vlibras">
                   <div>
                     <strong>Tradutor em Libras (VLibras)</strong>
-                    <p>Carrega o intérprete oficial sob demanda apenas quando ativado. Desligado por padrão.</p>
+                    <p>Ativa o intérprete em Libras sob demanda. Fica desligado por padrão.</p>
                   </div>
-                  <input type="checkbox" id="pref-vlibras" role="switch" class="bc-switch" />
+                  <input type="checkbox" id="pref-vlibras" name="vlibras" role="switch" class="bc-switch" />
                 </label>
               </div>
             </div>
           </div>
 
-          <!-- ABA 4: AGENDA -->
+          <!-- Aba 4: Agenda -->
           <div id="settings-tab-agenda" class="settings-tabpanel is-hidden" role="tabpanel">
             <div class="settings-section-block">
               <span class="settings-block-title">Regras e lembretes</span>
@@ -1481,7 +1468,7 @@
                     <strong>Bloquear choque de horário</strong>
                     <p>Impede confirmar duas monitorias no mesmo dia e faixa de horário.</p>
                   </div>
-                  <input type="checkbox" id="pref-block-conflicts" role="switch" class="bc-switch" checked />
+                  <input type="checkbox" id="pref-block-conflicts" name="blockConflicts" role="switch" class="bc-switch" checked />
                 </label>
 
                 <label class="settings-row" for="pref-auto-ics">
@@ -1489,13 +1476,13 @@
                     <strong>Destacar lembrete de agenda (.ics)</strong>
                     <p>Realça o botão de exportação para Google Agenda / Apple Calendar após confirmar.</p>
                   </div>
-                  <input type="checkbox" id="pref-auto-ics" role="switch" class="bc-switch" />
+                  <input type="checkbox" id="pref-auto-ics" name="autoIcs" role="switch" class="bc-switch" />
                 </label>
 
                 <div class="settings-row settings-row-stack">
                   <div>
-                    <strong>Antecedência do lembrete no arquivo .ics</strong>
-                    <p>Adiciona alerta automático (VALARM) ao importar sua monitoria no calendário.</p>
+                    <strong>Antecedência do lembrete (.ics)</strong>
+                    <p>Define quando o calendário avisa antes do início da monitoria.</p>
                   </div>
                   <div class="ics-reminder-group" id="ics-reminder-group" role="radiogroup" aria-label="Antecedência do lembrete no arquivo .ics">
                     <button type="button" class="ics-reminder-opt" role="radio" aria-checked="false" data-ics-reminder="0">Sem alerta</button>
@@ -1530,23 +1517,23 @@
               <div class="settings-grouped-list">
                 <div class="settings-row">
                   <span>Focar busca de disciplinas (Etapa 1)</span>
-                  <kbd class="kbd">/</kbd>
+                  <kbd class="kbd" translate="no">/</kbd>
                 </div>
                 <div class="settings-row">
                   <span>Navegar pelos dias do calendário (Etapa 2)</span>
-                  <span class="kbd-group"><kbd class="kbd">←</kbd><kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd><kbd class="kbd">→</kbd></span>
+                  <span class="kbd-group" translate="no"><kbd class="kbd">←</kbd><kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd><kbd class="kbd">→</kbd></span>
                 </div>
                 <div class="settings-row">
                   <span>Abrir ou alternar Configurações</span>
-                  <span class="kbd-group"><kbd class="kbd">Alt</kbd> + <kbd class="kbd">,</kbd></span>
+                  <span class="kbd-group" translate="no"><kbd class="kbd">Alt</kbd> + <kbd class="kbd">,</kbd></span>
                 </div>
                 <div class="settings-row">
                   <span>Ouvir resumo da tela atual</span>
-                  <span class="kbd-group"><kbd class="kbd">Alt</kbd> + <kbd class="kbd">L</kbd></span>
+                  <span class="kbd-group" translate="no"><kbd class="kbd">Alt</kbd> + <kbd class="kbd">L</kbd></span>
                 </div>
                 <div class="settings-row">
                   <span>Fechar janelas e modais</span>
-                  <kbd class="kbd">Esc</kbd>
+                  <kbd class="kbd" translate="no">Esc</kbd>
                 </div>
               </div>
             </div>
@@ -1599,7 +1586,7 @@
     </div>
   </div>
 
-  <!-- Régua / Guia de leitura (Tecnologia Assistiva - Cognição/Dislexia) -->
+  <!-- Guia de leitura -->
   <div id="reading-mask" class="reading-mask is-hidden" aria-hidden="true"></div>
 
   <!-- Região ARIA Live para anunciar alterações a leitores de tela -->
@@ -1644,7 +1631,7 @@
     <div class="toast-progress" id="toast-progress" aria-hidden="true"></div>
   </div>
 
-  <!-- Barra inferior fixa (apenas mobile autenticado — Lei de Fitts) -->
+  <!-- Barra de navegação inferior (mobile autenticado) -->
   <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Navegação inferior">
     <button type="button" class="mobile-tab-btn is-active" data-mobile-nav="agendar" aria-current="page">
       <span class="mobile-tab-icon-wrap" aria-hidden="true">
@@ -1731,14 +1718,14 @@
             <line x1="12" y1="16" x2="12" y2="12" />
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
-          <span id="sso-modal-foot-text">Fluxo simulado · Pronto para integração via SAML / API da UNIFSA</span>
+          <span id="sso-modal-foot-text">Ambiente demonstrativo · <span translate="no">UNIFSA</span></span>
         </div>
       </div>
 
       <div id="sso-stage-loading" class="sso-loading-stage is-hidden" role="status" aria-live="polite">
         <div class="sso-loading-head">
           <span class="sso-provider-badge is-sm" id="sso-loading-provider-icon" aria-hidden="true"></span>
-          <strong id="sso-loading-provider-name">Gennera SSO</strong>
+          <strong id="sso-loading-provider-name" translate="no">Gennera SSO</strong>
         </div>
 
         <div id="sso-loading-profile" class="sso-loading-profile"></div>
@@ -1747,9 +1734,9 @@
           <span class="sso-spinner"></span>
         </div>
 
-        <p id="sso-loading-title" class="sso-loading-title">Sincronizando matrícula e disciplinas do Gennera...</p>
+        <p id="sso-loading-title" class="sso-loading-title">Sincronizando matrícula e disciplinas do Gennera…</p>
         <p class="sso-loading-sub">Isso leva apenas alguns instantes.</p>
-        <p class="sso-loading-foot">Fluxo simulado</p>
+        <p class="sso-loading-foot">Ambiente demonstrativo</p>
       </div>
     </div>
   </div>
@@ -1759,11 +1746,11 @@
 
   <footer class="site-footer" id="app-footer">
     <div class="footer-inner">
-      <span>Monitora+ · Sistema de Agendamento de Monitorias Acadêmicas</span>
+      <span><span translate="no">Monitora+</span> · Sistema de Agendamento de Monitorias Acadêmicas</span>
       <span>Engenharia de Software · 2026</span>
     </div>
   </footer>
 
-  <script src="app.js?v=20261124g1"></script>
+  <script src="app.js?v=20261124h1"></script>
 </body>
 </html>
