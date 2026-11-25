@@ -5654,16 +5654,19 @@ function positionFixedPopover(trigger, popover, desiredWidth, maxDesiredHeight =
   const margin = 12;
   const popWidth = Math.min(window.innerWidth - margin * 2, Math.max(rect.width, desiredWidth));
 
-  // Mede o origin real do containing block (compensa filter em html[data-cvd] ou body scroll-locked)
+  // Mede o origin real do containing block sem animação ativa (compensa filter em html[data-cvd] ou body scroll-locked)
   const prevVis = popover.style.visibility;
+  const prevAnim = popover.style.animation;
+  popover.style.animation = "none";
   popover.style.visibility = "hidden";
   popover.style.top = "0px";
   popover.style.left = "0px";
   popover.style.bottom = "auto";
   popover.style.width = `${Math.round(popWidth)}px`;
+  void popover.offsetHeight;
   const originRect = popover.getBoundingClientRect();
-  const offsetX = originRect.left;
-  const offsetY = originRect.top;
+  const offsetX = Math.abs(originRect.left) <= 2000 ? originRect.left : 0;
+  const offsetY = Math.abs(originRect.top) <= 2000 ? originRect.top : 0;
 
   const targetLeft =
     rect.left + popWidth <= window.innerWidth - margin
@@ -5690,6 +5693,7 @@ function positionFixedPopover(trigger, popover, desiredWidth, maxDesiredHeight =
   popover.style.bottom = "auto";
   popover.style.maxHeight = `${maxHeight}px`;
   popover.style.visibility = prevVis === "hidden" ? "" : prevVis;
+  popover.style.animation = prevAnim;
 }
 
 function positionCustomPopover(trigger, popover) {

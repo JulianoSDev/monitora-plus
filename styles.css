@@ -2567,8 +2567,8 @@ body.theme-dark .toast[data-category="error"]   { --toast-accent: #f87171; }
 
 .svg-defs-hidden {
   position: fixed;
-  top: -9999px;
-  left: -9999px;
+  top: 0;
+  left: 0;
   width: 0;
   height: 0;
   overflow: hidden;
@@ -3273,8 +3273,8 @@ body.a11y-pause-distractions *:active {
 
 .bc-select-popover {
   position: fixed;
-  top: -9999px;
-  left: -9999px;
+  top: 0;
+  left: 0;
   min-width: 210px;
   max-height: 248px;
   overflow-y: auto;
@@ -3364,8 +3364,8 @@ body.a11y-pause-distractions *:active {
 
 .bc-date-popover {
   position: fixed;
-  top: -9999px;
-  left: -9999px;
+  top: 0;
+  left: 0;
   width: 286px;
   max-width: calc(100vw - 24px);
   z-index: 960;
@@ -6356,6 +6356,15 @@ body.a11y-pause-distractions #view-inicio.is-active .inicio-open-slots {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Neutraliza fundo azulado do autofill do Chrome/Safari no tema escuro e claro */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  box-shadow: 0 0 0 1000px var(--bg) inset;
+  transition: background-color 9999s ease-out 0s;
 }
 
 
