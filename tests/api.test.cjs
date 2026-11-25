@@ -34,6 +34,8 @@ test("restore CSRF from /me; invalidate only authenticated 401", async () => {
   await client.request("/auth/me");
   result = json({ error: "bad credentials", fields: { password: "incorrect" } }, 401);
   await assert.rejects(client.request("/auth/login", { method: "POST" }), error => error.status === 401 && error.fields.password === "incorrect");
+  result = json({ error: "invalid google" }, 401);
+  await assert.rejects(client.request("/auth/google", { method: "POST" }), error => error.status === 401);
   assert.equal(unauthorized, 0);
   result = json({});
   await client.request("/slots/1", { method: "DELETE" });

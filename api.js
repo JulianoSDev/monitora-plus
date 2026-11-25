@@ -41,7 +41,11 @@
           throw new ApiError("O servidor retornou uma resposta inesperada. Atualize os dados e tente novamente.", response.status);
         }
         if (!response.ok) {
-          if (response.status === 401 && !["/auth/login", "/auth/register"].includes(path) && version === sessionVersion) {
+          if (
+            response.status === 401 &&
+            !["/auth/login", "/auth/register", "/auth/google", "/auth/google/complete", "/auth/gennera"].includes(path) &&
+            version === sessionVersion
+          ) {
             clearSession();
             onUnauthorized();
           }

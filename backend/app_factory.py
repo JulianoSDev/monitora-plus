@@ -21,6 +21,10 @@ def create_app():
         raise ValueError("SameSite=None exige JWT_COOKIE_SECURE=True (HTTPS).")
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=int(os.getenv("JWT_EXPIRES_HOURS", "8")))
     app.config["TIMEZONE"] = os.getenv("TIMEZONE", "America/Sao_Paulo")
+    app.config["GOOGLE_CLIENT_ID"] = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+    app.config["GENNERA_API_URL"] = os.getenv("GENNERA_API_URL", "").strip().rstrip("/")
+    app.config["GENNERA_API_TOKEN"] = os.getenv("GENNERA_API_TOKEN", "").strip()
+    app.config["GENNERA_INSTITUTION_ID"] = os.getenv("GENNERA_INSTITUTION_ID", "").strip()
 
     app.url_map.strict_slashes = False  # /api/offerings e /api/offerings/ funcionam
     app.json.sort_keys = False  # mantém a ordem dos campos como escrita no código

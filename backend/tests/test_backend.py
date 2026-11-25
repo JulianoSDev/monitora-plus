@@ -163,6 +163,56 @@ class BackendIntegrationTest(unittest.TestCase):
                 deletion = executor.submit(delete)
                 self.assertIn((booking.result(), deletion.result()), {(201, 409), (404, 204)})
 
+    def test_google_oauth_and_providers(self):
+        with patch.dict(os.environ, {"GOOGLE_CLIENT_ID": "test-google-client.apps.googleusercontent.com"}):
+            app = create_app()
+            app.testing = True
+        client = app.test_client()
+        providers = client.get("/api/auth/providers", base_url=self.base)
+        self.assertEqual(providers.status_code, 200)
+        self.assertTrue(providers.json["google"]["enabled"])
+        self.assertEqual(providers.json["google"]["client_id"], "test-google-client.apps.googleusercontent.com")
+        self.assertFalse(providers.json["gennera"]["enabled"])
+
+        gennera = client.post("/api/auth/gennera", json={}, base_url=self.base)
+        self.assertEqual(gennera.status_code, 503)
+
+        fake_google_payload = {
+            "iss": "https://accounts.google.com",
+            "sub": "google-sub-999111",
+            "email": "juliano.google@example.org",
+            "email_verified": True,
+            "name": "Juliano Google",
+            "picture": "https://lh3.googleusercontent.com/a/example",
+        }
+        with patch("api.auth.services.google_id_token.verify_oauth2_token", return_value=fake_google_payload):
+            first = client.post("/api/auth/google", json={"credential": "fake-jwt"}, base_url=self.base)
+            self.assertEqual(first.status_code, 200, first.json)
+            self.assertTrue(first.json["needs_onboarding"])
+            onboarding_token = first.json["onboarding_token"]
+
+            complete = client.post(
+                "/api/auth/google/complete",
+                json={
+                    "onboarding_token": onboarding_token,
+                    "role": "student",
+                    "name": "Juliano Google",
+                    "ra": "7788991",
+                    "course": "Eng. Software · 1º A",
+                },
+                base_url=self.base,
+            )
+            self.assertEqual(complete.status_code, 201, complete.json)
+            self.assertEqual(complete.json["user"]["avatar_url"], fake_google_payload["picture"])
+            self.assertTrue(complete.json["user"]["has_google"])
+
+            # Segundo login com o mesmo Google entra direto sem onboarding
+            again_client = app.test_client()
+            second = again_client.post("/api/auth/google", json={"credential": "fake-jwt"}, base_url=self.base)
+            self.assertEqual(second.status_code, 200, second.json)
+            self.assertEqual(second.json["user"]["ra"], "7788991")
+            self.assertIn("csrf_token", second.json)
+
 
 if __name__ == "__main__":
     unittest.main()

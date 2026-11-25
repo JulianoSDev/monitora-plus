@@ -3362,7 +3362,8 @@ body.is-auth-register .assaad-card {
 }
 
 /* Modal SSO como Bottom Sheet nativo no Mobile (<= 768px) */
-#sso-modal {
+#sso-modal,
+#sso-provider-modal {
   align-items: flex-end;
   padding: 0;
 }
@@ -3375,7 +3376,7 @@ body.is-auth-register .assaad-card {
   overflow-x: hidden;
   border-radius: 16px 16px 0 0;
   border-bottom: none;
-  padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
+  padding: 16px 16px 24px;
   scrollbar-width: none;
   -ms-overflow-style: none;
   animation: sheetSlideUp var(--dur-modal) var(--ease-out);

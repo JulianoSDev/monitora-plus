@@ -98,11 +98,13 @@ async function cleanup() {
   await register(student, accounts[1]);
   console.log('PASS: real HTTPS monitor/student registration, private code and slot publishing');
   await student.reload();
+  await student.waitForFunction(() => Boolean(getCurrentUser()) && !document.getElementById('auth-stage-quick').classList.contains('is-hidden') && pendingApiActions.size === 0);
+  await student.locator('#btn-quick-continue').click();
   await student.waitForFunction(() => ui.activeView === 'inicio' && pendingApiActions.size === 0);
   assert.equal(await student.evaluate(() => localStorage.getItem('monitoraplus_v6_state')), null);
   const stored = await student.evaluate(() => JSON.parse(localStorage.getItem('monitoraplus_v7_preferences') || '{}'));
   assert.ok(!('users' in stored) && !('bookings' in stored));
-  console.log('PASS: cookie session restored on reload; legacy credentials removed');
+  console.log('PASS: cookie session restored via quick-continue card on reload; legacy credentials removed');
   await student.evaluate(slot => {
     ui.selectedOfferingId = 'off-ihc'; ui.selectedSlotId = slot; ui.selectedDateIso = getSlot(slot).dateIso;
     ui.step = 3; switchView('agendar');

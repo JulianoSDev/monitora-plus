@@ -34,6 +34,12 @@ class User(db.Model):
             "(role = 'monitor' AND offering_id IS NOT NULL) OR role = 'student'",
             name="ck_users_monitor_has_offering",
         ),
+        db.Index(
+            "uq_users_google_sub",
+            "google_sub",
+            unique=True,
+            postgresql_where=db.text("google_sub IS NOT NULL"),
+        ),
     )
 
     id = db.Column(db.Integer, primary_key=True)
@@ -44,6 +50,8 @@ class User(db.Model):
     password_hash = db.Column(db.String(80), nullable=False)
     course = db.Column(db.String(80))  # turma (só aluno)
     offering_id = db.Column(db.String(20), db.ForeignKey("offerings.id"))  # disciplina (só monitor)
+    google_sub = db.Column(db.String(64))
+    avatar_url = db.Column(db.String(500))
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=db.func.now())
 
 

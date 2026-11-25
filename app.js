@@ -168,10 +168,46 @@ const pendingApiActions = new Set();
 let remoteSessionVersion = 0;
 let refreshInFlight = null;
 let lastRemoteRefresh = 0;
+let authProviders = { google: { enabled: false, clientId: null }, gennera: { enabled: false } };
+let googleGisInitializedClientId = null;
+let pendingGoogleOnboarding = null;
+let googleOnboardingRole = "student";
+let ssoModalLastTrigger = null;
 
 function mapUser(user) {
-  return { id: String(user.id), role: user.role, name: user.name, ra: user.ra,
-    email: user.email, course: user.course, offeringId: user.offering_id };
+  return {
+    id: String(user.id),
+    role: user.role,
+    name: user.name,
+    ra: user.ra,
+    email: user.email,
+    course: user.course,
+    offeringId: user.offering_id,
+    avatarUrl: user.avatar_url || null,
+    hasGoogle: Boolean(user.has_google),
+  };
+}
+
+function getUserInitials(name, fallback = "M+") {
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return fallback;
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function renderAvatarContent(el, avatarUrl, initials) {
+  if (!el) return;
+  if (avatarUrl) {
+    el.innerHTML = `<img src="${escapeHtml(avatarUrl)}" alt="" class="avatar-photo-img" referrerpolicy="no-referrer" />`;
+    const img = el.querySelector("img");
+    if (img) {
+      img.addEventListener("error", () => {
+        el.textContent = initials;
+      }, { once: true });
+    }
+  } else {
+    el.textContent = initials;
+  }
 }
 
 function mapOffering(offering) {
@@ -244,6 +280,9 @@ function clearRemoteSession() {
   document.getElementById("form-new-slot").reset();
   document.getElementById("s3-topic").value = "";
   hideOtpStage();
+  hideGoogleOnboardingStage();
+  hideQuickAuthStage();
+  closeSsoProviderModal(false);
   setAuthTab("login");
 }
 
@@ -272,11 +311,15 @@ async function refreshRemoteData() {
     const [catalog, slots, own, monitor] = await Promise.all(requests);
     if (version !== remoteSessionVersion) return;
     OFFERINGS.splice(0, OFFERINGS.length, ...catalog.offerings.map(mapOffering));
-    const subjectSelect = document.getElementById("reg-subject");
-    const selected = subjectSelect.value;
-    subjectSelect.innerHTML = OFFERINGS.map((off) => `<option value="${escapeHtml(off.id)}">${escapeHtml(off.subject)}</option>`).join("");
-    if (OFFERINGS.some((off) => off.id === selected)) subjectSelect.value = selected;
-    syncCustomSelect(subjectSelect);
+    const optionsHtml = OFFERINGS.map((off) => `<option value="${escapeHtml(off.id)}">${escapeHtml(off.subject)}</option>`).join("");
+    ["reg-subject", "google-reg-subject"].forEach((selectId) => {
+      const subjectSelect = document.getElementById(selectId);
+      if (!subjectSelect) return;
+      const selected = subjectSelect.value;
+      subjectSelect.innerHTML = optionsHtml;
+      if (OFFERINGS.some((off) => off.id === selected)) subjectSelect.value = selected;
+      syncCustomSelect(subjectSelect);
+    });
     if (user) {
       state.users = [user];
       state.slots = slots.slots.map((slot) => mapSlot(slot));
@@ -311,10 +354,21 @@ function showApiError(error, form = null) {
     hideOtpStage();
     form = document.getElementById("form-register");
   }
-  const fieldMap = { identifier: "login-identifier", password: form?.id === "form-login" ? "login-password" : "reg-password",
-    name: "reg-name", ra: "reg-ra", email: "reg-email", course: "reg-course", offering_id: "reg-subject",
-    professor_code: form?.id === "auth-stage-otp" ? "otp-code" : "ms-prof-code",
-    date: "ms-date", time: "ms-time", capacity: "ms-capacity", topic: "s3-topic" };
+  const isGoogleOnboard = form?.id === "auth-stage-google-onboarding";
+  const fieldMap = {
+    identifier: "login-identifier",
+    password: form?.id === "form-login" ? "login-password" : "reg-password",
+    name: isGoogleOnboard ? "google-reg-name" : "reg-name",
+    ra: isGoogleOnboard ? "google-reg-ra" : "reg-ra",
+    email: "reg-email",
+    course: isGoogleOnboard ? "google-reg-course" : "reg-course",
+    offering_id: isGoogleOnboard ? "google-reg-subject" : "reg-subject",
+    professor_code: isGoogleOnboard ? "google-reg-code" : form?.id === "auth-stage-otp" ? "otp-code" : "ms-prof-code",
+    date: "ms-date",
+    time: "ms-time",
+    capacity: "ms-capacity",
+    topic: "s3-topic",
+  };
   const fields = Object.entries(error.fields || {}).map(([key, message]) => ({ el: document.getElementById(fieldMap[key]), message }))
     .filter((field) => field.el && form?.contains(field.el));
   if (fields.length) applyFieldErrors(form, fields);
@@ -386,8 +440,27 @@ async function changeRemoteBookingStatus(booking, status, message, undoStatus) {
   });
 }
 
+async function loadAuthProviders() {
+  try {
+    const data = await apiClient.request("/auth/providers");
+    authProviders = {
+      google: {
+        enabled: Boolean(data?.google?.enabled && data?.google?.client_id),
+        clientId: data?.google?.client_id || null,
+      },
+      gennera: {
+        enabled: Boolean(data?.gennera?.enabled),
+      },
+    };
+    initGoogleIdentity();
+  } catch {
+    // Mantém estado padrão seguro caso o backend ainda não exponha /auth/providers
+  }
+}
+
 async function bootstrapRemote() {
   setApiStatus("Conectando ao Monitora+…", true);
+  await loadAuthProviders();
   try {
     const result = await apiClient.request("/auth/me");
     const user = mapUser(result.user);
@@ -401,7 +474,10 @@ async function bootstrapRemote() {
   }
   await refreshSafely();
   renderTopbar();
-  if (getCurrentUser()) switchView("inicio");
+  const activeUser = getCurrentUser();
+  if (activeUser) {
+    showQuickAuthStage(activeUser);
+  }
 }
 
 
@@ -1365,9 +1441,8 @@ function syncSettingsAccountBox() {
   const dangerZone = document.getElementById("settings-danger-zone");
 
   if (user) {
-    const parts = user.name.trim().split(/\s+/);
-    const initials = parts.length >= 2 ? `${parts[0][0]}${parts[parts.length - 1][0]}` : parts[0].slice(0, 2);
-    avatar.textContent = initials.toUpperCase();
+    const initials = getUserInitials(user.name);
+    renderAvatarContent(avatar, user.avatarUrl, initials);
     nameEl.textContent = user.name;
     subEl.textContent = `${user.role === "monitor" ? "Monitor(a)" : "Estudante"} · ${user.ra}`;
     statusEl.textContent = `${user.name} (${user.ra})`;
@@ -1837,17 +1912,40 @@ function renderTopbar() {
     const firstName = parts[0];
     const initials = parts.length >= 2 ? `${parts[0][0]}${parts[parts.length - 1][0]}` : parts[0].slice(0, 2);
     const isMonitor = user.role === "monitor";
-    const roleTag = isMonitor ? "Monitor(a)" : `Mat. ${user.ra}`;
-    const initialsUpper = initials.toUpperCase();
+    const initialsUpper = getUserInitials(user.name);
     label.textContent = firstName;
+    const topbarAvatarWrap = document.getElementById("topbar-user-avatar");
     const topbarInitials = document.getElementById("topbar-user-initials");
     if (topbarInitials) topbarInitials.textContent = initialsUpper;
-    if (ddAvatar) ddAvatar.textContent = initialsUpper;
+    if (topbarAvatarWrap) {
+      topbarAvatarWrap.querySelector(".avatar-photo-img")?.remove();
+      if (user.avatarUrl) {
+        topbarAvatarWrap.classList.add("has-photo");
+        const img = document.createElement("img");
+        img.src = user.avatarUrl;
+        img.alt = "";
+        img.className = "avatar-photo-img";
+        img.referrerPolicy = "no-referrer";
+        img.addEventListener("error", () => {
+          img.remove();
+          topbarAvatarWrap.classList.remove("has-photo");
+        }, { once: true });
+        topbarAvatarWrap.appendChild(img);
+      } else {
+        topbarAvatarWrap.classList.remove("has-photo");
+      }
+    }
+    renderAvatarContent(ddAvatar, user.avatarUrl, initialsUpper);
     if (ddName) ddName.textContent = user.name;
     if (ddRoleBadge) ddRoleBadge.textContent = isMonitor ? "Monitor" : "Estudante";
     if (ddSub) ddSub.textContent = user.email;
   } else {
     label.textContent = "Entrar";
+    const topbarAvatarWrap = document.getElementById("topbar-user-avatar");
+    if (topbarAvatarWrap) {
+      topbarAvatarWrap.querySelector(".avatar-photo-img")?.remove();
+      topbarAvatarWrap.classList.remove("has-photo");
+    }
     const topbarInitials = document.getElementById("topbar-user-initials");
     if (topbarInitials) topbarInitials.textContent = "M+";
     if (ddAvatar) ddAvatar.textContent = "M+";
@@ -2414,7 +2512,277 @@ function switchView(viewName, useTransition = false) {
   }
 }
 
-// ==================== AUTENTICAÇÃO E VERIFICAÇÃO OTP ====================
+// ==================== AUTENTICAÇÃO, RETORNO RÁPIDO E SSO REAL ====================
+function showQuickAuthStage(user) {
+  if (!user) return;
+  const quickStage = document.getElementById("auth-stage-quick");
+  const mainStage = document.getElementById("auth-stage-main");
+  const otpStage = document.getElementById("auth-stage-otp");
+  const googleStage = document.getElementById("auth-stage-google-onboarding");
+  if (!quickStage || !mainStage) return;
+
+  renderAvatarContent(document.getElementById("quick-avatar"), user.avatarUrl, getUserInitials(user.name));
+  document.getElementById("quick-name").textContent = user.name;
+  document.getElementById("quick-sub").textContent = "Acesse sua conta";
+
+  mainStage.classList.add("is-hidden");
+  otpStage?.classList.add("is-hidden");
+  googleStage?.classList.add("is-hidden");
+  quickStage.classList.remove("is-hidden");
+}
+
+function hideQuickAuthStage() {
+  document.getElementById("auth-stage-quick")?.classList.add("is-hidden");
+  document.getElementById("auth-stage-main")?.classList.remove("is-hidden");
+}
+
+function setGoogleOnboardingRole(role) {
+  googleOnboardingRole = role === "monitor" ? "monitor" : "student";
+  const isMonitor = googleOnboardingRole === "monitor";
+  document.querySelectorAll("[data-google-role]").forEach((btn) => {
+    const active = btn.dataset.googleRole === googleOnboardingRole;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-checked", String(active));
+  });
+  document.getElementById("google-course-wrap")?.classList.toggle("is-hidden", isMonitor);
+  document.getElementById("google-subject-wrap")?.classList.toggle("is-hidden", !isMonitor);
+  document.getElementById("google-code-wrap")?.classList.toggle("is-hidden", !isMonitor);
+}
+
+function showGoogleOnboardingStage(data) {
+  pendingGoogleOnboarding = {
+    onboardingToken: data.onboarding_token,
+    profile: data.profile || {},
+  };
+  const profile = pendingGoogleOnboarding.profile;
+  renderAvatarContent(
+    document.getElementById("google-onboard-avatar"),
+    profile.avatar_url || null,
+    getUserInitials(profile.name || profile.email, "G")
+  );
+  document.getElementById("google-onboard-name").textContent = profile.name || "Conta Google";
+  document.getElementById("google-onboard-email").textContent = profile.email || "";
+
+  const form = document.getElementById("auth-stage-google-onboarding");
+  clearFormErrors(form);
+  document.getElementById("google-reg-name").value = profile.name || "";
+  document.getElementById("google-reg-ra").value = "";
+  document.getElementById("google-reg-course").value = "Eng. Software · 1º A";
+  document.getElementById("google-reg-code").value = "";
+  setGoogleOnboardingRole("student");
+
+  document.getElementById("auth-stage-quick")?.classList.add("is-hidden");
+  document.getElementById("auth-stage-main")?.classList.add("is-hidden");
+  document.getElementById("auth-stage-otp")?.classList.add("is-hidden");
+  form?.classList.remove("is-hidden");
+  document.getElementById("google-reg-ra")?.focus();
+}
+
+function hideGoogleOnboardingStage() {
+  pendingGoogleOnboarding = null;
+  const form = document.getElementById("auth-stage-google-onboarding");
+  if (form) {
+    clearFormErrors(form);
+    form.classList.add("is-hidden");
+  }
+  document.getElementById("auth-stage-main")?.classList.remove("is-hidden");
+}
+
+function initGoogleIdentity() {
+  if (!authProviders.google.enabled || !authProviders.google.clientId) return false;
+  if (!window.google?.accounts?.id) return false;
+  if (googleGisInitializedClientId === authProviders.google.clientId) return true;
+  window.google.accounts.id.initialize({
+    client_id: authProviders.google.clientId,
+    callback: handleGoogleCredentialResponse,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+    use_fedcm_for_prompt: true,
+  });
+  googleGisInitializedClientId = authProviders.google.clientId;
+  return true;
+}
+
+function openSsoProviderModal({ iconHtml, title, sub, bodyHtml, triggerEl = null }) {
+  ssoModalLastTrigger = triggerEl || document.activeElement;
+  document.getElementById("sso-provider-icon").innerHTML = iconHtml;
+  document.getElementById("sso-provider-title").textContent = title;
+  document.getElementById("sso-provider-sub").textContent = sub;
+  document.getElementById("sso-provider-body").innerHTML = bodyHtml;
+  document.getElementById("sso-provider-modal")?.classList.remove("is-hidden");
+  syncBodyScrollLock();
+}
+
+function closeSsoProviderModal(restoreFocus = true) {
+  const modal = document.getElementById("sso-provider-modal");
+  if (!modal || modal.classList.contains("is-hidden")) return;
+  modal.classList.add("is-hidden");
+  syncBodyScrollLock();
+  if (restoreFocus && lastInputWasKeyboard && ssoModalLastTrigger?.focus) {
+    ssoModalLastTrigger.focus();
+  }
+  ssoModalLastTrigger = null;
+}
+
+function openGoogleFallbackModal(triggerEl = null) {
+  const googleSvg = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`;
+  openSsoProviderModal({
+    iconHtml: googleSvg,
+    title: "Continuar com Google",
+    sub: "Autenticação oficial verificada pelo servidor Monitora+.",
+    bodyHtml: `
+      <p class="sso-provider-note">Selecione sua conta Google abaixo para entrar ou vincular seu cadastro institucional.</p>
+      <div class="sso-google-render-slot" id="sso-google-render-slot"></div>
+    `,
+    triggerEl,
+  });
+  const slot = document.getElementById("sso-google-render-slot");
+  if (slot && window.google?.accounts?.id) {
+    const isDark = document.body.classList.contains("theme-dark") || document.body.classList.contains("theme-contrast");
+    window.google.accounts.id.renderButton(slot, {
+      type: "standard",
+      theme: isDark ? "filled_black" : "outline",
+      size: "large",
+      text: "continue_with",
+      shape: "rectangular",
+      logo_alignment: "left",
+      width: 300,
+    });
+  }
+}
+
+async function triggerGoogleSignIn(triggerEl = null) {
+  if (!authProviders.google.enabled) {
+    await loadAuthProviders();
+  }
+  if (!authProviders.google.enabled || !authProviders.google.clientId) {
+    showToast("Login com Google aguardando configuração de GOOGLE_CLIENT_ID no servidor.", null, "info");
+    return;
+  }
+  if (!initGoogleIdentity()) {
+    showToast("Carregando serviço do Google… tente novamente em 1 segundo.", null, "info");
+    return;
+  }
+  try {
+    window.google.accounts.id.prompt((notification) => {
+      if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) {
+        openGoogleFallbackModal(triggerEl);
+      }
+    });
+  } catch {
+    openGoogleFallbackModal(triggerEl);
+  }
+}
+
+function handleGoogleCredentialResponse(response) {
+  const credential = response?.credential;
+  if (!credential) {
+    showToast("Não foi possível obter a credencial do Google.", null, "error");
+    return;
+  }
+  closeSsoProviderModal(false);
+  return runApiAction("auth-google", async () => {
+    const result = await apiClient.request("/auth/google", {
+      method: "POST",
+      body: { credential },
+    });
+    if (result.needs_onboarding) {
+      showGoogleOnboardingStage(result);
+      showToast("Conta Google verificada. Informe sua matrícula para concluir.", null, "info");
+      return;
+    }
+    const user = await acceptRemoteSession(result);
+    showToast(`Bem-vindo(a), ${user.name.split(" ")[0]}!`, null, "success");
+  });
+}
+
+function handleGoogleOnboardingSubmit(e) {
+  e.preventDefault();
+  if (!pendingGoogleOnboarding?.onboardingToken) {
+    hideGoogleOnboardingStage();
+    showToast("Sessão Google expirada. Clique em Google novamente.", null, "error");
+    return;
+  }
+  const form = document.getElementById("auth-stage-google-onboarding");
+  clearFormErrors(form);
+  const nameEl = document.getElementById("google-reg-name");
+  const raEl = document.getElementById("google-reg-ra");
+  const courseEl = document.getElementById("google-reg-course");
+  const subjectEl = document.getElementById("google-reg-subject");
+  const codeEl = document.getElementById("google-reg-code");
+
+  const name = nameEl.value.trim();
+  const ra = raEl.value.trim();
+  const course = courseEl.value.trim();
+  const offeringId = subjectEl.value;
+  const professorCode = codeEl.value.trim().toUpperCase();
+  const isMonitor = googleOnboardingRole === "monitor";
+
+  const errors = [];
+  if (name.length < 3) errors.push({ el: nameEl, message: "Informe seu nome completo (mínimo 3 caracteres)." });
+  if (!/^\d{5,12}$/.test(ra)) errors.push({ el: raEl, message: "A matrícula deve conter de 5 a 12 números." });
+  if (!isMonitor && !course) errors.push({ el: courseEl, message: "Informe sua turma." });
+  if (isMonitor && !offeringId) errors.push({ el: subjectEl, message: "Selecione a disciplina da monitoria." });
+  if (isMonitor && !professorCode) errors.push({ el: codeEl, message: "Informe o código autorizado pelo docente." });
+  if (applyFieldErrors(form, errors)) return;
+
+  return runApiAction("auth-google-complete", async () => {
+    const result = await apiClient.request("/auth/google/complete", {
+      method: "POST",
+      body: {
+        onboarding_token: pendingGoogleOnboarding.onboardingToken,
+        role: googleOnboardingRole,
+        name,
+        ra,
+        course: isMonitor ? undefined : course,
+        offering_id: isMonitor ? offeringId : undefined,
+        professor_code: isMonitor ? professorCode : undefined,
+      },
+    });
+    pendingGoogleOnboarding = null;
+    hideGoogleOnboardingStage();
+    const user = await acceptRemoteSession(result, true);
+    showToast(`Cadastro Google concluído! Bem-vindo(a), ${user.name.split(" ")[0]}!`, null, "success");
+  }, form);
+}
+
+function openGenneraModal(triggerEl = null) {
+  const genneraIcon = `<img src="assets/gennera-icon.svg?v=20261124b1" alt="" width="22" height="22" class="sso-icon-img" aria-hidden="true" />`;
+  const googleReady = authProviders.google.enabled;
+  openSsoProviderModal({
+    iconHtml: genneraIcon,
+    title: "Acesso Institucional · Gennera",
+    sub: "Integração com o portal acadêmico UNIFSA.",
+    bodyHtml: `
+      <p class="sso-provider-note">
+        O login direto via Webservice da Gennera (UNIFSA) já está estruturado no servidor e aguarda apenas a liberação da chave institucional pela TI.
+      </p>
+      <p class="sso-provider-note">
+        Enquanto isso, acesse com sua conta real do Monitora+ usando Google ou sua matrícula e senha:
+      </p>
+      <div class="sso-provider-actions">
+        ${
+          googleReady
+            ? `<button type="button" class="btn btn-primary btn-full" id="btn-gennera-to-google">Continuar com Google</button>`
+            : ""
+        }
+        <button type="button" class="btn ${googleReady ? "btn-secondary" : "btn-primary"} btn-full" id="btn-gennera-to-password">
+          Entrar com matrícula e senha
+        </button>
+      </div>
+    `,
+    triggerEl,
+  });
+  document.getElementById("btn-gennera-to-google")?.addEventListener("click", () => {
+    closeSsoProviderModal(false);
+    triggerGoogleSignIn(document.getElementById("btn-sso-google"));
+  });
+  document.getElementById("btn-gennera-to-password")?.addEventListener("click", () => {
+    closeSsoProviderModal(false);
+    document.getElementById("login-identifier")?.focus();
+  });
+}
+
 function setAuthTab(tabName) {
   ui.authTab = tabName;
   document.body.classList.toggle("is-auth-register", tabName === "register");
@@ -2423,6 +2791,7 @@ function setAuthTab(tabName) {
     t.classList.toggle("is-active", active);
     t.setAttribute("aria-selected", String(active));
   });
+  document.getElementById("auth-sso-block")?.classList.toggle("is-hidden", tabName !== "login");
   document.getElementById("form-login").classList.toggle("is-hidden", tabName !== "login");
   document.getElementById("form-register").classList.toggle("is-hidden", tabName !== "register");
   clearFormErrors(document.getElementById("form-login"));
@@ -4690,6 +5059,34 @@ function bindEvents() {
   document.getElementById("auth-stage-otp").addEventListener("submit", handleVerifyOtpSubmit);
   document.getElementById("btn-otp-back").addEventListener("click", hideOtpStage);
 
+  document.getElementById("btn-quick-continue")?.addEventListener("click", () => {
+    const user = getCurrentUser();
+    if (!user) {
+      hideQuickAuthStage();
+      return;
+    }
+    hideQuickAuthStage();
+    switchView("inicio", true);
+  });
+  document.getElementById("btn-quick-logout")?.addEventListener("click", performLogout);
+
+  document.getElementById("btn-sso-google")?.addEventListener("click", (e) => {
+    triggerGoogleSignIn(e.currentTarget);
+  });
+  document.getElementById("btn-sso-gennera")?.addEventListener("click", (e) => {
+    openGenneraModal(e.currentTarget);
+  });
+  document.getElementById("btn-close-sso-provider")?.addEventListener("click", () => closeSsoProviderModal(true));
+  document.getElementById("sso-provider-modal")?.addEventListener("click", (e) => {
+    if (e.target.id === "sso-provider-modal") closeSsoProviderModal(true);
+  });
+
+  document.querySelectorAll("[data-google-role]").forEach((btn) => {
+    btn.addEventListener("click", () => setGoogleOnboardingRole(btn.dataset.googleRole));
+  });
+  document.getElementById("auth-stage-google-onboarding")?.addEventListener("submit", handleGoogleOnboardingSubmit);
+  document.getElementById("btn-google-cancel")?.addEventListener("click", hideGoogleOnboardingStage);
+
   document.getElementById("otp-code").addEventListener("input", () => {
     clearOtpErrors();
     document.getElementById("btn-verify-otp").disabled = !getOtpValue();
@@ -5102,6 +5499,11 @@ function bindEvents() {
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Tab") {
+      const ssoProviderModal = document.getElementById("sso-provider-modal");
+      if (ssoProviderModal && !ssoProviderModal.classList.contains("is-hidden")) {
+        trapFocusInModal(e, ssoProviderModal);
+        return;
+      }
       const confirmModal = document.getElementById("confirm-modal");
       if (confirmModal && !confirmModal.classList.contains("is-hidden")) {
         trapFocusInModal(e, confirmModal);
@@ -5141,6 +5543,11 @@ function bindEvents() {
         const selectTrigger = openSelectWrap?.querySelector(".bc-select-trigger");
         closeAllCustomSelects();
         selectTrigger?.focus();
+        return;
+      }
+      const ssoProviderModal = document.getElementById("sso-provider-modal");
+      if (ssoProviderModal && !ssoProviderModal.classList.contains("is-hidden")) {
+        closeSsoProviderModal(true);
         return;
       }
       const confirmModal = document.getElementById("confirm-modal");
