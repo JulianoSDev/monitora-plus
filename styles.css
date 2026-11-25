@@ -1279,6 +1279,21 @@ body.theme-contrast .otp-box.is-invalid {
   margin-bottom: 13px;
 }
 
+#api-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  border-radius: 0;
+  font-size: 0.875rem;
+}
+
+#api-status[aria-busy="true"] {
+  background: var(--surface-2);
+  color: var(--text-secondary);
+}
+
 /* ==================== STEPPER & AGENDAR ==================== */
 .stepper-bar {
   display: flex;
