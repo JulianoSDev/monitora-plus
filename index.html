@@ -20,8 +20,8 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="styles.css?v=20261125f1" />
-  <link rel="stylesheet" href="mobile.css?v=20261125f1" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="styles.css?v=20261125g1" />
+  <link rel="stylesheet" href="mobile.css?v=20261125g1" media="(max-width: 768px)" />
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="theme-light is-landing-mode">
@@ -1746,7 +1746,17 @@
 
   <!-- Barra de navegação inferior (mobile autenticado) -->
   <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Navegação inferior">
-    <button type="button" class="mobile-tab-btn is-active" data-mobile-nav="agendar" aria-current="page">
+    <button type="button" class="mobile-tab-btn is-active" data-mobile-nav="inicio" aria-current="page">
+      <span class="mobile-tab-icon-wrap" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 10.5L12 3l9 7.5" />
+          <path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" />
+        </svg>
+      </span>
+      <span class="mobile-tab-label">Início</span>
+    </button>
+
+    <button type="button" class="mobile-tab-btn" data-mobile-nav="agendar">
       <span class="mobile-tab-icon-wrap" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
