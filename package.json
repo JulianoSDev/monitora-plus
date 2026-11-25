@@ -1,0 +1,13 @@
+{
+  "name": "monitora-plus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monitora+ — frontend estático e testes da integração Flask",
+  "scripts": {
+    "test": "node --test tests/api.test.cjs",
+    "test:e2e": "node tests/frontend.e2e.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

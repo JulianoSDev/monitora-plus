@@ -3,16 +3,8 @@
  * Autenticação, agendamento em 3 etapas e painel do monitor isolado por disciplina.
  */
 
-const STORAGE_KEY = "monitoraplus_v6_state";
+const STORAGE_KEY = "monitoraplus_v7_preferences";
 
-const PROFESSOR_CODES = {
-  "off-ihc": "IHC026",
-  "off-es": "ESW026",
-  "off-aoc": "AOC026",
-  "off-md": "MAT026",
-  "off-alg": "ALG026",
-  "off-ing": "ING026",
-};
 
 const LANDING_PHRASES = [
   {
@@ -50,213 +42,7 @@ const MONTH_NAMES = [
 
 const MONTH_SHORT = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
 
-const INITIAL_USERS = [
-  {
-    id: "usr-stu-1",
-    role: "student",
-    name: "Ana Paula Ribeiro",
-    ra: "2026101",
-    email: "ana@academico.edu.br",
-    course: "Eng. Software · 1º A",
-    password: "1234",
-  },
-  {
-    id: "usr-stu-2",
-    role: "student",
-    name: "Lucas Mendes",
-    ra: "2026102",
-    email: "lucas@academico.edu.br",
-    course: "Eng. Software · 1º A",
-    password: "1234",
-  },
-  {
-    id: "usr-mon-1",
-    role: "monitor",
-    name: "Rafael Silva",
-    ra: "2025042",
-    email: "rafael@academico.edu.br",
-    offeringId: "off-alg",
-    password: "1234",
-  },
-];
-
-const OFFERINGS = [
-  {
-    id: "off-ihc",
-    subject: "Interação Humano-Computador",
-    shortSubject: "IHC",
-    title: "Heurísticas, Usabilidade e Protótipos (90h/a)",
-    monitor: "Monitora Mariana L.",
-    mode: "Presencial / Online",
-    location: "Sala 104 · Bloco A / Virtual",
-    shortLocation: "Sala 104 · Presencial / Online",
-    duration: "40 minutos",
-  },
-  {
-    id: "off-es",
-    subject: "Introdução à Engenharia de Software",
-    shortSubject: "Eng. Software",
-    title: "Requisitos, Casos de Uso e Processos (72h/a)",
-    monitor: "Monitor Bruno T.",
-    mode: "Presencial",
-    location: "Presencial · Sala 201, Bloco A",
-    shortLocation: "Sala 201 · Presencial",
-    duration: "40 minutos",
-  },
-  {
-    id: "off-aoc",
-    subject: "Arquitetura e Organização de Computadores",
-    shortSubject: "Arq. Computadores",
-    title: "Sistemas Numéricos, Portas Lógicas e ULA (54h/a)",
-    monitor: "Monitor Gabriel N.",
-    mode: "Presencial",
-    location: "Presencial · Lab Hardware, Bloco C",
-    shortLocation: "Lab Hardware · Presencial",
-    duration: "40 minutos",
-  },
-  {
-    id: "off-md",
-    subject: "Matemática Discreta",
-    shortSubject: "Mat. Discreta",
-    title: "Conjuntos, Relações, Grafos e Indução (54h/a)",
-    monitor: "Monitor Pedro H.",
-    mode: "Online",
-    location: "Online · Sala Virtual Acadêmica",
-    shortLocation: "Sala Virtual · Online",
-    duration: "40 minutos",
-  },
-  {
-    id: "off-alg",
-    subject: "Algoritmo e Programação",
-    shortSubject: "Algoritmos",
-    title: "Vetores, Matrizes e Lógica em Python (54h/a)",
-    monitor: "Monitor Rafael S.",
-    mode: "Presencial",
-    location: "Presencial · Lab 02, Bloco B",
-    shortLocation: "Lab 02 · Presencial",
-    duration: "40 minutos",
-  },
-  {
-    id: "off-ing",
-    subject: "Introdução à Língua Inglesa",
-    shortSubject: "Língua Inglesa",
-    title: "Leitura Técnica e Vocabulário de Computação (54h/a)",
-    monitor: "Monitora Sofia M.",
-    mode: "Online",
-    location: "Online · Sala Virtual Acadêmica",
-    shortLocation: "Sala Virtual · Online",
-    duration: "40 minutos",
-  },
-];
-
-function buildUpcomingBusinessSlotDate(businessOffset, timeStr) {
-  const now = new Date();
-  const [startH, startM] = String(timeStr || "14:00")
-    .split(" - ")[0]
-    .split(":")
-    .map(Number);
-  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
-
-  const advanceToWeekday = (dateObj) => {
-    while (dateObj.getDay() === 0 || dateObj.getDay() === 6) {
-      dateObj.setDate(dateObj.getDate() + 1);
-    }
-  };
-
-  if (businessOffset === 0) {
-    advanceToWeekday(d);
-    const candidateStart = new Date(
-      d.getFullYear(),
-      d.getMonth(),
-      d.getDate(),
-      Number.isFinite(startH) ? startH : 14,
-      Number.isFinite(startM) ? startM : 0,
-      0,
-      0
-    );
-    if (candidateStart.getTime() <= now.getTime() + 15 * 60000) {
-      d.setDate(d.getDate() + 1);
-      advanceToWeekday(d);
-    }
-  } else {
-    let remaining = businessOffset;
-    while (remaining > 0) {
-      d.setDate(d.getDate() + 1);
-      if (d.getDay() !== 0 && d.getDay() !== 6) remaining -= 1;
-    }
-  }
-
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return {
-    dateIso: `${y}-${m}-${day}`,
-    dayName: FULL_WEEKDAYS[d.getDay()] || "Segunda",
-  };
-}
-
-function buildInitialSlots() {
-  const templates = [
-    { id: "sl-1", offeringId: "off-alg", offset: 1, time: "14:00 - 14:40", capacity: 4, baseOccupied: 1 },
-    { id: "sl-2", offeringId: "off-alg", offset: 2, time: "15:00 - 15:40", capacity: 4, baseOccupied: 2 },
-    { id: "sl-3", offeringId: "off-alg", offset: 3, time: "16:30 - 17:10", capacity: 3, baseOccupied: 3 },
-    { id: "sl-4", offeringId: "off-alg", offset: 4, time: "14:00 - 14:40", capacity: 4, baseOccupied: 2 },
-
-    { id: "sl-7", offeringId: "off-ihc", offset: 1, time: "15:00 - 15:40", capacity: 4, baseOccupied: 2 },
-    { id: "sl-8", offeringId: "off-ihc", offset: 0, time: "16:30 - 17:10", capacity: 4, baseOccupied: 0 },
-    { id: "sl-9", offeringId: "off-ihc", offset: 2, time: "16:30 - 17:10", capacity: 3, baseOccupied: 1 },
-
-    { id: "sl-10", offeringId: "off-es", offset: 1, time: "15:00 - 15:40", capacity: 4, baseOccupied: 2 },
-    { id: "sl-11", offeringId: "off-es", offset: 0, time: "18:30 - 19:10", capacity: 4, baseOccupied: 3 },
-    { id: "sl-12", offeringId: "off-es", offset: 2, time: "14:00 - 14:40", capacity: 3, baseOccupied: 2 },
-
-    { id: "sl-13", offeringId: "off-aoc", offset: 1, time: "18:30 - 19:10", capacity: 4, baseOccupied: 1 },
-    { id: "sl-14", offeringId: "off-aoc", offset: 2, time: "15:00 - 15:40", capacity: 4, baseOccupied: 2 },
-
-    { id: "sl-15", offeringId: "off-md", offset: 1, time: "18:30 - 19:10", capacity: 5, baseOccupied: 2 },
-    { id: "sl-16", offeringId: "off-md", offset: 2, time: "16:30 - 17:10", capacity: 3, baseOccupied: 3 },
-
-    { id: "sl-17", offeringId: "off-ing", offset: 0, time: "16:30 - 17:10", capacity: 5, baseOccupied: 1 },
-    { id: "sl-18", offeringId: "off-ing", offset: 3, time: "18:30 - 19:10", capacity: 4, baseOccupied: 1 },
-  ];
-
-  return templates.map(({ offset, ...tpl }) => {
-    const { dateIso, dayName } = buildUpcomingBusinessSlotDate(offset, tpl.time);
-    return { ...tpl, dateIso, dayName };
-  });
-}
-
-const INITIAL_SLOTS = buildInitialSlots();
-
-const INITIAL_BOOKINGS = [
-  {
-    id: "bk-100",
-    protocol: "#MON-2026-014",
-    studentId: "usr-stu-1",
-    slotId: "sl-7",
-    topic: "Revisar heurísticas e roteiro de usabilidade",
-    status: "Confirmado",
-    createdAt: "18/11/2026 10:15",
-  },
-  {
-    id: "bk-099",
-    protocol: "#MON-2026-009",
-    studentId: "usr-stu-1",
-    slotId: "sl-12",
-    topic: "Critérios de aceitação no Documento de Requisitos",
-    status: "Concluído",
-    createdAt: "11/11/2026 14:20",
-  },
-  {
-    id: "bk-101",
-    protocol: "#MON-2026-011",
-    studentId: "usr-stu-2",
-    slotId: "sl-1",
-    topic: "Dúvida em percurso de matrizes bidimensionais em Python",
-    status: "Confirmado",
-    createdAt: "18/11/2026 11:05",
-  },
-];
+const OFFERINGS = [];
 
 const DEFAULT_PREFS = {
   defaultLayout: "list",
@@ -303,7 +89,7 @@ const SETTINGS_TAB_META = {
   },
   conta: {
     title: "Conta e Privacidade (LGPD)",
-    desc: "Sessão ativa, portabilidade de dados e exclusão local.",
+    desc: "Sessão ativa, portabilidade de dados e exclusão da conta.",
   },
 };
 
@@ -338,31 +124,16 @@ const ui = {
 
 // ==================== PERSISTÊNCIA ====================
 function loadState() {
+  let stored = {};
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed.users && parsed.slots && parsed.bookings) {
-        return {
-          ...parsed,
-          prefs: { ...DEFAULT_PREFS, ...(parsed.prefs || {}) },
-        };
-      }
-    }
-  } catch {
-    // Fallback silencioso
-  }
-
-  return {
-    users: structuredClone(INITIAL_USERS),
-    slots: structuredClone(INITIAL_SLOTS),
-    bookings: structuredClone(INITIAL_BOOKINGS),
-    currentUserId: null,
-    theme: "light",
-    fontScale: 1,
-    prefs: { ...DEFAULT_PREFS },
-    nextSeq: 15,
-  };
+    stored = JSON.parse(localStorage.getItem(STORAGE_KEY)
+      || localStorage.getItem("monitoraplus_v6_state") || "{}");
+    localStorage.removeItem("monitoraplus_v6_state"); // apaga senhas e contas do protótipo
+  } catch { /* Preferências indisponíveis não impedem o uso da API. */ }
+  return { users: [], slots: [], historySlots: [], bookings: [], currentUserId: null,
+    theme: ["light", "dark", "contrast"].includes(stored.theme) ? stored.theme : "light",
+    fontScale: Number.isFinite(stored.fontScale) ? Math.min(1.52, Math.max(0.88, stored.fontScale)) : 1,
+    prefs: { ...DEFAULT_PREFS, ...(stored.prefs || {}), blockConflicts: true } };
 }
 
 function getPrefs() {
@@ -372,14 +143,267 @@ function getPrefs() {
 
 function saveState() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // Ignora em modo privado restrito
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      theme: state.theme, fontScale: state.fontScale, prefs: state.prefs,
+    }));
+  } catch { /* Preferências continuam em memória. */ }
+  if (typeof ui !== "undefined" && ui.activeView === "inicio") renderInicio();
+}
+
+// ==================== API E ESTADO REMOTO ====================
+const isLocalHost = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+const apiClient = MonitoraAPI.createClient({
+  baseUrl: isLocalHost ? "http://localhost:8000/api"
+    : location.hostname.endsWith(".trycloudflare.com") ? "/api" : window.MONITORA_API_URL,
+  onUnauthorized: () => {
+    if (!state.currentUserId) return;
+    clearRemoteSession();
+    renderTopbar();
+    closeSettingsModal();
+    switchView("landing");
+    showToast("Sua sessão terminou. Entre novamente para continuar.", null, "error");
+  },
+});
+const pendingApiActions = new Set();
+let remoteSessionVersion = 0;
+let refreshInFlight = null;
+let lastRemoteRefresh = 0;
+
+function mapUser(user) {
+  return { id: String(user.id), role: user.role, name: user.name, ra: user.ra,
+    email: user.email, course: user.course, offeringId: user.offering_id };
+}
+
+function mapOffering(offering) {
+  return { id: offering.id, subject: offering.subject, shortSubject: offering.short_subject,
+    title: offering.title, mode: offering.mode, location: offering.location,
+    shortLocation: offering.short_location, monitor: offering.monitors?.join(", ") || "Monitor a definir",
+    duration: `${offering.duration_minutes || 40} minutos` };
+}
+
+function mapSlot(slot, offeringId = slot.offering_id) {
+  return { id: String(slot.id), offeringId, dateIso: slot.date, dayName: slot.day_name,
+    time: slot.time, capacity: slot.capacity, occupied: slot.occupied || 0 };
+}
+
+function getSlot(slotId) {
+  return state.slots.find((slot) => slot.id === slotId)
+    || state.historySlots.find((slot) => slot.id === slotId);
+}
+
+function applyRemoteBooking(item) {
+  const current = getCurrentUser();
+  const studentId = String(item.student?.id || current.id);
+  if (item.student && !state.users.some((user) => user.id === studentId)) {
+    state.users.push({ id: studentId, role: "student", name: item.student.name, ra: item.student.ra });
   }
-  if (typeof ui !== "undefined" && ui.activeView === "inicio") {
-    renderInicio();
+  const slot = mapSlot(item.slot, item.offering.id);
+  state.historySlots = state.historySlots.filter((old) => old.id !== slot.id);
+  state.historySlots.push(slot);
+  const booking = { id: String(item.id), protocol: item.protocol, status: item.status,
+    topic: item.topic, studentId, slotId: slot.id,
+    createdAt: new Date(item.created_at).toLocaleString("pt-BR") };
+  state.bookings = state.bookings.filter((old) => old.id !== booking.id);
+  state.bookings.push(booking);
+  return booking;
+}
+
+function renderCurrentData() {
+  renderTopbar();
+  if (ui.activeView === "inicio") renderInicio();
+  if (ui.activeView === "agendar") renderAgendar();
+  if (ui.activeView === "agendamentos") renderBookings();
+  if (ui.activeView === "monitor") renderMonitorPanel();
+}
+
+function setApiStatus(message = "", loading = false) {
+  const box = document.getElementById("api-status");
+  document.getElementById("api-status-text").textContent = message;
+  box.classList.toggle("is-hidden", !message);
+  box.setAttribute("aria-busy", String(loading));
+  const retry = document.getElementById("btn-api-retry");
+  retry.disabled = loading;
+  retry.textContent = loading ? "Carregando…" : "Atualizar dados";
+}
+
+function clearRemoteSession() {
+  remoteSessionVersion += 1;
+  refreshInFlight = null;
+  state.users = [];
+  state.slots = [];
+  state.historySlots = [];
+  state.bookings = [];
+  state.currentUserId = null;
+  apiClient.clearSession();
+  ui.selectedSlotId = null;
+  ui.lastCreatedBookingId = null;
+  ui.reschedulingBookingId = null;
+  ui.step3Completed = false;
+  document.getElementById("form-login").reset();
+  document.getElementById("form-register").reset();
+  document.getElementById("form-new-slot").reset();
+  document.getElementById("s3-topic").value = "";
+  hideOtpStage();
+  setAuthTab("login");
+}
+
+async function refreshRemoteData() {
+  if (refreshInFlight) return refreshInFlight;
+  const version = remoteSessionVersion;
+  let user = getCurrentUser();
+  const promise = (async () => {
+    if (user) {
+      const session = await apiClient.request("/auth/me");
+      if (version !== remoteSessionVersion) return;
+      user = mapUser(session.user);
+    }
+    const requests = [apiClient.request("/offerings")];
+    if (user) {
+      if (state.currentUserId !== user.id) {
+        ui.reschedulingBookingId = null;
+        ui.selectedSlotId = null;
+        ui.step3Completed = false;
+        ui.step = 1;
+      }
+      state.currentUserId = user.id;
+      requests.push(apiClient.request("/slots"), apiClient.request("/schedules"));
+      if (user.role === "monitor") requests.push(apiClient.request("/schedules/monitor?scope=all"));
+    }
+    const [catalog, slots, own, monitor] = await Promise.all(requests);
+    if (version !== remoteSessionVersion) return;
+    OFFERINGS.splice(0, OFFERINGS.length, ...catalog.offerings.map(mapOffering));
+    const subjectSelect = document.getElementById("reg-subject");
+    const selected = subjectSelect.value;
+    subjectSelect.innerHTML = OFFERINGS.map((off) => `<option value="${escapeHtml(off.id)}">${escapeHtml(off.subject)}</option>`).join("");
+    if (OFFERINGS.some((off) => off.id === selected)) subjectSelect.value = selected;
+    syncCustomSelect(subjectSelect);
+    if (user) {
+      state.users = [user];
+      state.slots = slots.slots.map((slot) => mapSlot(slot));
+      state.bookings = [];
+      state.historySlots = [];
+      own.schedules.forEach(applyRemoteBooking);
+      monitor?.schedules.forEach(applyRemoteBooking);
+    }
+    lastRemoteRefresh = Date.now();
+    setApiStatus();
+  })();
+  refreshInFlight = promise;
+  try {
+    await promise;
+  } finally {
+    if (refreshInFlight === promise) refreshInFlight = null;
   }
 }
+
+async function refreshSafely() {
+  try {
+    await refreshRemoteData();
+    return true;
+  } catch (error) {
+    if (error.status !== 401) setApiStatus(error.message);
+    return false;
+  }
+}
+
+function showApiError(error, form = null) {
+  if (form?.id === "auth-stage-otp" && Object.keys(error.fields || {}).some((key) => key !== "professor_code")) {
+    hideOtpStage();
+    form = document.getElementById("form-register");
+  }
+  const fieldMap = { identifier: "login-identifier", password: form?.id === "form-login" ? "login-password" : "reg-password",
+    name: "reg-name", ra: "reg-ra", email: "reg-email", course: "reg-course", offering_id: "reg-subject",
+    professor_code: form?.id === "auth-stage-otp" ? "otp-code" : "ms-prof-code",
+    date: "ms-date", time: "ms-time", capacity: "ms-capacity", topic: "s3-topic" };
+  const fields = Object.entries(error.fields || {}).map(([key, message]) => ({ el: document.getElementById(fieldMap[key]), message }))
+    .filter((field) => field.el && form?.contains(field.el));
+  if (fields.length) applyFieldErrors(form, fields);
+  if (form?.id === "auth-stage-otp") {
+    document.getElementById("otp-error").textContent = error.message;
+    document.getElementById("otp-error").classList.remove("is-hidden");
+  }
+  showToast(error.message, null, "error");
+  if (!error.status) setApiStatus(error.message);
+}
+
+async function runApiAction(key, action, form = null) {
+  if (pendingApiActions.size) return;
+  pendingApiActions.add(key);
+  const buttons = Array.from(form?.querySelectorAll('button[type="submit"]') || []);
+  const previous = buttons.map((button) => ({ disabled: button.disabled, html: button.innerHTML }));
+  form?.setAttribute("aria-busy", "true");
+  buttons.forEach((button) => { button.disabled = true; button.textContent = "Aguarde…"; });
+  try {
+    const actingUserId = state.currentUserId;
+    if (refreshInFlight) await refreshInFlight;
+    if (actingUserId !== state.currentUserId) {
+      throw new MonitoraAPI.ApiError("Sua sessão mudou. Confira a conta ativa antes de continuar.", 409);
+    }
+    return await action();
+  } catch (error) {
+    showApiError(error, form);
+  } finally {
+    pendingApiActions.delete(key);
+    form?.removeAttribute("aria-busy");
+    buttons.forEach((button, index) => { button.disabled = previous[index].disabled; button.innerHTML = previous[index].html; });
+  }
+}
+
+async function acceptRemoteSession(response, registered = false) {
+  let verified;
+  try {
+    verified = await apiClient.request("/auth/me");
+  } catch (error) {
+    if (error.status === 401) throw new MonitoraAPI.ApiError(registered
+      ? "Conta criada, mas o navegador bloqueou a sessão. Permita cookies deste site e entre com sua matrícula e senha."
+      : "O navegador não manteve sua sessão. Permita cookies deste site e tente entrar novamente.", 403);
+    throw error;
+  }
+  remoteSessionVersion += 1;
+  refreshInFlight = null;
+  const user = mapUser(verified.user || response.user);
+  state.users = [user];
+  state.currentUserId = user.id;
+  state.slots = [];
+  state.historySlots = [];
+  state.bookings = [];
+  await refreshSafely();
+  ui.step = 1;
+  renderTopbar();
+  switchView("inicio");
+  return user;
+}
+
+async function changeRemoteBookingStatus(booking, status, message, undoStatus) {
+  return runApiAction(`booking:${booking.id}`, async () => {
+    const result = await apiClient.request(`/schedules/${booking.id}/status`, { method: "PATCH", body: { status } });
+    applyRemoteBooking(result.schedule);
+    await refreshSafely();
+    ui.highlightedBookingId = booking.id;
+    renderCurrentData();
+    showToast(message, undoStatus ? () => changeRemoteBookingStatus(booking, undoStatus,
+      `Alteração desfeita (${booking.protocol}).`) : null, "success");
+  });
+}
+
+async function bootstrapRemote() {
+  setApiStatus("Conectando ao Monitora+…", true);
+  try {
+    const result = await apiClient.request("/auth/me");
+    const user = mapUser(result.user);
+    state.users = [user];
+    state.currentUserId = user.id;
+  } catch (error) {
+    if (error.status !== 401) {
+      setApiStatus(error.message);
+      return;
+    }
+  }
+  await refreshSafely();
+  renderTopbar();
+  if (getCurrentUser()) switchView("inicio");
+}
+
 
 let lastInputWasKeyboard = false;
 document.addEventListener(
@@ -522,16 +546,10 @@ function applyFieldErrors(formEl, errors) {
 }
 
 function clearOtpErrors() {
-  const errEl = document.getElementById("otp-error");
-  if (errEl) {
-    errEl.classList.add("is-hidden");
-    errEl.textContent = "";
-  }
-  document.querySelectorAll(".otp-box").forEach((box) => {
-    box.classList.remove("is-invalid");
-    box.removeAttribute("aria-invalid");
-    box.removeAttribute("aria-describedby");
-  });
+  const error = document.getElementById("otp-error");
+  error.classList.add("is-hidden");
+  error.textContent = "";
+  clearFieldError(document.getElementById("otp-code"));
 }
 
 function getCurrentUser() {
@@ -548,13 +566,7 @@ function getOffering(offeringId) {
 }
 
 function getSlotOccupied(slot) {
-  const dynamicConfirmed = state.bookings.filter(
-    (b) => b.slotId === slot.id && b.status === "Confirmado"
-  ).length;
-  const initialConfirmed = INITIAL_BOOKINGS.filter(
-    (b) => b.slotId === slot.id && b.status === "Confirmado"
-  ).length;
-  return Math.max(0, slot.baseOccupied + (dynamicConfirmed - initialConfirmed));
+  return slot.occupied || 0;
 }
 
 function getSlotRemaining(slot) {
@@ -572,7 +584,7 @@ function hasScheduleConflict(userId, targetSlot, ignoreBookingId = null) {
   return state.bookings.some((b) => {
     if (ignoreBookingId && b.id === ignoreBookingId) return false;
     if (b.studentId !== userId || b.status !== "Confirmado") return false;
-    const other = state.slots.find((s) => s.id === b.slotId);
+    const other = getSlot(b.slotId);
     if (!other) return false;
     return other.dateIso === targetSlot.dateIso && other.time === targetSlot.time;
   });
@@ -1260,8 +1272,8 @@ function hasAnyBlockingOverlayOpen() {
   const isMobileInAppSettings =
     window.innerWidth <= 768 && !document.body.classList.contains("is-landing-mode");
   const modalIds = isMobileInAppSettings
-    ? ["confirm-modal", "faq-modal", "sso-modal"]
-    : ["settings-modal", "confirm-modal", "faq-modal", "sso-modal"];
+    ? ["confirm-modal", "faq-modal"]
+    : ["settings-modal", "confirm-modal", "faq-modal"];
   const anyModalOpen = modalIds.some((id) => {
     const el = document.getElementById(id);
     return Boolean(el && !el.classList.contains("is-hidden"));
@@ -1367,7 +1379,7 @@ function syncSettingsAccountBox() {
     nameEl.textContent = "Visitante";
     subEl.textContent = "Entre para personalizar sua conta";
     statusEl.textContent = "Nenhum usuário autenticado";
-    detailEl.textContent = "Faça login para gerenciar ou excluir sua conta local.";
+    detailEl.textContent = "Faça login para gerenciar ou excluir sua conta.";
     logoutBtn.classList.add("is-hidden");
     dangerZone.classList.add("is-hidden");
   }
@@ -1671,7 +1683,7 @@ function exportUserBookingsJson() {
     system: "Monitora+ UNIFSA",
     user: user ? { name: user.name, ra: user.ra, email: user.email, role: user.role } : null,
     bookings: mine.map((bk) => {
-      const slot = state.slots.find((s) => s.id === bk.slotId);
+      const slot = getSlot(bk.slotId);
       const off = slot ? getOffering(slot.offeringId) : null;
       return {
         protocol: bk.protocol,
@@ -1715,7 +1727,7 @@ function confirmDeleteAccount() {
 
   openConfirmDialog({
     title: "Excluir conta e dados?",
-    desc: "Sua conta e os seus agendamentos salvos neste navegador serão removidos permanentemente.",
+    desc: "Sua conta e seus agendamentos serão removidos permanentemente do servidor.",
     summaryHtml: buildConfirmSummaryCard({
       title: user.name,
       rows: [
@@ -1725,16 +1737,14 @@ function confirmDeleteAccount() {
     }),
     confirmText: "Excluir permanentemente",
     danger: true,
-    onConfirm: () => {
-      state.bookings = state.bookings.filter((b) => b.studentId !== user.id);
-      state.users = state.users.filter((u) => u.id !== user.id);
-      state.currentUserId = null;
-      saveState();
+    onConfirm: () => runApiAction("delete-account", async () => {
+      await apiClient.request("/auth/me", { method: "DELETE" });
+      clearRemoteSession();
       closeSettingsModal();
       renderTopbar();
       switchView("landing");
-      showToast("Conta e dados locais removidos.");
-    },
+      showToast("Conta e agendamentos removidos do servidor.", null, "success");
+    }),
   });
 }
 
@@ -2141,7 +2151,7 @@ function renderInicio() {
   const activeStudentBookings = state.bookings
     .filter((b) => b.studentId === user.id && b.status === "Confirmado")
     .map((bk) => {
-      const slot = state.slots.find((s) => s.id === bk.slotId);
+      const slot = getSlot(bk.slotId);
       const off = slot ? getOffering(slot.offeringId) : null;
       const startDate = slot ? getSlotStartDate(slot.dateIso, slot.time) : null;
       return { bk, slot, off, startMs: startDate ? startDate.getTime() : 0 };
@@ -2413,7 +2423,6 @@ function setAuthTab(tabName) {
     t.classList.toggle("is-active", active);
     t.setAttribute("aria-selected", String(active));
   });
-  document.getElementById("auth-sso-block")?.classList.toggle("is-hidden", tabName !== "login");
   document.getElementById("form-login").classList.toggle("is-hidden", tabName !== "login");
   document.getElementById("form-register").classList.toggle("is-hidden", tabName !== "register");
   clearFormErrors(document.getElementById("form-login"));
@@ -2447,22 +2456,13 @@ function setAuthTab(tabName) {
 function showOtpStage(draft) {
   ui.pendingMonitorDraft = draft;
   const off = getOffering(draft.offeringId);
-  const hintCode = PROFESSOR_CODES[draft.offeringId] || "IHC026";
-
   document.getElementById("auth-stage-main").classList.add("is-hidden");
   document.getElementById("auth-stage-otp").classList.remove("is-hidden");
-  document.getElementById("otp-subtitle").textContent = `Insira o código de 6 caracteres autorizado para ${
-    off ? off.subject : "a disciplina"
-  }.`;
-  document.getElementById("otp-hint-code").textContent = hintCode;
+  document.getElementById("otp-subtitle").textContent = `Insira o código autorizado para ${off?.subject || "a disciplina"}.`;
   clearOtpErrors();
-
-  const boxes = Array.from(document.querySelectorAll(".otp-box"));
-  boxes.forEach((b) => {
-    b.value = "";
-  });
+  document.getElementById("otp-code").value = "";
   document.getElementById("btn-verify-otp").disabled = true;
-  boxes[0].focus();
+  document.getElementById("otp-code").focus();
 }
 
 function hideOtpStage() {
@@ -2473,49 +2473,27 @@ function hideOtpStage() {
 }
 
 function getOtpValue() {
-  return Array.from(document.querySelectorAll(".otp-box"))
-    .map((b) => b.value.trim().toUpperCase())
-    .join("");
+  return document.getElementById("otp-code").value.trim().toUpperCase();
 }
 
 function handleLoginSubmit(e) {
   e.preventDefault();
   const form = document.getElementById("form-login");
   clearFormErrors(form);
-
-  const idInput = document.getElementById("login-identifier");
-  const passInput = document.getElementById("login-password");
-  const identifier = idInput.value.trim().toLowerCase();
-  const password = passInput.value;
-
+  const identifierEl = document.getElementById("login-identifier");
+  const passwordEl = document.getElementById("login-password");
+  const identifier = identifierEl.value.trim();
+  const password = passwordEl.value;
   const errors = [];
-  if (!identifier) {
-    errors.push({ el: idInput, message: "Informe sua matrícula ou e-mail institucional." });
-  }
-  if (!password) {
-    errors.push({ el: passInput, message: "Digite sua senha para continuar." });
-  }
+  if (!identifier) errors.push({ el: identifierEl, message: "Informe sua matrícula ou e-mail institucional." });
+  if (!password) errors.push({ el: passwordEl, message: "Digite sua senha para continuar." });
   if (applyFieldErrors(form, errors)) return;
-
-  const user = state.users.find(
-    (u) => (u.ra.toLowerCase() === identifier || u.email.toLowerCase() === identifier) && u.password === password
-  );
-
-  if (!user) {
-    idInput.classList.add("is-invalid");
-    idInput.setAttribute("aria-invalid", "true");
-    setFieldError(passInput, "Matrícula/e-mail ou senha inválidos. Confira os dados e tente novamente.");
-    passInput.focus();
-    return;
-  }
-
-  state.currentUserId = user.id;
-  saveState();
-  renderTopbar();
-
-  ui.step = 1;
-  switchView("inicio");
-  showToast(`Bem-vindo(a), ${user.name.split(" ")[0]}!`);
+  return runApiAction("auth", async () => {
+    const result = await apiClient.request("/auth/login", { method: "POST", body: { identifier, password } });
+    const user = await acceptRemoteSession(result);
+    form.reset();
+    showToast(`Bem-vindo(a), ${user.name.split(" ")[0]}!`, null, "success");
+  }, form);
 }
 
 function validateNewAccountFields({ name, ra, email, password }) {
@@ -2530,13 +2508,9 @@ function validateNewAccountFields({ name, ra, email, password }) {
   }
   if (!/^\d{5,12}$/.test(ra)) {
     errors.push({ el: raEl, message: "A matrícula deve conter de 5 a 12 números." });
-  } else if (state.users.some((u) => u.ra === ra)) {
-    errors.push({ el: raEl, message: "Já existe uma conta cadastrada com esta matrícula." });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     errors.push({ el: emailEl, message: "Informe um e-mail institucional válido." });
-  } else if (state.users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-    errors.push({ el: emailEl, message: "Já existe uma conta cadastrada com este e-mail." });
   }
   if (password.length < 6) {
     errors.push({ el: passEl, message: "A senha deve ter no mínimo 6 caracteres." });
@@ -2544,284 +2518,12 @@ function validateNewAccountFields({ name, ra, email, password }) {
   return errors;
 }
 
-// ==================== SSO INSTITUCIONAL (GENNERA UNIFSA / GOOGLE) ====================
-const SSO_GENNERA_ICON_SVG = `<img src="assets/gennera-icon.svg?v=20261124b1" alt="" width="34" height="34" class="sso-provider-img" aria-hidden="true" />`;
-const SSO_GOOGLE_ICON_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`;
-
-const SSO_PROVIDERS = {
-  gennera: {
-    name: "Gennera",
-    loadingHeader: "Gennera · UNIFSA",
-    title: "Gennera · UNIFSA",
-    desc: "Escolha a conta acadêmica para entrar.",
-    loadingTitle: "Sincronizando matrícula e disciplinas do Gennera…",
-    footer: "Ambiente demonstrativo · UNIFSA",
-    iconSvg: SSO_GENNERA_ICON_SVG,
-    badgeClass: "is-gennera",
-  },
-  google: {
-    name: "Google",
-    loadingHeader: "Google Institucional",
-    title: "Google Institucional",
-    desc: "Escolha sua conta @academico.edu.br.",
-    loadingTitle: "Validando conta institucional…",
-    footer: "Ambiente demonstrativo · UNIFSA",
-    iconSvg: SSO_GOOGLE_ICON_SVG,
-    badgeClass: "is-google",
-  },
-};
-
-const SSO_ACCOUNTS = [
-  {
-    userId: "usr-stu-1",
-    name: "Ana Paula Ribeiro",
-    shortToastName: "Ana Paula",
-    initials: "AP",
-    roleLabel: "Estudante",
-    detail: "Engenharia de Software",
-    ra: "2026101",
-    email: "ana@academico.edu.br",
-  },
-  {
-    userId: "usr-mon-1",
-    name: "Rafael Silva",
-    shortToastName: "Rafael",
-    initials: "RS",
-    roleLabel: "Monitor",
-    detail: "Algoritmo e Programação",
-    ra: "2025042",
-    email: "rafael@academico.edu.br",
-  },
-];
-
-const ssoState = {
-  provider: "gennera",
-  selectedUserId: "usr-stu-1",
-  loading: false,
-  timer: null,
-  heightTimer: null,
-  heightEndHandler: null,
-  triggerEl: null,
-};
-
-function resetSsoBoxHeightTransition() {
-  clearTimeout(ssoState.heightTimer);
-  ssoState.heightTimer = null;
-  const box = document.querySelector("#sso-modal .sso-modal-box");
-  if (!box) return;
-  if (ssoState.heightEndHandler) {
-    box.removeEventListener("transitionend", ssoState.heightEndHandler);
-    ssoState.heightEndHandler = null;
-  }
-  box.classList.remove("is-morphing-height");
-  box.style.height = "";
-  box.style.overflow = "";
-}
-
-function ensureDemoUser(demoId) {
-  let user = state.users.find((u) => u.id === demoId);
-  let restored = false;
-  const seed = INITIAL_USERS.find((u) => u.id === demoId);
-  if (!user && seed) {
-    user = structuredClone(seed);
-    state.users.push(user);
-    INITIAL_BOOKINGS.filter((b) => b.studentId === demoId).forEach((seedBk) => {
-      if (!state.bookings.some((b) => b.id === seedBk.id)) {
-        state.bookings.push(structuredClone(seedBk));
-      }
-    });
-    restored = true;
-  } else if (user && seed && demoId === "usr-mon-1" && user.email === "rafael.monitor@academico.edu.br") {
-    user.ra = seed.ra;
-    user.email = seed.email;
-  }
-  return { user, restored };
-}
-
-function renderSsoAccountList() {
-  const listEl = document.getElementById("sso-account-list");
-  if (!listEl) return;
-
-  listEl.innerHTML = SSO_ACCOUNTS.map((acc) => {
-    const selected = acc.userId === ssoState.selectedUserId;
-
-    return `
-      <button
-        type="button"
-        class="sso-account-card ${selected ? "is-selected" : ""}"
-        role="radio"
-        aria-checked="${selected}"
-        data-sso-account="${escapeHtml(acc.userId)}"
-      >
-        <span class="sso-avatar" aria-hidden="true">${escapeHtml(acc.initials)}</span>
-        <span class="sso-account-info">
-          <span class="sso-account-top">
-            <strong class="sso-account-name">${escapeHtml(acc.name)}</strong>
-            <span class="sso-role-pill">${escapeHtml(acc.roleLabel)}</span>
-          </span>
-          <span class="sso-account-meta">${escapeHtml(acc.detail)} · ${escapeHtml(acc.ra)}</span>
-          <span class="sso-account-email">${escapeHtml(acc.email)}</span>
-        </span>
-        <span class="sso-account-chevron" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </span>
-        <span class="sso-account-radio" aria-hidden="true"></span>
-      </button>
-    `;
-  }).join("");
-}
-
-function openSsoModal(providerKey, triggerEl = null) {
-  const cfg = SSO_PROVIDERS[providerKey] || SSO_PROVIDERS.gennera;
-  clearTimeout(ssoState.timer);
-  ssoState.timer = null;
-  ssoState.loading = false;
-  resetSsoBoxHeightTransition();
-  ssoState.provider = providerKey === "google" ? "google" : "gennera";
-  ssoState.selectedUserId = SSO_ACCOUNTS[0].userId;
-  ssoState.triggerEl =
-    triggerEl instanceof HTMLElement
-      ? triggerEl
-      : document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
-
-  const badgeEl = document.getElementById("sso-provider-icon");
-  if (badgeEl) {
-    badgeEl.className = `sso-provider-badge ${cfg.badgeClass}`;
-    badgeEl.innerHTML = cfg.iconSvg;
-  }
-  document.getElementById("sso-modal-title").textContent = cfg.title;
-  document.getElementById("sso-modal-desc").textContent = cfg.desc;
-  document.getElementById("sso-modal-foot-text").textContent = cfg.footer;
-
-  document.getElementById("sso-stage-select")?.classList.remove("is-hidden");
-  const loadingStage = document.getElementById("sso-stage-loading");
-  loadingStage?.classList.add("is-hidden");
-  loadingStage?.classList.remove("is-morph-enter");
-  renderSsoAccountList();
-
-  const modal = document.getElementById("sso-modal");
-  modal?.classList.remove("is-hidden");
-  syncBodyScrollLock();
-  const firstCard = modal?.querySelector(".sso-account-card");
-  firstCard?.focus();
-  announceA11y(`${cfg.title}. ${cfg.desc}`);
-}
-
-function closeSsoModal(restoreFocus = true) {
-  clearTimeout(ssoState.timer);
-  ssoState.timer = null;
-  ssoState.loading = false;
-  resetSsoBoxHeightTransition();
-  document.getElementById("sso-stage-loading")?.classList.remove("is-morph-enter");
-  const modal = document.getElementById("sso-modal");
-  const wasOpen = modal && !modal.classList.contains("is-hidden");
-  modal?.classList.add("is-hidden");
-  syncBodyScrollLock();
-  if (wasOpen && restoreFocus && ssoState.triggerEl && document.contains(ssoState.triggerEl)) {
-    ssoState.triggerEl.focus();
-  }
-  ssoState.triggerEl = null;
-}
-
-function startSsoSync(userId) {
-  if (ssoState.loading) return;
-  hideToast(true);
-  const acc = SSO_ACCOUNTS.find((a) => a.userId === userId) || SSO_ACCOUNTS[0];
-  const cfg = SSO_PROVIDERS[ssoState.provider] || SSO_PROVIDERS.gennera;
-  ssoState.loading = true;
-  ssoState.selectedUserId = acc.userId;
-
-  const loadIcon = document.getElementById("sso-loading-provider-icon");
-  if (loadIcon) {
-    loadIcon.className = `sso-provider-badge is-sm ${cfg.badgeClass}`;
-    loadIcon.innerHTML = cfg.iconSvg;
-  }
-  document.getElementById("sso-loading-provider-name").textContent = cfg.loadingHeader;
-  document.getElementById("sso-loading-title").textContent = cfg.loadingTitle;
-
-  document.getElementById("sso-loading-profile").innerHTML = `
-    <span class="sso-loading-profile-main">
-      <span class="sso-avatar is-sm" aria-hidden="true">${escapeHtml(acc.initials)}</span>
-      <strong>${escapeHtml(acc.name)}</strong>
-    </span>
-    <span class="sso-loading-check" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-    </span>
-  `;
-
-  const box = document.querySelector("#sso-modal .sso-modal-box");
-  const selectStage = document.getElementById("sso-stage-select");
-  const loadingStage = document.getElementById("sso-stage-loading");
-  resetSsoBoxHeightTransition();
-
-  if (box && !prefersReducedMotion()) {
-    const fromHeight = box.getBoundingClientRect().height;
-    selectStage?.classList.add("is-hidden");
-    loadingStage?.classList.remove("is-hidden");
-    loadingStage?.classList.remove("is-morph-enter");
-    void loadingStage?.offsetWidth;
-    loadingStage?.classList.add("is-morph-enter");
-
-    const toHeight = box.getBoundingClientRect().height;
-    if (Math.abs(toHeight - fromHeight) > 2) {
-      box.style.height = `${fromHeight}px`;
-      box.style.overflow = "hidden";
-      void box.offsetHeight;
-      box.classList.add("is-morphing-height");
-      box.style.height = `${toHeight}px`;
-
-      const onEnd = (ev) => {
-        if (ev.target === box && ev.propertyName === "height") {
-          resetSsoBoxHeightTransition();
-        }
-      };
-      ssoState.heightEndHandler = onEnd;
-      box.addEventListener("transitionend", onEnd);
-      ssoState.heightTimer = setTimeout(resetSsoBoxHeightTransition, 290);
-    }
-  } else {
-    selectStage?.classList.add("is-hidden");
-    loadingStage?.classList.remove("is-hidden");
-    loadingStage?.classList.remove("is-morph-enter");
-  }
-  announceA11y(cfg.loadingTitle);
-
-  const delayMs = prefersReducedMotion() ? 60 : 600;
-  ssoState.timer = setTimeout(() => {
-    ssoState.timer = null;
-    ssoState.loading = false;
-    const { user } = ensureDemoUser(acc.userId);
-    if (!user) {
-      closeSsoModal(true);
-      return;
-    }
-    state.currentUserId = user.id;
-    saveState();
-    closeSsoModal(false);
-    renderTopbar();
-    ui.step = 1;
-    switchView("inicio");
-    showToast(`Conectado via ${cfg.name} · ${acc.shortToastName}`, null, "success");
-  }, delayMs);
-}
-
-function finalizeCreateUser({ role, name, ra, email, password, course, offeringId }) {
-  const user = {
-    id: `usr-${Date.now()}`,
-    role,
-    name,
-    ra,
-    email,
-    password,
-    course: role === "student" ? course : undefined,
-    offeringId: role === "monitor" ? offeringId : undefined,
-  };
-  state.users.push(user);
-  state.currentUserId = user.id;
-  saveState();
-  return user;
+async function finalizeCreateUser(draft) {
+  const result = await apiClient.request("/auth/register", { method: "POST", body: {
+    role: draft.role, name: draft.name, ra: draft.ra, email: draft.email, password: draft.password,
+    course: draft.course, offering_id: draft.offeringId, professor_code: draft.professorCode,
+  } });
+  return acceptRemoteSession(result, true);
 }
 
 function handleRegisterSubmit(e) {
@@ -2847,46 +2549,26 @@ function handleRegisterSubmit(e) {
     return;
   }
 
-  finalizeCreateUser(draft);
-  form.reset();
-  clearFormErrors(form);
-  renderTopbar();
-  ui.step = 1;
-  switchView("inicio");
-  showToast("Conta de estudante criada com sucesso!");
+  return runApiAction("auth", async () => {
+    await finalizeCreateUser(draft);
+    form.reset();
+    clearFormErrors(form);
+    showToast("Conta de estudante criada com sucesso!", null, "success");
+  }, form);
 }
 
 function handleVerifyOtpSubmit(e) {
   e.preventDefault();
   const draft = ui.pendingMonitorDraft;
   if (!draft) return;
-
   clearOtpErrors();
-  const errEl = document.getElementById("otp-error");
-
-  const codeEntered = getOtpValue();
-  const expected = PROFESSOR_CODES[draft.offeringId];
-
-  if (!expected || codeEntered !== expected) {
-    errEl.textContent = "Código inválido para esta disciplina. Solicite o código ao professor.";
-    errEl.classList.remove("is-hidden");
-    const boxes = document.querySelectorAll(".otp-box");
-    boxes.forEach((box) => {
-      box.classList.add("is-invalid");
-      box.setAttribute("aria-invalid", "true");
-      box.setAttribute("aria-describedby", "otp-error");
-    });
-    boxes[0]?.focus();
-    return;
-  }
-
-  finalizeCreateUser(draft);
-  hideOtpStage();
-  document.getElementById("form-register").reset();
-  renderTopbar();
-  ui.step = 1;
-  switchView("inicio");
-  showToast("Conta de monitor autorizada e ativada!");
+  return runApiAction("auth", async () => {
+    await finalizeCreateUser({ ...draft, professorCode: getOtpValue() });
+    hideOtpStage();
+    document.getElementById("form-register").reset();
+    document.getElementById("otp-code").value = "";
+    showToast("Conta de monitor autorizada e ativada!", null, "success");
+  }, document.getElementById("auth-stage-otp"));
 }
 
 // ==================== AGENDAR (3 ETAPAS) ====================
@@ -2910,7 +2592,7 @@ function syncRescheduleBanner() {
     banner.classList.add("is-hidden");
     return;
   }
-  const oldSlot = state.slots.find((s) => s.id === bk.slotId);
+  const oldSlot = getSlot(bk.slotId);
   const off = oldSlot ? getOffering(oldSlot.offeringId) : null;
   document.getElementById("reschedule-banner-title").textContent = `Reagendando ${bk.protocol}${
     off ? ` · ${off.shortSubject}` : ""
@@ -2924,7 +2606,7 @@ function syncRescheduleBanner() {
 function startReschedule(bookingId) {
   const bk = state.bookings.find((b) => b.id === bookingId && b.status === "Confirmado");
   if (!bk) return;
-  const oldSlot = state.slots.find((s) => s.id === bk.slotId);
+  const oldSlot = getSlot(bk.slotId);
   const off = oldSlot ? getOffering(oldSlot.offeringId) : null;
   if (!oldSlot || !off) return;
 
@@ -3488,7 +3170,7 @@ function syncTopicChips() {
 }
 
 function renderStep3() {
-  const slot = state.slots.find((s) => s.id === ui.selectedSlotId);
+  const slot = getSlot(ui.selectedSlotId);
   const off = slot ? getOffering(slot.offeringId) : null;
   if (!slot || !off) return;
 
@@ -3566,7 +3248,7 @@ function handleConfirmBooking(e) {
   const errBox = document.getElementById("s3-error-box");
   clearFormErrors(form);
 
-  const slot = state.slots.find((s) => s.id === ui.selectedSlotId);
+  const slot = getSlot(ui.selectedSlotId);
   const off = slot ? getOffering(slot.offeringId) : null;
   if (!slot || !off) return;
 
@@ -3598,65 +3280,35 @@ function handleConfirmBooking(e) {
     return;
   }
 
-  if (getPrefs().blockConflicts && hasScheduleConflict(user.id, slot, reschedBk?.id || null)) {
+  if (hasScheduleConflict(user.id, slot, reschedBk?.id || null)) {
     errBox.textContent = `Você já possui um atendimento confirmado em ${slot.dayName} às ${slot.time}.`;
     errBox.classList.remove("is-hidden");
     return;
   }
 
-  const executeBooking = () => {
-    if (getSlotRemaining(slot) <= 0) {
-      errBox.textContent = "As vagas deste horário acabaram de ser preenchidas.";
-      errBox.classList.remove("is-hidden");
-      return;
-    }
-
-    let protocol = "";
-    let undoRescheduleFn = null;
+  const executeBooking = () => runApiAction("save-booking", async () => {
     const isReschedule = Boolean(reschedBk);
-
-    if (reschedBk) {
-      const oldSlotId = reschedBk.slotId;
-      const oldTopic = reschedBk.topic;
-      reschedBk.slotId = slot.id;
-      reschedBk.topic = topic;
-      protocol = reschedBk.protocol;
-      ui.lastCreatedBookingId = reschedBk.id;
-      ui.reschedulingBookingId = null;
-
-      undoRescheduleFn = () => {
-        const prevSlot = state.slots.find((s) => s.id === oldSlotId);
-        if (!prevSlot || getSlotRemaining(prevSlot) <= 0) {
-          showToast("O horário anterior não possui mais vagas disponíveis.");
-          return;
-        }
-        reschedBk.slotId = oldSlotId;
-        reschedBk.topic = oldTopic;
-        ui.highlightedBookingId = reschedBk.id;
-        saveState();
-        renderTopbar();
-        if (ui.activeView === "agendamentos") renderBookings();
-        showToast(`Reagendamento desfeito (${protocol}).`);
-      };
-    } else {
-      const seq = String(state.nextSeq).padStart(3, "0");
-      state.nextSeq += 1;
-      protocol = `#MON-2026-${seq}`;
-
-      const booking = {
-        id: `bk-${Date.now()}`,
-        protocol,
-        studentId: user.id,
-        slotId: slot.id,
-        topic,
-        status: "Confirmado",
-        createdAt: new Date().toLocaleString("pt-BR"),
-      };
-
-      state.bookings.push(booking);
-      ui.lastCreatedBookingId = booking.id;
-    }
-
+    const previousSlotId = reschedBk?.slotId;
+    const previousTopic = reschedBk?.topic;
+    const result = await apiClient.request(reschedBk ? `/schedules/${reschedBk.id}/slot` : "/schedules", {
+      method: reschedBk ? "PATCH" : "POST", body: { slot_id: Number(slot.id), topic },
+    });
+    const booking = applyRemoteBooking(result.schedule);
+    const protocol = booking.protocol;
+    ui.lastCreatedBookingId = booking.id;
+    ui.reschedulingBookingId = null;
+    await refreshSafely();
+    if (!getCurrentUser()) return;
+    const undoRescheduleFn = reschedBk ? () => runApiAction(`booking:${booking.id}`, async () => {
+      const restored = await apiClient.request(`/schedules/${booking.id}/slot`, {
+        method: "PATCH", body: { slot_id: Number(previousSlotId), topic: previousTopic },
+      });
+      applyRemoteBooking(restored.schedule);
+      await refreshSafely();
+      ui.highlightedBookingId = booking.id;
+      switchView("agendamentos");
+      showToast(`Reagendamento desfeito (${protocol}).`, null, "success");
+    }) : null;
     ui.highlightedBookingId = ui.lastCreatedBookingId;
     ui.step3Completed = true;
     saveState();
@@ -3706,7 +3358,7 @@ function handleConfirmBooking(e) {
       ? `Horário reagendado (${protocol})`
       : `Agendamento confirmado (${protocol})`;
     showToast(toastMsg, undoRescheduleFn, "success");
-  };
+  }, form);
 
   if (!getPrefs().confirmBeforeBook) {
     executeBooking();
@@ -3795,7 +3447,7 @@ function renderBookings() {
     .reverse()
     .sort((a, b) => (statusRank[a.status] ?? 9) - (statusRank[b.status] ?? 9))
     .map((bk) => {
-      const slot = state.slots.find((s) => s.id === bk.slotId);
+      const slot = getSlot(bk.slotId);
       const off = slot ? getOffering(slot.offeringId) : null;
       if (!slot || !off) return "";
 
@@ -3858,10 +3510,9 @@ function renderMonitorPanel() {
 
   const off = getOffering(user.offeringId);
   const subjectName = off ? off.subject : "Disciplina não vinculada";
-  const expectedCode = PROFESSOR_CODES[user.offeringId] || "";
 
   document.getElementById("ms-offering-display").value = subjectName;
-  document.getElementById("ms-prof-code").placeholder = expectedCode || "Ex.: IHC026";
+  document.getElementById("ms-prof-code").placeholder = "Código fornecido pelo professor";
   document.getElementById(
     "monitor-sub"
   ).textContent = `${subjectName} · Agendamentos e horários da sua disciplina.`;
@@ -3884,7 +3535,7 @@ function renderMonitorPanel() {
   filterToggleEl?.classList.toggle("is-hidden", activeTab !== "bookings");
 
   const disciplineBookings = state.bookings.filter((bk) => {
-    const slot = state.slots.find((s) => s.id === bk.slotId);
+    const slot = getSlot(bk.slotId);
     return Boolean(slot && user.offeringId && slot.offeringId === user.offeringId);
   });
 
@@ -3912,7 +3563,7 @@ function renderMonitorPanel() {
       .slice()
       .reverse()
       .map((bk) => {
-        const slot = state.slots.find((s) => s.id === bk.slotId);
+        const slot = getSlot(bk.slotId);
         const stu = getUserById(bk.studentId);
         if (!slot) return "";
 
@@ -4022,7 +3673,6 @@ function handlePublishNewSlot(e) {
   if (!user || user.role !== "monitor") return;
 
   const offeringId = user.offeringId;
-  const expectedCode = PROFESSOR_CODES[offeringId];
   const dateEl = document.getElementById("ms-date");
   const timeEl = document.getElementById("ms-time");
   const capEl = document.getElementById("ms-capacity");
@@ -4042,8 +3692,6 @@ function handlePublishNewSlot(e) {
   }
   if (!profCode) {
     errors.push({ el: codeEl, message: "Informe o código autorizado pelo docente." });
-  } else if (!expectedCode || profCode !== expectedCode) {
-    errors.push({ el: codeEl, message: "Código do professor inválido para esta disciplina." });
   }
 
   if (applyFieldErrors(form, errors)) return;
@@ -4063,19 +3711,12 @@ function handlePublishNewSlot(e) {
     }),
     confirmText: "Sim, publicar horário",
     danger: false,
-    onConfirm: () => {
-      const newSlot = {
-        id: `sl-${Date.now()}`,
-        offeringId,
-        dateIso,
-        dayName,
-        time,
-        capacity,
-        baseOccupied: 0,
-      };
-
-      state.slots.push(newSlot);
-      saveState();
+    onConfirm: () => runApiAction("publish-slot", async () => {
+      const result = await apiClient.request("/slots", { method: "POST", body: {
+        date: dateIso, time, capacity, professor_code: profCode,
+      } });
+      state.slots.push(mapSlot(result.slot));
+      await refreshSafely();
       document.getElementById("ms-prof-code").value = "";
       closeMonitorSlotSheet(false);
       if (!prefersReducedMotion()) {
@@ -4089,7 +3730,7 @@ function handlePublishNewSlot(e) {
       }
       showToast(`Novo horário publicado (${dayName}, ${formatDateBr(dateIso)} às ${time.split(" - ")[0]}).`);
       renderMonitorPanel();
-    },
+    }, form),
   });
 }
 
@@ -4262,7 +3903,7 @@ function flashLiquidButtonState(btn, confirmedText, durationMs = 1800) {
 
 function downloadIcs(bookingId, triggerBtn = null) {
   const bk = state.bookings.find((b) => b.id === bookingId);
-  const slot = bk ? state.slots.find((s) => s.id === bk.slotId) : null;
+  const slot = bk ? getSlot(bk.slotId) : null;
   const off = slot ? getOffering(slot.offeringId) : null;
   if (!bk || !slot || !off) return;
 
@@ -4286,7 +3927,7 @@ function downloadAllConfirmedIcs() {
   const reminderMinutes = Number(getPrefs().icsReminderMinutes ?? 30);
   const eventBlocks = [];
   confirmed.forEach((bk) => {
-    const slot = state.slots.find((s) => s.id === bk.slotId);
+    const slot = getSlot(bk.slotId);
     const off = slot ? getOffering(slot.offeringId) : null;
     if (slot && off) {
       eventBlocks.push(buildIcsEventLines(bk, slot, off, reminderMinutes));
@@ -4303,7 +3944,7 @@ function downloadAllConfirmedIcs() {
 
 async function copyProof(bookingId, triggerBtn = null) {
   const bk = state.bookings.find((b) => b.id === bookingId);
-  const slot = bk ? state.slots.find((s) => s.id === bk.slotId) : null;
+  const slot = bk ? getSlot(bk.slotId) : null;
   const off = slot ? getOffering(slot.offeringId) : null;
   const usr = bk ? getUserById(bk.studentId) : null;
   if (!bk || !slot || !off || !usr) return;
@@ -4525,16 +4166,15 @@ function bindEvents() {
     }
   });
 
-  const performLogout = () => {
-    state.currentUserId = null;
-    saveState();
+  const performLogout = () => runApiAction("logout", async () => {
+    await apiClient.request("/auth/logout", { method: "POST" });
+    clearRemoteSession();
     closeProfileMenu();
     closeSettingsModal();
     renderTopbar();
-    hideOtpStage();
     switchView("landing");
     showToast("Sessão encerrada.");
-  };
+  });
 
   document.getElementById("btn-account-action").addEventListener("click", (e) => {
     e.stopPropagation();
@@ -5050,40 +4690,9 @@ function bindEvents() {
   document.getElementById("auth-stage-otp").addEventListener("submit", handleVerifyOtpSubmit);
   document.getElementById("btn-otp-back").addEventListener("click", hideOtpStage);
 
-  // 6 caixinhas OTP (avanço automático, colar e backspace)
-  const otpBoxes = Array.from(document.querySelectorAll(".otp-box"));
-  otpBoxes.forEach((box, idx) => {
-    box.addEventListener("input", () => {
-      const clean = box.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-      box.value = clean.slice(0, 1);
-      if (box.value && idx < otpBoxes.length - 1) {
-        otpBoxes[idx + 1].focus();
-      }
-      document.getElementById("btn-verify-otp").disabled = getOtpValue().length !== 6;
-    });
-
-    box.addEventListener("keydown", (e) => {
-      if (e.key === "Backspace" && !box.value && idx > 0) {
-        otpBoxes[idx - 1].focus();
-      }
-      if (e.key === "ArrowLeft" && idx > 0) otpBoxes[idx - 1].focus();
-      if (e.key === "ArrowRight" && idx < otpBoxes.length - 1) otpBoxes[idx + 1].focus();
-    });
-
-    box.addEventListener("paste", (e) => {
-      e.preventDefault();
-      const pasted = (e.clipboardData || window.clipboardData)
-        .getData("text")
-        .replace(/[^a-zA-Z0-9]/g, "")
-        .toUpperCase()
-        .slice(0, 6);
-      pasted.split("").forEach((ch, i) => {
-        if (otpBoxes[i]) otpBoxes[i].value = ch;
-      });
-      const focusIdx = Math.min(pasted.length, otpBoxes.length - 1);
-      otpBoxes[focusIdx].focus();
-      document.getElementById("btn-verify-otp").disabled = getOtpValue().length !== 6;
-    });
+  document.getElementById("otp-code").addEventListener("input", () => {
+    clearOtpErrors();
+    document.getElementById("btn-verify-otp").disabled = !getOtpValue();
   });
 
   // Toggle mostrar/ocultar senha (Entrar e Criar conta)
@@ -5099,32 +4708,6 @@ function bindEvents() {
       btn.querySelector(".icon-eye-open")?.classList.toggle("is-hidden", nowShowing);
       btn.querySelector(".icon-eye-closed")?.classList.toggle("is-hidden", !nowShowing);
     });
-  });
-
-  // SSO Institucional (Gennera UNIFSA & Google)
-  document.getElementById("btn-sso-gennera")?.addEventListener("click", (e) => {
-    openSsoModal("gennera", e.currentTarget);
-  });
-  document.getElementById("btn-sso-google")?.addEventListener("click", (e) => {
-    openSsoModal("google", e.currentTarget);
-  });
-  document.getElementById("btn-sso-close")?.addEventListener("click", () => closeSsoModal(true));
-  document.getElementById("sso-modal")?.addEventListener("click", (e) => {
-    if (e.target.id === "sso-modal") closeSsoModal(true);
-  });
-  document.getElementById("sso-account-list")?.addEventListener("click", (e) => {
-    const card = e.target.closest("[data-sso-account]");
-    if (!card || ssoState.loading) return;
-    const chosenId = card.dataset.ssoAccount;
-    ssoState.selectedUserId = chosenId;
-    if (window.innerWidth <= 768) {
-      renderSsoAccountList();
-    } else {
-      startSsoSync(chosenId);
-    }
-  });
-  document.getElementById("btn-sso-continue")?.addEventListener("click", () => {
-    if (!ssoState.loading) startSsoSync(ssoState.selectedUserId);
   });
 
   // Stepper & Passo 1
@@ -5198,7 +4781,7 @@ function bindEvents() {
     }
     const mobileSlotBtn = e.target.closest("[data-mobile-matrix-slot]");
     if (mobileSlotBtn && !mobileSlotBtn.disabled) {
-      const slot = state.slots.find((s) => s.id === mobileSlotBtn.dataset.mobileMatrixSlot);
+      const slot = getSlot(mobileSlotBtn.dataset.mobileMatrixSlot);
       if (!slot) return;
       ui.selectedOfferingId = slot.offeringId;
       ui.selectedDateIso = slot.dateIso;
@@ -5208,7 +4791,7 @@ function bindEvents() {
     }
     const btn = e.target.closest("[data-matrix-slot]");
     if (!btn || btn.disabled) return;
-    const slot = state.slots.find((s) => s.id === btn.dataset.matrixSlot);
+    const slot = getSlot(btn.dataset.matrixSlot);
     if (!slot) return;
     ui.selectedOfferingId = slot.offeringId;
     ui.selectedDateIso = slot.dateIso;
@@ -5373,7 +4956,7 @@ function bindEvents() {
     if (cancelBtn) {
       const bk = state.bookings.find((b) => b.id === cancelBtn.dataset.cancelBk);
       if (!bk) return;
-      const slot = state.slots.find((s) => s.id === bk.slotId);
+      const slot = getSlot(bk.slotId);
       const off = slot ? getOffering(slot.offeringId) : null;
 
       openConfirmDialog({
@@ -5391,23 +4974,8 @@ function bindEvents() {
             : "",
         confirmText: "Sim, cancelar vaga",
         danger: true,
-        onConfirm: () => {
-          const rowEl = document.querySelector(`#bookings-list [data-booking-row="${bk.id}"]`);
-          animateRowExitAndRun(rowEl, () => {
-            bk.status = "Cancelado";
-            saveState();
-            renderTopbar();
-            renderBookings();
-            showToast(`Agendamento ${bk.protocol} cancelado.`, () => {
-              bk.status = "Confirmado";
-              ui.highlightedBookingId = bk.id;
-              saveState();
-              renderTopbar();
-              renderBookings();
-              showToast(`Cancelamento desfeito (${bk.protocol}).`);
-            });
-          });
-        },
+        onConfirm: () => changeRemoteBookingStatus(bk, "Cancelado",
+          `Agendamento ${bk.protocol} cancelado.`, "Confirmado"),
       });
       return;
     }
@@ -5476,7 +5044,7 @@ function bindEvents() {
     const btn = e.target.closest("[data-remove-slot]");
     if (!btn || btn.disabled) return;
     const slotId = btn.dataset.removeSlot;
-    const slot = state.slots.find((s) => s.id === slotId);
+    const slot = getSlot(slotId);
     if (!slot) return;
     const hasConfirmed = state.bookings.some((b) => b.slotId === slot.id && b.status === "Confirmado");
     if (hasConfirmed) {
@@ -5497,23 +5065,13 @@ function bindEvents() {
       }),
       confirmText: "Sim, remover horário",
       danger: true,
-      onConfirm: () => {
-        const snapshot = structuredClone(slot);
-        const rowEl = document.querySelector(`#monitor-slots-list [data-slot-row="${slot.id}"]`);
-        animateRowExitAndRun(rowEl, () => {
-          state.slots = state.slots.filter((s) => s.id !== slot.id);
-          saveState();
-          renderMonitorPanel();
-          showToast(`Horário removido (${slot.dayName}, ${slot.time.split(" - ")[0]}).`, () => {
-            if (!state.slots.some((s) => s.id === snapshot.id)) {
-              state.slots.push(snapshot);
-              saveState();
-              renderMonitorPanel();
-              showToast("Remoção de horário desfeita.");
-            }
-          });
-        });
-      },
+      onConfirm: () => runApiAction(`slot:${slot.id}`, async () => {
+        await apiClient.request(`/slots/${slot.id}`, { method: "DELETE" });
+        state.slots = state.slots.filter((item) => item.id !== slot.id);
+        await refreshSafely();
+        renderCurrentData();
+        showToast(`Horário removido (${slot.dayName}, ${slot.time.split(" - ")[0]}).`, null, "success");
+      }),
     });
   });
 
@@ -5523,7 +5081,7 @@ function bindEvents() {
     const bk = state.bookings.find((b) => b.id === btn.dataset.completeBk);
     if (!bk) return;
     const stu = getUserById(bk.studentId);
-    const slot = state.slots.find((s) => s.id === bk.slotId);
+    const slot = getSlot(bk.slotId);
 
     openConfirmDialog({
       title: "Concluir atendimento?",
@@ -5537,31 +5095,13 @@ function bindEvents() {
       }),
       confirmText: "Sim, concluir",
       danger: false,
-      onConfirm: () => {
-        const rowEl = document.querySelector(`#monitor-bookings-list [data-booking-row="${bk.id}"]`);
-        animateRowExitAndRun(rowEl, () => {
-          bk.status = "Concluído";
-          saveState();
-          renderMonitorPanel();
-          showToast(`Atendimento ${bk.protocol} concluído.`, () => {
-            bk.status = "Confirmado";
-            ui.highlightedBookingId = bk.id;
-            saveState();
-            renderMonitorPanel();
-            showToast(`Conclusão desfeita (${bk.protocol}).`);
-          });
-        });
-      },
+      onConfirm: () => changeRemoteBookingStatus(bk, "Concluído",
+        `Atendimento ${bk.protocol} concluído.`, "Confirmado"),
     });
   });
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Tab") {
-      const ssoModal = document.getElementById("sso-modal");
-      if (ssoModal && !ssoModal.classList.contains("is-hidden")) {
-        trapFocusInModal(e, ssoModal);
-        return;
-      }
       const confirmModal = document.getElementById("confirm-modal");
       if (confirmModal && !confirmModal.classList.contains("is-hidden")) {
         trapFocusInModal(e, confirmModal);
@@ -5601,11 +5141,6 @@ function bindEvents() {
         const selectTrigger = openSelectWrap?.querySelector(".bc-select-trigger");
         closeAllCustomSelects();
         selectTrigger?.focus();
-        return;
-      }
-      const ssoModal = document.getElementById("sso-modal");
-      if (ssoModal && !ssoModal.classList.contains("is-hidden")) {
-        closeSsoModal(true);
         return;
       }
       const confirmModal = document.getElementById("confirm-modal");
@@ -6277,7 +5812,6 @@ function initCustomSelects() {
   );
 
   window.addEventListener("resize", () => {
-    resetSsoBoxHeightTransition();
     clearToastWidthMorph(document.getElementById("toast"));
     if (getPrefs().vlibras) positionVlibrasShadowAccess();
     syncSearchPlaceholder();
@@ -6320,3 +5854,21 @@ syncSearchPlaceholder();
 applyThemeAndA11y();
 renderTopbar();
 startPhraseCarousel();
+
+document.getElementById("btn-api-retry").addEventListener("click", () => runApiAction("refresh", async () => {
+  if (!getCurrentUser()) await bootstrapRemote();
+  else {
+    setApiStatus("Atualizando seus dados…", true);
+    await refreshSafely();
+    renderCurrentData();
+  }
+}));
+async function refreshOnReturn() {
+  if (document.hidden || !getCurrentUser() || pendingApiActions.size || Date.now() - lastRemoteRefresh < 15000) return;
+  await refreshSafely();
+  renderCurrentData();
+}
+window.addEventListener("focus", refreshOnReturn);
+document.addEventListener("visibilitychange", refreshOnReturn);
+setInterval(refreshOnReturn, 30000);
+runApiAction("bootstrap", bootstrapRemote, document.getElementById("form-login"));

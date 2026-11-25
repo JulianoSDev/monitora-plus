@@ -113,7 +113,16 @@ Migração amplia `users.course`, adiciona exclusão lógica (`slots.deleted_at`
 índice único apenas para horários ativos e a sequência de protocolos ausente na
 migração inicial. Downgrade recusa perder nomes longos ou histórico excluído.
 
-## Próximo passo no frontend (fora deste escopo)
+## Frontend integrado
+
+A interface publicada usa `api.js` para cookies/CSRF e `app.js` para carregar os
+dados reais. A URL HTTPS está em `../api-config.js`; atualize-a quando o Quick
+Tunnel mudar e envie a alteração ao GitHub Pages. Apenas preferências visuais
+ficam no localStorage. O backend valida vagas, códigos de professor e permissões.
+Os acessos Google/Gennera simulados foram removidos. Monitores usam o campo de
+código privado, sem a limitação de seis caracteres do protótipo.
+
+O exemplo abaixo documenta o protocolo usado pelo cliente:
 
 Nenhum arquivo do frontend precisa mudar para subir a API. Depois, integre as rotas:
 
@@ -158,7 +167,8 @@ domínio com `document.cookie`. Logout autenticado também exige CSRF.
 de terceiros. Teste o navegador usado na apresentação. Se ele bloquear, use uma
 exceção de cookies para essa demonstração ou sirva frontend e API pela mesma
 origem num próximo passo. Não desative CSRF nem exponha JWT ao JavaScript.
-A integração deve substituir o estado local do protótipo, não só acrescentar uma URL.
+A integração substitui o estado local do protótipo; contas antigas precisam ser
+cadastradas novamente na API.
 
 ## Alternativa futura com domínio
 

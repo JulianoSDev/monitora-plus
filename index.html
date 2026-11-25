@@ -178,6 +178,11 @@
       </div>
     </div>
   </header>
+  <div id="api-status" class="inline-alert is-hidden" role="status" aria-live="polite">
+    <span id="api-status-text"></span>
+    <button type="button" class="ghost-link" id="btn-api-retry">Atualizar dados</button>
+  </div>
+
 
   <main id="conteudo-principal" class="main-shell">
     <!-- VIEW 0: LANDING -->
@@ -272,30 +277,6 @@
                   <span class="auth-title-mobile">Acesse sua conta</span>
                 </h2>
                 <p id="auth-head-sub">Acesse com sua matrícula ou e-mail institucional.</p>
-              </div>
-
-              <!-- SSO Institucional em 2 colunas simétricas (visível apenas em Entrar) -->
-              <div id="auth-sso-block" class="auth-sso-block">
-                <div class="sso-grid">
-                  <button type="button" class="sso-btn sso-btn-neutral" id="btn-sso-gennera" aria-label="Entrar com Gennera (UNIFSA)">
-                    <img src="assets/gennera-icon.svg?v=20261124b1" alt="" width="18" height="18" class="sso-icon-img" aria-hidden="true" />
-                    <span translate="no">Gennera</span>
-                  </button>
-
-                  <button type="button" class="sso-btn sso-btn-neutral" id="btn-sso-google" aria-label="Continuar com Google Institucional">
-                    <svg class="sso-icon-google" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    <span translate="no">Google</span>
-                  </button>
-                </div>
-
-                <div class="auth-divider" aria-hidden="true">
-                  <span>ou entre com matrícula e senha</span>
-                </div>
               </div>
 
               <!-- Formulário Entrar -->
@@ -457,27 +438,22 @@
               <div class="assaad-head">
                 <h2>Digite o código</h2>
                 <p id="otp-subtitle">
-                  Insira o código de 6 caracteres autorizado pelo docente da disciplina.
+                  Insira o código autorizado pelo docente da disciplina.
                 </p>
               </div>
 
               <div class="otp-info-banner">
                 <span class="otp-check-icon" aria-hidden="true">✓</span>
                 <span id="otp-banner-text">
-                  Disciplina selecionada. Código de teste: <strong class="mono-inline" id="otp-hint-code" translate="no">IHC026</strong>
+                  Solicite o código ao professor responsável pela disciplina.
                 </span>
               </div>
 
               <div class="field">
-                <label for="otp-box-0">Código do professor</label>
-                <div class="otp-grid" id="otp-grid" role="group" aria-label="Código de 6 caracteres">
-                  <input type="text" maxlength="1" class="otp-box" id="otp-box-0" name="otp0" autocomplete="one-time-code" spellcheck="false" aria-label="Caractere 1" />
-                  <input type="text" maxlength="1" class="otp-box" id="otp-box-1" name="otp1" autocomplete="off" spellcheck="false" aria-label="Caractere 2" />
-                  <input type="text" maxlength="1" class="otp-box" id="otp-box-2" name="otp2" autocomplete="off" spellcheck="false" aria-label="Caractere 3" />
-                  <input type="text" maxlength="1" class="otp-box" id="otp-box-3" name="otp3" autocomplete="off" spellcheck="false" aria-label="Caractere 4" />
-                  <input type="text" maxlength="1" class="otp-box" id="otp-box-4" name="otp4" autocomplete="off" spellcheck="false" aria-label="Caractere 5" />
-                  <input type="text" maxlength="1" class="otp-box" id="otp-box-5" name="otp5" autocomplete="off" spellcheck="false" aria-label="Caractere 6" />
-                </div>
+                <label for="otp-code">Código do professor</label>
+                <input type="text" id="otp-code" name="professor_code" maxlength="72"
+                  autocomplete="off" spellcheck="false" autocapitalize="characters"
+                  aria-describedby="otp-subtitle" required />
               </div>
 
               <div id="otp-error" class="inline-alert is-hidden" role="alert"></div>
@@ -938,7 +914,7 @@
               </div>
               <div class="field">
                 <label for="ms-prof-code">Código do professor</label>
-                <input type="text" id="ms-prof-code" name="profCode" maxlength="6" placeholder="Ex.: IHC026" autocomplete="off" spellcheck="false" required />
+                <input type="text" id="ms-prof-code" name="professor_code" maxlength="72" placeholder="Código fornecido pelo professor" autocomplete="off" spellcheck="false" required />
               </div>
             </div>
 
@@ -1048,7 +1024,7 @@
             </svg>
           </summary>
           <p>
-            Ao criar conta como Monitor(a), é obrigatório validar o código de 6 caracteres autorizado pelo professor da disciplina. O Painel do Monitor mostra apenas os horários e inscritos da sua própria matéria.
+            Ao criar conta como Monitor(a), é obrigatório validar o código autorizado pelo professor da disciplina. O Painel do Monitor mostra apenas os horários e inscritos da sua própria matéria.
           </p>
         </details>
       </div>
@@ -1506,9 +1482,9 @@
                 <label class="settings-row" for="pref-block-conflicts">
                   <div>
                     <strong>Bloquear choque de horário</strong>
-                    <p>Impede confirmar duas monitorias no mesmo dia e faixa de horário.</p>
+                    <p>Sempre ativo: impede confirmar duas monitorias no mesmo dia e faixa de horário.</p>
                   </div>
-                  <input type="checkbox" id="pref-block-conflicts" name="blockConflicts" role="switch" class="bc-switch" checked />
+                  <input type="checkbox" id="pref-block-conflicts" name="blockConflicts" role="switch" class="bc-switch" checked disabled />
                 </label>
 
                 <label class="settings-row" for="pref-auto-ics">
@@ -1587,7 +1563,7 @@
                 <div class="settings-row">
                   <div>
                     <strong id="settings-account-status">Nenhum usuário autenticado</strong>
-                    <p id="settings-account-detail">Os dados ficam salvos localmente apenas neste navegador.</p>
+                    <p id="settings-account-detail">Sua conta e seus agendamentos são salvos no servidor.</p>
                   </div>
                   <button type="button" class="btn btn-secondary is-hidden" id="btn-settings-logout">Sair da conta</button>
                 </div>
@@ -1614,8 +1590,8 @@
               <span class="settings-block-title settings-danger-title">Zona de privacidade</span>
               <div class="settings-danger-box">
                 <div>
-                  <strong>Excluir conta e dados locais</strong>
-                  <p>Remove permanentemente seu cadastro e agendamentos deste navegador.</p>
+                  <strong>Excluir conta e agendamentos</strong>
+                  <p>Remove permanentemente seu cadastro e agendamentos do servidor.</p>
                 </div>
                 <button type="button" class="btn btn-danger" id="btn-settings-delete-account">Excluir conta</button>
               </div>
@@ -1718,69 +1694,6 @@
     </button>
   </nav>
 
-  <!-- Modal SSO Institucional (Gennera UNIFSA / Google) -->
-  <div
-    id="sso-modal"
-    class="modal-backdrop is-hidden"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="sso-modal-title"
-  >
-    <div class="modal-box sso-modal-box">
-      <div class="sso-sheet-handle" aria-hidden="true"><span></span></div>
-
-      <div id="sso-stage-select">
-        <div class="sso-modal-head">
-          <div class="sso-modal-title-row">
-            <span class="sso-provider-badge" id="sso-provider-icon" aria-hidden="true"></span>
-            <div class="sso-modal-head-copy">
-              <h2 id="sso-modal-title">Gennera · UNIFSA</h2>
-              <p id="sso-modal-desc" class="step-sub">Escolha a conta acadêmica para entrar.</p>
-            </div>
-          </div>
-          <button type="button" class="sso-close-btn" id="btn-sso-close" aria-label="Fechar janela de acesso institucional">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-
-        <div id="sso-account-list" class="sso-account-list" role="radiogroup" aria-label="Contas institucionais disponíveis"></div>
-
-        <button type="button" class="btn btn-primary btn-full sso-mobile-continue" id="btn-sso-continue">
-          Continuar com esta conta
-        </button>
-
-        <div class="sso-modal-foot">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
-          <span id="sso-modal-foot-text">Ambiente demonstrativo · <span translate="no">UNIFSA</span></span>
-        </div>
-      </div>
-
-      <div id="sso-stage-loading" class="sso-loading-stage is-hidden" role="status" aria-live="polite">
-        <div class="sso-loading-head">
-          <span class="sso-provider-badge is-sm" id="sso-loading-provider-icon" aria-hidden="true"></span>
-          <strong id="sso-loading-provider-name" translate="no">Gennera SSO</strong>
-        </div>
-
-        <div id="sso-loading-profile" class="sso-loading-profile"></div>
-
-        <div class="sso-spinner-wrap" aria-hidden="true">
-          <span class="sso-spinner"></span>
-        </div>
-
-        <p id="sso-loading-title" class="sso-loading-title">Sincronizando matrícula e disciplinas do Gennera…</p>
-        <p class="sso-loading-sub">Isso leva apenas alguns instantes.</p>
-        <p class="sso-loading-foot">Ambiente demonstrativo</p>
-      </div>
-    </div>
-  </div>
-
   <div id="monitor-slot-sheet-backdrop" class="monitor-sheet-backdrop is-hidden" aria-hidden="true"></div>
   <div id="profile-sheet-backdrop" class="profile-sheet-backdrop is-hidden" aria-hidden="true"></div>
 
@@ -1791,6 +1704,8 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20261125c1"></script>
+  <script src="api-config.js?v=20261125d1"></script>
+  <script src="api.js?v=20261125d1"></script>
+  <script src="app.js?v=20261125d1"></script>
 </body>
 </html>
