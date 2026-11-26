@@ -1,4 +1,7 @@
-from flask import Flask, jsonify
+from pathlib import Path
+
+from flask import Flask, jsonify, send_from_directory
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from api.common import ServiceError
 from extensions import bcrypt, cors, db, jwt, migrate
@@ -6,9 +9,21 @@ from dotenv import load_dotenv
 import os
 from datetime import timedelta
 
+FRONTEND_ROOT = Path(__file__).resolve().parents[1]
+FRONTEND_ALLOWED_FILES = frozenset({
+    "index.html",
+    "styles.css",
+    "mobile.css",
+    "app.js",
+    "api.js",
+    "api-config.js",
+})
+
+
 def create_app():
     load_dotenv()
     app = Flask(__name__)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
     #Configurações do app ():
     app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
@@ -47,8 +62,27 @@ def create_app():
 
     app.register_blueprint(api_bp)
 
+    if os.getenv("SERVE_FRONTEND", "False").lower() == "true":
+        register_frontend_routes(app)
+
     register_error_handlers(app)
     return app
+
+
+def register_frontend_routes(app: Flask):
+    @app.get("/")
+    def serve_frontend_index():
+        return send_from_directory(FRONTEND_ROOT, "index.html")
+
+    @app.get("/<string:filename>")
+    def serve_frontend_file(filename: str):
+        if filename not in FRONTEND_ALLOWED_FILES:
+            return _error("Rota não encontrada.", 404)
+        return send_from_directory(FRONTEND_ROOT, filename)
+
+    @app.get("/assets/<path:asset_path>")
+    def serve_frontend_asset(asset_path: str):
+        return send_from_directory(FRONTEND_ROOT / "assets", asset_path)
 
 
 def _error(message: str, status: int, fields: dict | None = None):
