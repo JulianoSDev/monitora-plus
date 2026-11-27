@@ -1,8 +1,12 @@
 import re
 import secrets
+import threading
+import time
 
+import requests
 from flask import current_app
 from flask_jwt_extended import create_access_token
+from google.auth import exceptions as google_exceptions
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
@@ -24,6 +28,50 @@ GOOGLE_ONBOARDING_MAX_AGE = 900  # 15 minutos
 USER_COLUMNS = "id, role, name, ra, email, course, offering_id, avatar_url, (google_sub IS NOT NULL) AS has_google"
 
 _dummy_hash: str | None = None
+
+
+class _CachedGoogleRequest(google_requests.Request):
+    """Reutiliza sessão HTTP e faz cache em memória dos certificados públicos do Google."""
+
+    def __init__(self) -> None:
+        super().__init__(session=requests.Session())
+        self._lock = threading.Lock()
+        self._cache: dict[str, tuple[float, object]] = {}
+
+    def clear_cache(self) -> None:
+        with self._lock:
+            self._cache.clear()
+
+    def __call__(self, url, method="GET", body=None, headers=None, timeout=8, **kwargs):
+        cacheable = method.upper() == "GET" and "googleapis.com/oauth2/" in url
+        now = time.monotonic()
+        if cacheable:
+            with self._lock:
+                entry = self._cache.get(url)
+                if entry and entry[0] > now:
+                    return entry[1]
+
+        response = super().__call__(
+            url,
+            method=method,
+            body=body,
+            headers=headers,
+            timeout=timeout or 8,
+            **kwargs,
+        )
+        if cacheable and getattr(response, "status", None) == 200:
+            _ = response.data
+            ttl = 1800.0
+            cc = (response.headers or {}).get("cache-control", "")
+            m = re.search(r"max-age=(\d+)", cc)
+            if m:
+                ttl = max(300.0, min(float(int(m.group(1))), 3600.0))
+            with self._lock:
+                self._cache[url] = (time.monotonic() + ttl, response)
+        return response
+
+
+_google_request = _CachedGoogleRequest()
 
 
 def _password_ok_length(password) -> bool:
@@ -226,10 +274,35 @@ class AuthService:
         try:
             payload = google_id_token.verify_oauth2_token(
                 credential.strip(),
-                google_requests.Request(),
+                _google_request,
                 client_id,
+                clock_skew_in_seconds=10,
             )
-        except Exception:
+        except ValueError as exc:
+            if "Could not find cert" in str(exc) or "Certificate" in str(exc):
+                _google_request.clear_cache()
+                try:
+                    payload = google_id_token.verify_oauth2_token(
+                        credential.strip(),
+                        _google_request,
+                        client_id,
+                        clock_skew_in_seconds=10,
+                    )
+                except Exception as retry_exc:
+                    current_app.logger.warning(
+                        "Google token verification failed after cert refresh: %s: %s",
+                        type(retry_exc).__name__,
+                        retry_exc,
+                    )
+                    raise ServiceError("Não foi possível validar sua conta Google. Tente entrar novamente.", 401)
+            else:
+                current_app.logger.warning("Google token verification failed: %s: %s", type(exc).__name__, exc)
+                raise ServiceError("Não foi possível validar sua conta Google. Tente entrar novamente.", 401)
+        except (google_exceptions.TransportError, requests.RequestException) as exc:
+            current_app.logger.warning("Google certs transport error: %s: %s", type(exc).__name__, exc)
+            raise ServiceError("Não foi possível contatar o Google agora. Tente novamente em alguns segundos.", 503)
+        except Exception as exc:
+            current_app.logger.warning("Google token verification failed: %s: %s", type(exc).__name__, exc)
             raise ServiceError("Não foi possível validar sua conta Google. Tente entrar novamente.", 401)
 
         iss = payload.get("iss")
