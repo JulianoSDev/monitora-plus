@@ -2962,7 +2962,7 @@ function openGoogleFallbackModal(triggerEl = null) {
     title: "Continuar com Google",
     sub: "Autenticação oficial verificada pelo servidor Monitora+.",
     bodyHtml: `
-      <p class="sso-provider-note">Selecione sua conta Google abaixo para entrar ou vincular seu cadastro institucional.</p>
+      <p class="sso-provider-note">Selecione sua conta Google abaixo para entrar ou concluir seu cadastro.</p>
       <div class="sso-google-render-slot" id="sso-google-render-slot"></div>
     `,
     triggerEl,
@@ -2994,15 +2994,9 @@ async function triggerGoogleSignIn(triggerEl = null) {
     showToast("Carregando serviço do Google… tente novamente em 1 segundo.", null, "info");
     return;
   }
-  try {
-    window.google.accounts.id.prompt((notification) => {
-      if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) {
-        openGoogleFallbackModal(triggerEl);
-      }
-    });
-  } catch {
-    openGoogleFallbackModal(triggerEl);
-  }
+  // Abre diretamente o modal com o botão oficial renderButton do Google GIS,
+  // evitando o cooldown silencioso do FedCM/One Tap após cancelamentos no Chrome.
+  openGoogleFallbackModal(triggerEl);
 }
 
 function handleGoogleCredentialResponse(response) {
